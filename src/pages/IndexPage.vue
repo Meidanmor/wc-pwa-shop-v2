@@ -4,8 +4,8 @@
     <!-- Hero Section -->
     <div class="hero-section q-mb-xl">
       <div class="hero-content container">
-        <h1 class="text-h2 text-white">Modern WooCommerce Shop</h1>
-        <p class="text-subtitle1 text-white">Built with Vue, Quasar & WordPress</p>
+        <h1 class="text-h2 text-white">NaturaBloom</h1>
+        <p class="text-white">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
         <q-btn label="Browse Products" color="primary" class="q-mt-md" @click="scrollToProducts" />
       </div>
     </div>
@@ -266,17 +266,46 @@ export default {
   height: 100%;
   background: linear-gradient(-45deg, rgba(255, 182, 193, 0.6), rgba(255, 105, 180, 0.5), rgba(255, 192, 203, 0.6));
   background-size: 600% 600%;
-  animation: gradientShift 15s ease infinite;
+  animation: gradientShift 5s ease infinite;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 20px;
   padding: 40px 20px;
 }
-
+.cta-overlay:after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: unset;
+    left: auto;
+    width: 400px;
+    height: 500px;
+    background: url(https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 50px;
+    bottom: -30%;
+    z-index: -1;
+    opacity: 0.5;
+    transform: translateY(50%);
+}
+.cta-overlay:before {
+  content: '';
+  background: var(--q-primary);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: auto;
+  max-width: 200px;
+  z-index: -1;
+  transition: 1s;
+}
 .cta-content {
   max-width: 600px;
-  margin: 0 auto;
+  margin: 0 auto auto;
   text-align: center;
 }
 
