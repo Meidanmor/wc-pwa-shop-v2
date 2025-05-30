@@ -18,7 +18,7 @@ export async function fetchProductById(id) {
 }
 
 export async function fetchAllProducts() {
-  const response = await fetchWithToken(`${baseURL}/products/`, {credentials: 'include'});
+  const response = await fetchWithToken(`${baseURL}/products/?per_page=100`, {credentials: 'include'});
   const data = await response.json();
   return data;
 }
