@@ -1,0 +1,33 @@
+/* app global css */
+.no-decoration {
+  text-decoration: none;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.nav-bar {
+  display: flex;
+  column-gap: 15px;
+}
+.nav-bar a {
+  font-size: 16px;
+  color: #fff;
+  transition: 0.3s ease;
+}
+.nav-bar a.router-link-exact-active {
+  color: pink;
+}
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.6s ease, transform 0.4s ease-out;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+.q-item.q-router-link--active {
+  color: inherit;
+}
+.q-item.q-router-link--exact-active {
+  color: var(--q-primary);
+}
