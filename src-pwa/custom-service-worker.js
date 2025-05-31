@@ -26,7 +26,7 @@ cleanupOutdatedCaches()
 
 // ✅ API caching for WooCommerce backend
 registerRoute(
-  ({ url }) => url.origin === 'https://nuxt.meidanm.com' && url.pathname.startsWith('/wp-json/wc/store/v1/products'),
+  ({ url }) => url.origin === 'https://nuxt.meidanm.com' && url.pathname.startsWith('/wp-json/wc/store/v1/products?per_page'),
   new NetworkFirst({
     cacheName: 'woocommerce-api',
     plugins: [
