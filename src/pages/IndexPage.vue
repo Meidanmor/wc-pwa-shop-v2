@@ -4,8 +4,8 @@
     <!-- Hero Section -->
     <div class="hero-section q-mb-xl">
       <div class="hero-content container">
-        <h1 class="text-h2">NaturaBloom</h1>
-        <p>We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
+        <h1 class="text-h1 q-mb-sm">NaturaBloom</h1>
+        <p class="text-h6 text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
         <q-btn label="Browse Products" color="primary" class="q-mt-md" @click="scrollToProducts" />
       </div>
     </div>
@@ -13,7 +13,7 @@
     <!-- Featured Products Slider -->
     <section ref="productSection" class="featured-products q-my-xl">
       <div class="container">
-        <h2 class="text-h3 text-center q-mb-md">Featured Products</h2>
+        <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
         <q-carousel
           v-if="slideChunks && slideChunks.length > 0"
           v-model="slide"
@@ -21,79 +21,133 @@
           infinite
           autoplay
           navigation
+          swipeable
+          arrows
           height="550px"
-          class="bg-grey-2 rounded-borders shadow-2"
+          control-color="primary"
+          class="rounded-borders"
         >
-<q-carousel-slide
-  v-for="(slideGroup, index) in slideChunks"
-  :key="index"
-  :name="index"
->
-  <div class="row justify-center">
-    <div
-      v-for="fp in slideGroup"
-      :key="fp.id"
-      class="col-12 col-sm-6 col-md-4"
-    >
-      <q-card class="my-card full-height">
-        <q-img
-        width="100%"
-        height="300px"
-          :src="fp.images[0]?.src || 'https://via.placeholder.com/400x300?text=No+Image'"
-          :alt="fp.name"
-        />
-        <q-card-section>
-          <div class="text-h6">{{ fp.name }}</div>
-          <div class="text-subtitle2" v-html="fp.price_html" />
-        </q-card-section>
-        <q-card-actions>
-          <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
-          <q-btn
-            label="View"
-            color="secondary"
-            :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
-            flat
-          />
-        </q-card-actions>
-      </q-card>
-    </div>
-  </div>
-</q-carousel-slide>
+          <q-carousel-slide
+            v-for="(slideGroup, index) in slideChunks"
+            :key="index"
+            :name="index"
+          >
+            <div class="row justify-center">
+              <div
+                v-for="fp in slideGroup"
+                :key="fp.id"
+                class="col-12 col-sm-6 col-md-4"
+              >
+                <q-card class="my-card full-height">
+                  <q-img
+                    width="100%"
+                    height="300px"
+                    :src="fp.images[0]?.src || 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png'"
+                    :alt="fp.name"
+                  />
+                  <q-card-section>
+                    <div class="text-h6">{{ fp.name }}</div>
+                    <div class="text-subtitle2" v-html="fp.price_html" />
+                  </q-card-section>
+                  <q-card-actions>
+                    <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
+                    <q-btn
+                      label="View"
+                      color="secondary"
+                      :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
+                      flat
+                    />
+                  </q-card-actions>
+                </q-card>
+              </div>
+            </div>
+          </q-carousel-slide>
         </q-carousel>
         <q-banner v-else-if="slideChunks && slideChunks.length === 0" class="bg-grey-2 text-center q-pa-md">No featured products found.</q-banner>
-       <div v-else class="q-pa-md flex items-center justify-center">
-         <q-spinner color="primary" size="6em" />
-       </div>
-
+        <div v-else class="q-pa-md flex items-center justify-center">
+          <q-spinner color="primary" size="6em" />
+        </div>
       </div>
     </section>
 
     <!-- CTA Section -->
     <section class="cta-section">
-    <div class="container">
-      <div class="cta-overlay">
-        <div class="cta-content">
-          <h2 class="text-h4 text-white q-mb-md">Discover Our Full Collection</h2>
-          <q-btn
-            ref="ctaBtn"
-            label="Browse All Products"
-            color="primary"
-            size="lg"
-            to="/products"
-          />
+      <div class="container">
+        <div class="cta-overlay">
+          <div class="cta-content">
+            <h2 class="text-h4 text-white q-mb-md">Discover Our Full Collection</h2>
+            <q-btn
+              ref="ctaBtn"
+              label="Browse All Products"
+              color="primary"
+              size="lg"
+              to="/products"
+            />
+          </div>
         </div>
       </div>
+    </section>
+    <!-- Testimonials Section -->
+    <section class="testimonials-section container q-my-xl">
+      <h2 class="text-h3 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
+      <div class="row q-col-gutter-md">
+        <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
+          <q-card class="q-pa-md">
+            <q-avatar size="56px" class="q-mb-sm">
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="40" cy="40" r="40" fill="#E8F5E9"/>
+                <circle cx="40" cy="30" r="12" fill="#81C784"/>
+                <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/>
+              </svg>
+            </q-avatar>
+            <div class="text-subtitle1 q-mb-sm">{{ testimonial.name }}</div>
+            <q-icon name="format_quote" size="sm" class="text-grey-5" />
+            <p class="text-body2">{{ testimonial.feedback }}</p>
+          </q-card>
+        </div>
       </div>
     </section>
 
-    <!-- About Section -->
-    <section class="about-section container q-mt-xl q-mb-xl">
-      <h2 class="text-h5 q-mb-md">Why Shop With Us?</h2>
-      <p class="text-body1 q-mb-sm">We blend modern frontend technology with the flexibility of WordPress to give you the best shopping experience.</p>
-      <p class="text-body1">Enjoy a smooth, secure and responsive shop built with Vue and Quasar — fast, clean and customizable.</p>
+    <!-- Sustainability Section -->
+    <section class="sustainability-section container q-my-xl">
+      <div class="row items-center">
+        <div class="col-12 col-md-6">
+          <img src="https://example.com/sustainability.jpg" alt="Sustainability" class="full-width" />
+        </div>
+        <div class="col-12 col-md-6">
+          <h2 class="text-h4 text-weight-light q-mb-md">Our Commitment to Sustainability</h2>
+          <p class="text-body1">
+            At NaturaBloom, we prioritize eco-friendly practices, from sourcing organic ingredients to using recyclable packaging.
+          </p>
+        </div>
+      </div>
     </section>
 
+    <!-- Newsletter Signup Section -->
+    <section class="newsletter-section container q-my-xl text-center">
+      <h2 class="text-h3 text-weight-light q-mb-md">Stay Updated</h2>
+      <p class="text-body1 q-mb-lg">Subscribe to our newsletter for the latest products and offers.</p>
+      <q-input filled v-model="email" label="Your Email" class="subscribe-email-input q-mb-md" />
+      <q-btn label="Subscribe" color="primary" @click="subscribeNewsletter" />
+    </section>
 
+    <!-- Instagram Feed Section -->
+    <section class="instagram-section container q-my-xl">
+      <h2 class="text-h3 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
+      <div class="row q-col-gutter-md">
+        <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
+          <q-img :src="post.image" :alt="post.caption" class="rounded-borders" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Enhanced About Section -->
+    <section class="about-section container q-my-xl">
+      <h2 class="text-h3 text-weight-light text-center q-mb-md">About NaturaBloom</h2>
+      <p class="text-body1 text-center">
+        NaturaBloom blends modern technology with nature's purity, offering organic, cruelty-free, and environmentally friendly products.
+      </p>
+    </section>
 
 
   </q-page>
@@ -119,6 +173,40 @@ export default {
     const ctaBtn = ref(null);
     const slideChunks = ref(false);
     const slide = ref(0);
+    const email = ref('');
+    const testimonials = ref([
+      {
+        name: 'Alice Johnson',
+        feedback: 'NaturaBloom products have transformed my skincare routine!',
+        avatar: 'https://example.com/avatar1.jpg',
+      },
+      {
+        name: 'Mark Thompson',
+        feedback: 'I love the organic ingredients and sustainable packaging.',
+        avatar: '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>',
+      },
+      {
+        name: 'Sophie Lee',
+        feedback: 'Fast shipping and excellent customer service.',
+        avatar: 'https://example.com/avatar3.jpg',
+      },
+    ]);
+
+    const instagramPosts = ref([
+      { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Our latest product launch!' },
+      { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Behind the scenes at NaturaBloom.' },
+      { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Customer favorites this month.' },
+      { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Sustainable packaging in action.' },
+    ]);
+
+    const subscribeNewsletter = () => {
+      if (email.value) {
+        $q.notify({ type: 'positive', message: 'Subscribed successfully!' });
+        email.value = '';
+      } else {
+        $q.notify({ type: 'negative', message: 'Please enter a valid email.' });
+      }
+    };
 
     const getChunks = (array, size) => {
       const chunks = [];
@@ -131,15 +219,12 @@ export default {
     const computeSlideChunks = () => {
       const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3;
       slideChunks.value = getChunks(featuredProducts.value, chunkSize);
-      console.log(slideChunks.value);
     };
 
     const fetchProducts = async () => {
       const allProducts = await api.getProducts();
       products.value = allProducts;
-      featuredProducts.value = allProducts.filter(p => p.featured).slice(0, 6);
       featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
-      console.log(featuredProducts.value);
       computeSlideChunks();
     };
 
@@ -161,23 +246,28 @@ export default {
       });
     };
 
-    const nextSlide = () => {
-      carousel.value.next();
-    };
-
-    const prevSlide = () => {
-      carousel.value.prev();
+    const subscribe = () => {
+      if (email.value) {
+        $q.notify({ type: 'positive', message: 'Thanks for subscribing!' });
+        email.value = '';
+      } else {
+        $q.notify({ type: 'warning', message: 'Please enter a valid email.' });
+      }
     };
 
     onMounted(() => {
       fetchProducts();
-//computeSlideChunks();
       gsap.from('.hero-content', {
         y: 50,
         opacity: 0,
         duration: 1.2,
         ease: 'power3.out',
       });
+      gsap.from('.testimonials-section', { opacity: 0, y: 50, duration: 1 });
+      gsap.from('.sustainability-section', { opacity: 0, x: -50, duration: 1, delay: 0.5 });
+      gsap.from('.newsletter-section', { opacity: 0, y: 50, duration: 1, delay: 1 });
+      gsap.from('.instagram-section', { opacity: 0, y: 50, duration: 1, delay: 1.5 });
+      gsap.from('.about-section', { opacity: 0, y: 50, duration: 1, delay: 2 });
 
       nextTick(() => {
         gsap.from(ctaBtn.value.$el, {
@@ -202,12 +292,15 @@ export default {
       addToCart,
       getSlugFromPermalink,
       scrollToProducts,
-      nextSlide,
-      prevSlide,
       productSection,
       carousel,
       ctaBtn,
-      slide
+      slide,
+      testimonials,
+      email,
+      instagramPosts,
+      subscribeNewsletter,
+      subscribe
     };
   },
 };
@@ -238,6 +331,7 @@ export default {
   border-radius: 20px;
   height: 400px;
   margin-bottom: 40px;
+  padding: 0;
 }
 .cta-section .container {
   height: 100%;
@@ -312,5 +406,36 @@ export default {
 .about-section {
   text-align: center;
   max-width: 700px;
+}
+.testimonials-section q-card {
+  transition: transform 0.3s;
+}
+.testimonials-section q-card:hover {
+  transform: translateY(-5px);
+}
+.sustainability-section img {
+  border-radius: 8px;
+}
+.newsletter-section {
+  background-color: #f9f9f9;
+  padding: 40px 20px;
+  border-radius: 8px;
+}
+.instagram-section q-img {
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+.instagram-section q-img:hover {
+  transform: scale(1.05);
+}
+.about-section {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.subscribe-email-input {
+  max-width: 500px;
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
 }
 </style>

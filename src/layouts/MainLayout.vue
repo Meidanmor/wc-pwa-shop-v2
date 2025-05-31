@@ -139,6 +139,7 @@
       </div>
 
     </q-drawer>
+    <ai-assistant></ai-assistant>
 
     <q-page-container>
       <transition name="fade" mode="out-in">
@@ -153,6 +154,7 @@ import { ref, computed } from 'vue'
 import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar} from "quasar";
+import AiAssistant from "src/components/AiAssistant.vue";
 
 const $q = useQuasar()
 const mobileMenuDrawer = ref(false)

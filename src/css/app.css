@@ -1,6 +1,7 @@
 /* app global css */
 body{
   color: var(--q-secondary);
+  /*scroll-behavior: smooth;*/
 }
 .no-decoration {
   text-decoration: none;
@@ -19,7 +20,7 @@ body{
   transition: 0.3s ease;
 }
 .nav-bar a.router-link-exact-active {
-  color: pink;
+  color: var(--q-secondary);
 }
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.6s ease, transform 0.4s ease-out;
@@ -33,4 +34,8 @@ body{
 }
 .q-item.q-router-link--exact-active {
   color: var(--q-primary);
+}
+body section {
+  padding-top: 80px;
+  padding-bottom: 80px;
 }

@@ -19,10 +19,10 @@
             :src="product.images?.[0]?.thumbnail"
             :alt="product.name"
             class="q-mb-sm"
-            style="height: 100px; object-fit: contain;"
+            style="height: 200px; object-fit: contain;"
           />
           <q-card-section>
-            <div class="text-subtitle1 ellipsis">{{ product.name }}</div>
+            <div class="text-subtitle1 ellipsis text-secondary">{{ product.name }}</div>
             <div class="text-caption text-grey">
               <span v-html="product.price_html" />
             </div>
@@ -49,9 +49,10 @@
       animated
       infinite
       swipeable
+      arrows
       control-color="primary"
       navigation
-      height="auto"
+      height="430px"
       class="bg-transparent"
     >
       <q-carousel-slide
@@ -71,10 +72,10 @@
               :src="product.images?.[0]?.thumbnail"
               :alt="product.name"
               class="q-mb-sm"
-              style="height: 100px; object-fit: contain;"
+              style="height: 200px; object-fit: contain;"
             />
             <q-card-section>
-              <div class="text-subtitle1 ellipsis">{{ product.name }}</div>
+              <div class="text-subtitle1 ellipsis text-secondary">{{ product.name }}</div>
               <div class="text-caption text-grey">
                 <span v-html="product.price_html" />
               </div>

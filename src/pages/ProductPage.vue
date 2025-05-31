@@ -20,6 +20,8 @@
               v-for="(img, index) in product.images"
               :key="index"
               :name="index"
+              :ratio="1"
+              fit="contain"
               :img-src="img.src"
               @click="openLightbox(index)"
               style="cursor: zoom-in"
@@ -30,7 +32,9 @@
           <q-img
             :src="product.images[0]?.src"
             spinner-color="primary"
+            fit="contain"
             style="cursor: zoom-in"
+            :ratio="1"
             @click="openLightbox(0)"
           />
         </div>

@@ -160,6 +160,21 @@ export default defineConfig((/* ctx */) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
     pwa: {
+        workbox: {
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/nuxt\/.meidanm\.com\/wp-json\/wc\/store\/v1\/products?per_page=100/,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'products-cache',
+                expiration: {
+                  maxEntries: 50,
+                  maxAgeSeconds: 60 * 60 * 24, // 1 day
+                },
+              },
+            }
+          ]
+        },
       workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
       useCredentialsForManifestTag: false,
         manifest: {
