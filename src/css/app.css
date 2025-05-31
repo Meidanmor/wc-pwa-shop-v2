@@ -1,4 +1,7 @@
 /* app global css */
+body{
+  color: var(--q-secondary);
+}
 .no-decoration {
   text-decoration: none;
 }
