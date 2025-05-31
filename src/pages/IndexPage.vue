@@ -4,8 +4,8 @@
     <!-- Hero Section -->
     <div class="hero-section q-mb-xl">
       <div class="hero-content container">
-        <h1 class="text-h2 text-white">NaturaBloom</h1>
-        <p class="text-white">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
+        <h1 class="text-h2">NaturaBloom</h1>
+        <p>We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
         <q-btn label="Browse Products" color="primary" class="q-mt-md" @click="scrollToProducts" />
       </div>
     </div>
@@ -215,7 +215,7 @@ export default {
 
 <style scoped>
 .hero-section {
-  background: linear-gradient(to bottom right, #2c3e50, #34495e);
+  background: rgb(243, 236, 226);
   border-radius: 20px;
   padding: 60px 20px;
   text-align: center;
@@ -264,9 +264,9 @@ export default {
   position: relative;
   z-index: 1;
   height: 100%;
-  background: linear-gradient(-45deg, rgba(255, 182, 193, 0.6), rgba(255, 105, 180, 0.5), rgba(255, 192, 203, 0.6));
+  background: linear-gradient(-45deg, #4c6e5d96, var(--q-primary), #4c6e5d96);
   background-size: 600% 600%;
-  animation: gradientShift 5s ease infinite;
+  animation: gradientShift 10s ease infinite;
   display: flex;
   align-items: center;
   justify-content: center;
