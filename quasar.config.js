@@ -73,8 +73,8 @@ export default defineConfig((/* ctx */) => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
     devServer: {
       https: {
-        key: fs.readFileSync('./certs/192.168.1.10-key.pem'),
-        cert: fs.readFileSync('./certs/192.168.1.10.pem'),
+        key: fs.readFileSync('./certs/localhost-key.pem'),
+        cert: fs.readFileSync('./certs/localhost.pem'),
       },
       port: 9000,
       open: true,
@@ -91,7 +91,7 @@ export default defineConfig((/* ctx */) => {
         brand: {
           primary: '#d8a7a7',
           secondary: '#4C6E5D',
-          accent: '#d4b07a',
+          accent: 'rgb(163, 201, 168)',
 
           dark: '#1d1d1d',
           'dark-page': '#121212',
