@@ -326,7 +326,7 @@ const getSlugFromPermalink = (permalink) => {
 }
 
 async function fetchProduct(slug) {
-  const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/products')
+  const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/products?per_page=100')
   const products = await res.json()
   product.value = products.find(p => getSlugFromPermalink(p.permalink) === slug)
   quantity.value = 1
