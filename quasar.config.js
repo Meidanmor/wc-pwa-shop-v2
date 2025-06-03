@@ -173,7 +173,8 @@ export default defineConfig((/* ctx */) => {
                 },
               },
             }
-          ]
+          ],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg}']
         },
       workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
       useCredentialsForManifestTag: false,
