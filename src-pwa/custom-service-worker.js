@@ -25,7 +25,7 @@ precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
 // ✅ API caching for WooCommerce backend
-registerRoute(
+/*registerRoute(
   ({ url }) => url.origin === 'https://nuxt.meidanm.com' && url.pathname.startsWith('/wp-json/wc/store/v1/products?per_page='),
   new NetworkFirst({
     cacheName: 'woocommerce-api',
@@ -36,7 +36,20 @@ registerRoute(
       }),
     ],
   })
-)
+)*/
+
+self.addEventListener('push', function (event) {
+  const data = event.data.json();
+  const options = {
+    body: data.body,
+    icon: '/icons/icon-128x128.png',
+    badge: '/icons/icon-128x128.png'
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
 
 // ✅ Navigation fallback for SPA routing
 if (process.env.MODE !== 'ssr' || process.env.PROD) {
