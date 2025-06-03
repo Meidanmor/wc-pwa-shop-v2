@@ -39,7 +39,7 @@ register(process.env.SERVICE_WORKER_FILE, {
     // console.error('Error during service worker registration:', err)
   }
 })
-register('./custom-service-worker.js', {
+register('/custom-service-worker.js', {
   ready (registration) {
     console.log('✅ Service worker is active:', registration)
   },
