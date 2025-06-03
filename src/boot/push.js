@@ -25,5 +25,8 @@ export async function subscribeToPushNotifications() {
   }
 }
 
-// Call the function on boot
-subscribeToPushNotifications();
+if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
+  subscribeToPushNotifications();
+} else {
+  console.warn('Push notifications are not supported in this browser.');
+}
