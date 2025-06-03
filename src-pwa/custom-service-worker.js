@@ -25,7 +25,7 @@ precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
 // ✅ API caching for WooCommerce backend
-/*registerRoute(
+registerRoute(
   ({ url }) => url.origin === 'https://nuxt.meidanm.com' && url.pathname.startsWith('/wp-json/wc/store/v1/products?per_page='),
   new NetworkFirst({
     cacheName: 'woocommerce-api',
@@ -36,9 +36,13 @@ cleanupOutdatedCaches()
       }),
     ],
   })
-)*/
+)
 
 self.addEventListener('push', function (event) {
+  console.log('[Service Worker] Push Received.');
+  const data = event.data.json();
+  console.log('[Service Worker] Push Data:', data);
+
   const data = event.data.json();
   const options = {
     body: data.body,
