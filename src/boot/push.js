@@ -9,5 +9,6 @@ export async function subscribeToPushNotifications() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(subscription)
-  });
+  })
+      .then(res => console.log(res.json()));
 }
