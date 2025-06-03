@@ -11,8 +11,8 @@ import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from
 import { registerRoute, NavigationRoute } from 'workbox-routing'
 
 // ✅ IMPORT THESE
-//import { NetworkFirst } from 'workbox-strategies'
-//import { ExpirationPlugin } from 'workbox-expiration'
+import { NetworkFirst } from 'workbox-strategies'
+import { ExpirationPlugin } from 'workbox-expiration'
 
 // Setup service worker behavior
 self.skipWaiting()
@@ -42,8 +42,6 @@ self.addEventListener('push', function (event) {
   console.log('[Service Worker] Push Received.');
   const data = event.data.json();
   console.log('[Service Worker] Push Data:', data);
-
-  const data = event.data.json();
   const options = {
     body: data.body,
     icon: '/icons/icon-128x128.png',
