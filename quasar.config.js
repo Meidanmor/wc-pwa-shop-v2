@@ -177,6 +177,9 @@ export default defineConfig((/* ctx */) => {
           globPatterns: ['**/*.{js,css,html,ico,png,svg}']
         },
       workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
+      injectManifest: {
+          swSrc: '/src-pwa/custom-service-worker.js'
+      },
       useCredentialsForManifestTag: false,
         manifest: {
     name: 'My Shop App',
