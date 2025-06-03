@@ -39,3 +39,38 @@ register(process.env.SERVICE_WORKER_FILE, {
     // console.error('Error during service worker registration:', err)
   }
 })
+register('./custom-service-worker.js', {
+  ready (registration) {
+    console.log('✅ Service worker is active:', registration)
+  },
+  registered (registration) {
+    console.log('📦 Service worker registered:', registration)
+  },
+  cached () {
+    console.log('💾 Content cached')
+  },
+  updatefound () {
+    console.log('⬇️ New content is downloading...')
+  },
+  updated () {
+    console.log('🔄 New content available!')
+  },
+  offline () {
+    console.log('📴 App running in offline mode')
+  },
+  error (err) {
+    console.error('❌ Service worker registration failed:', err)
+  }
+})
+
+navigator.serviceWorker.register('/service-worker.js')
+  .then(reg => {
+    console.log('✅ SW registered:', reg);
+    return navigator.serviceWorker.ready;
+  })
+  .then(ready => {
+    console.log('🟢 SW ready:', ready);
+  })
+  .catch(err => {
+    console.error('❌ SW error:', err);
+  });
