@@ -5,7 +5,7 @@ export async function subscribeToPushNotifications() {
     applicationServerKey: 'BLDC7BhdZ5IEKTcBzhXz2jLkiaQvxpL8hjb-uVFIomYEArnRKhEvAIlDbHAiOgJwaj9IwHAJUD-p8POw0VCowYg'
   });
 
-  await fetch('https://yourdomain.com/wp-json/pwa/v1/save-subscription', {
+  await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/save-subscription', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(subscription)
