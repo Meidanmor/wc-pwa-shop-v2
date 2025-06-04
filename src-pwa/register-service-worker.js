@@ -40,6 +40,8 @@ register(process.env.SERVICE_WORKER_FILE, {
   }
 })
 register('/custom-service-worker.js', {
+  type: 'module', // 👈 Important
+
   ready (registration) {
     console.log('✅ Service worker is active:', registration)
   },
