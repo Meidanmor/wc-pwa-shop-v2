@@ -11,12 +11,12 @@ register(process.env.SERVICE_WORKER_FILE, {
 
   // registrationOptions: { scope: './' },
 
-  ready (/* registration */) {
-     console.log('Service worker is active.')
+  ready ( registration ) {
+     console.log('Service worker is active.', registration)
   },
 
-  registered (/* registration */) {
-     console.log('Service worker has been registered.')
+  registered ( registration ) {
+     console.log('Service worker has been registered.', registration)
   },
 
   cached (/* registration */) {
@@ -35,7 +35,7 @@ register(process.env.SERVICE_WORKER_FILE, {
     // console.log('No internet connection found. App is running in offline mode.')
   },
 
-  error (/* err */) {
+  error ( err ) {
      console.error('Error during service worker registration:', err)
   }
 })
