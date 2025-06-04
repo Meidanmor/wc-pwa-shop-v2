@@ -39,3 +39,4 @@ register(process.env.SERVICE_WORKER_FILE, {
      console.error('Error during service worker registration:', err)
   }
 })
+navigator.serviceWorker.register('/sw.js') // or custom name if you changed swDest

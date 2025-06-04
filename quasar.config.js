@@ -161,65 +161,65 @@ export default defineConfig((/* ctx */) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
     pwa: {
-        workbox: {
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/nuxt\/.meidanm\.com\/wp-json\/wc\/store\/v1\/products?per_page=100/,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'products-cache',
-                expiration: {
-                  maxEntries: 50,
-                  maxAgeSeconds: 60 * 60 * 24, // 1 day
-                },
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/nuxt\/.meidanm\.com\/wp-json\/wc\/store\/v1\/products?per_page=100/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'products-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day
               },
-            }
-          ],
-          globPatterns: ['**/*.{js,css,html,ico,png,svg}']
-        },
+            },
+          }
+        ],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+      },
       workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
       injectManifest: {
         swSrc: 'src-pwa/custom-service-worker.js',
-        swDest: 'custom-service-worker.js',
+        swDest: 'sw.js',
         exclude: ['_redirects'], // 💥 add this
       },
       useCredentialsForManifestTag: false,
-        manifest: {
-    name: 'My Shop App',
-    short_name: 'Shop',
-    description: 'Headless WooCommerce PWA',
-    display: 'standalone',
-    orientation: 'portrait',
-    background_color: '#ffffff',
-    theme_color: '#027be3',
-    icons: [
-      {
-        src: 'icons/icon-128x128.png',
-        sizes: '128x128',
-        type: 'image/png'
-      },
-      {
-        src: 'icons/icon-192x192.png',
-        sizes: '192x192',
-        type: 'image/png'
-      },
-      {
-        src: 'icons/icon-256x256.png',
-        sizes: '256x256',
-        type: 'image/png'
-      },
-      {
-        src: 'icons/icon-384x384.png',
-        sizes: '384x384',
-        type: 'image/png'
-      },
-      {
-        src: 'icons/icon-512x512.png',
-        sizes: '512x512',
-        type: 'image/png'
+      manifest: {
+        name: 'My Shop App',
+        short_name: 'Shop',
+        description: 'Headless WooCommerce PWA',
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#ffffff',
+        theme_color: '#027be3',
+        icons: [
+          {
+            src: 'icons/icon-128x128.png',
+            sizes: '128x128',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-256x256.png',
+            sizes: '256x256',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-384x384.png',
+            sizes: '384x384',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
       }
-    ]
-  }
 
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json',
