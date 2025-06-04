@@ -7,8 +7,8 @@
  */
 
 import { clientsClaim } from 'workbox-core'
-import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching'
-import { registerRoute, NavigationRoute } from 'workbox-routing'
+//import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching'
+//import { registerRoute, NavigationRoute } from 'workbox-routing'
 
 // ✅ IMPORT THESE
 import { NetworkFirst } from 'workbox-strategies'
@@ -19,13 +19,13 @@ self.skipWaiting()
 clientsClaim()
 
 // Pre-cache static assets
-precacheAndRoute(self.__WB_MANIFEST)
+//precacheAndRoute(self.__WB_MANIFEST)
 
 // Clean old caches
-cleanupOutdatedCaches()
+//cleanupOutdatedCaches()
 
 // ✅ API caching for WooCommerce backend
-registerRoute(
+/*registerRoute(
   ({ url }) => url.origin === 'https://nuxt.meidanm.com' && url.pathname.startsWith('/wp-json/wc/store/v1/products?per_page='),
   new NetworkFirst({
     cacheName: 'woocommerce-api',
@@ -36,7 +36,7 @@ registerRoute(
       }),
     ],
   })
-)
+)*/
 
 self.addEventListener('install', (/*event*/) => {
   console.log('🛠️ Service Worker installing');
@@ -64,7 +64,7 @@ self.addEventListener('push', function (event) {
 });
 
 // ✅ Navigation fallback for SPA routing
-if (process.env.MODE !== 'ssr' || process.env.PROD) {
+/*if (process.env.MODE !== 'ssr' || process.env.PROD) {
   registerRoute(
     new NavigationRoute(
       createHandlerBoundToURL(process.env.PWA_FALLBACK_HTML),
@@ -76,5 +76,5 @@ if (process.env.MODE !== 'ssr' || process.env.PROD) {
       }
     )
   )
-}
+}*/
 

@@ -177,7 +177,7 @@ export default defineConfig((/* ctx */) => {
         ],
         globPatterns: ['**/*.{js,css,html,ico,png,svg}']
       },
-      workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
+      workboxMode: 'injectManifest', // 'GenerateSW' or 'InjectManifest'
       injectManifest: {
         swSrc: 'src-pwa/custom-service-worker.js',
         swDest: 'sw.js',
