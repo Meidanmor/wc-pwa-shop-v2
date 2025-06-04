@@ -181,6 +181,7 @@ export default defineConfig((/* ctx */) => {
       injectManifest: {
         swSrc: 'src-pwa/custom-service-worker.js',
         swDest: 'custom-service-worker.js',
+        exclude: ['_redirects'], // 💥 add this
       },
       useCredentialsForManifestTag: false,
         manifest: {

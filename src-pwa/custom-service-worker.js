@@ -38,6 +38,16 @@ registerRoute(
   })
 )
 
+self.addEventListener('install', (event) => {
+  console.log('🛠️ Service Worker installing');
+  self.skipWaiting(); // Optional but useful
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('⚡ Service Worker activating');
+  event.waitUntil(self.clients.claim()); // Optional
+});
+
 self.addEventListener('push', function (event) {
   console.log('[Service Worker] Push Received.');
   const data = event.data.json();
