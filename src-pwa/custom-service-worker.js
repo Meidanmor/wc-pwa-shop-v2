@@ -11,8 +11,8 @@ import { clientsClaim } from 'workbox-core'
 //import { registerRoute, NavigationRoute } from 'workbox-routing'
 
 // ✅ IMPORT THESE
-import { NetworkFirst } from 'workbox-strategies'
-import { ExpirationPlugin } from 'workbox-expiration'
+//import { NetworkFirst } from 'workbox-strategies'
+//import { ExpirationPlugin } from 'workbox-expiration'
 
 // Setup service worker behavior
 self.skipWaiting()
