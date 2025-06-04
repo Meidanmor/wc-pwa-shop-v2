@@ -12,7 +12,7 @@ self.importScripts('workbox-routing')
 
 // ✅ IMPORT THESE
 self.importScripts('workbox-strategies')
-self.importScripts'workbox-expiration')
+self.importScripts('workbox-expiration')
 
 // Setup service worker behavior
 self.skipWaiting()
