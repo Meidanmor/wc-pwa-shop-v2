@@ -179,7 +179,8 @@ export default defineConfig((/* ctx */) => {
         },
       workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
       injectManifest: {
-          swSrc: 'src-pwa/custom-service-worker.js'
+        swSrc: 'src-pwa/custom-service-worker.js',
+        swDest: 'custom-service-worker.js',
       },
       useCredentialsForManifestTag: false,
         manifest: {
