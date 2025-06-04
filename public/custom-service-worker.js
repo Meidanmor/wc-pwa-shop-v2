@@ -6,13 +6,13 @@
  * quasar.config file > pwa > workboxMode is set to "InjectManifest"
  */
 
-import { clientsClaim } from 'workbox-core'
-import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching'
-import { registerRoute, NavigationRoute } from 'workbox-routing'
+self.importScripts('workbox-core')
+self.importScripts('workbox-precaching')
+self.importScripts('workbox-routing')
 
 // ✅ IMPORT THESE
-import { NetworkFirst } from 'workbox-strategies'
-import { ExpirationPlugin } from 'workbox-expiration'
+self.importScripts('workbox-strategies')
+self.importScripts'workbox-expiration')
 
 // Setup service worker behavior
 self.skipWaiting()
