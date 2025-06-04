@@ -39,14 +39,3 @@ register(process.env.SERVICE_WORKER_FILE, {
      console.error('Error during service worker registration:', err)
   }
 })
-navigator.serviceWorker.register('/custom-service-worker.js')
-  .then(reg => {
-    console.log('✅ Manual SW registered:', reg);
-    return navigator.serviceWorker.ready;
-  })
-  .then(readyReg => {
-    console.log('🟢 Manual SW ready:', readyReg);
-  })
-  .catch(err => {
-    console.error('❌ Manual SW registration failed:', err);
-  });
