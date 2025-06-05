@@ -3,8 +3,13 @@
 
 import { defineConfig } from '#q-app/wrappers'
 import fs from 'fs';
-const fs = require('fs');
-const path = require('path');
+import path from 'path';
+
+import { fileURLToPath } from 'url';
+
+// ESM-safe __dirname equivalent
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 
 export default defineConfig((/* ctx */) => {
   return {
