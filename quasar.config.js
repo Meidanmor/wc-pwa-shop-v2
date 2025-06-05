@@ -200,6 +200,9 @@ export default defineConfig((/* ctx */) => {
         useCredentialsForManifestTag: false,
         exclude: [/\.map$/, /_redirects/], //this fixed it.
       },
+      workboxOptions: {
+            exclude: [/\.map$/, /_redirects/], //this fixed it.
+        },
       //useCredentialsForManifestTag: false,
       manifest: {
         name: 'My Shop App',
