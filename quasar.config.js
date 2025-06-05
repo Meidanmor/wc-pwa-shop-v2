@@ -3,13 +3,6 @@
 
 import { defineConfig } from '#q-app/wrappers'
 import fs from 'fs';
-import path from 'path';
-
-import { fileURLToPath } from 'url';
-
-// ESM-safe __dirname equivalent
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 
 export default defineConfig((/* ctx */) => {
   return {
@@ -44,12 +37,6 @@ export default defineConfig((/* ctx */) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#build
     build: {
-      afterBuild () {
-        const src = path.resolve(__dirname, 'public/_redirects');
-        const dest = path.resolve(__dirname, 'dist/pwa/_redirects');
-        fs.copyFileSync(src, dest);
-        console.log('✅ _redirects copied to dist/pwa');
-      },
       target: {
         browser: [ 'es2022', 'firefox115', 'chrome115', 'safari14' ],
         node: 'node20'
@@ -198,11 +185,8 @@ export default defineConfig((/* ctx */) => {
         injectPwaMetaTags: true,
         manifestFilename: 'manifest.json',
         useCredentialsForManifestTag: false,
-        exclude: ['dist/_redirects'], //this fixed it.
+        exclude: [/\.map$/, /netlify\.toml$/], // exclude netlify.toml just in case
       },
-      workboxOptions: {
-            exclude: ['dist/_redirects'], //this fixed it.
-        },
       //useCredentialsForManifestTag: false,
       manifest: {
         name: 'My Shop App',
