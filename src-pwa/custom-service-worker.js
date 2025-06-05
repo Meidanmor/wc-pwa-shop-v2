@@ -63,6 +63,27 @@ self.addEventListener('push', function (event) {
   );
 });
 
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close(); // Close the notification
+
+  const clickActionUrl = event.notification.data?.url || '/'; // Fallback to homepage
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      // If app is already open, just focus it and navigate
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin)) {
+          client.postMessage({ action: 'navigate', url: clickActionUrl });
+          return client.focus();
+        }
+      }
+
+      // Otherwise open a new window/tab
+      return clients.openWindow(clickActionUrl);
+    })
+  );
+});
+
 // ✅ Navigation fallback for SPA routing
 /*if (process.env.MODE !== 'ssr' || process.env.PROD) {
   registerRoute(
