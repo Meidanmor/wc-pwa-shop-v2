@@ -7,7 +7,7 @@
  */
 
 import { clientsClaim } from 'workbox-core'
-//import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching'
+import { precacheAndRoute, cleanupOutdatedCaches, /*createHandlerBoundToURL*/ } from 'workbox-precaching'
 //import { registerRoute, NavigationRoute } from 'workbox-routing'
 
 // ✅ IMPORT THESE
@@ -19,10 +19,10 @@ self.skipWaiting()
 clientsClaim()
 
 // Pre-cache static assets
-//precacheAndRoute(self.__WB_MANIFEST)
+precacheAndRoute(self.__WB_MANIFEST)
 
 // Clean old caches
-//cleanupOutdatedCaches()
+cleanupOutdatedCaches()
 
 // ✅ API caching for WooCommerce backend
 /*registerRoute(

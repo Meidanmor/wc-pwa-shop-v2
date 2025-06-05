@@ -179,11 +179,17 @@ export default defineConfig((/* ctx */) => {
       },
       workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
       injectManifest: {
+        workboxMode: 'injectManifest',
         swSrc: 'src-pwa/custom-service-worker.js',
-        swDest: 'sw.js',
-        exclude: ['_redirects'], // 💥 add this
+        swDest: 'service-worker.js',
+        injectPwaMetaTags: true,
+        manifestFilename: 'manifest.json',
+        useCredentialsForManifestTag: false,
+        extendInjectManifestOptions (cfg) {
+          cfg.exclude = [/\.map$/, /_redirects/];
+        }
       },
-      useCredentialsForManifestTag: false,
+      //useCredentialsForManifestTag: false,
       manifest: {
         name: 'My Shop App',
         short_name: 'Shop',
