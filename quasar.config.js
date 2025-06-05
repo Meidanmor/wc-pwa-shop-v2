@@ -198,7 +198,7 @@ export default defineConfig((/* ctx */) => {
         injectPwaMetaTags: true,
         manifestFilename: 'manifest.json',
         useCredentialsForManifestTag: false,
-        exclude: ['_redirects']
+        exclude: [/\.map$/, /_redirects/], //this fixed it.
       },
       //useCredentialsForManifestTag: false,
       manifest: {
