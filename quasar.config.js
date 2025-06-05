@@ -3,6 +3,8 @@
 
 import { defineConfig } from '#q-app/wrappers'
 import fs from 'fs';
+const fs = require('fs');
+const path = require('path');
 
 export default defineConfig((/* ctx */) => {
   return {
