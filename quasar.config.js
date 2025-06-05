@@ -198,10 +198,10 @@ export default defineConfig((/* ctx */) => {
         injectPwaMetaTags: true,
         manifestFilename: 'manifest.json',
         useCredentialsForManifestTag: false,
-        exclude: [/\.map$/, /_redirects/], //this fixed it.
+        exclude: ['dist/_redirects'], //this fixed it.
       },
       workboxOptions: {
-            exclude: [/_redirects/], //this fixed it.
+            exclude: ['dist/_redirects'], //this fixed it.
         },
       //useCredentialsForManifestTag: false,
       manifest: {
