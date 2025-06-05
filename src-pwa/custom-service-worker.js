@@ -52,10 +52,14 @@ self.addEventListener('push', function (event) {
   console.log('[Service Worker] Push Received.');
   const data = event.data.json();
   console.log('[Service Worker] Push Data:', data);
+
   const options = {
     body: data.body,
     icon: '/icons/icon-128x128.png',
-    badge: '/icons/icon-128x128.png'
+    badge: '/icons/icon-128x128.png',
+    data: data.data, // <-- ✅ This is critical
+    //tag: 'order-confirmation', // optional: prevents duplicates
+    renotify: false
   };
 
   event.waitUntil(
@@ -64,25 +68,23 @@ self.addEventListener('push', function (event) {
 });
 
 self.addEventListener('notificationclick', function (event) {
-  event.notification.close(); // Close the notification
-
-  const clickActionUrl = event.notification.data?.url || '/'; // Fallback to homepage
+  event.notification.close();
+  const clickUrl = event.notification?.data?.url || '/';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      // If app is already open, just focus it and navigate
       for (const client of clientList) {
         if (client.url.includes(self.location.origin)) {
-          client.postMessage({ action: 'navigate', url: clickActionUrl });
+          client.postMessage({ action: 'navigate', url: clickUrl });
           return client.focus();
         }
       }
 
-      // Otherwise open a new window/tab
-      return clients.openWindow(clickActionUrl);
+      return clients.openWindow(clickUrl);
     })
   );
 });
+
 
 // ✅ Navigation fallback for SPA routing
 /*if (process.env.MODE !== 'ssr' || process.env.PROD) {
