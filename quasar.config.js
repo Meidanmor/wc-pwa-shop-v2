@@ -201,7 +201,7 @@ export default defineConfig((/* ctx */) => {
         exclude: [/\.map$/, /_redirects/], //this fixed it.
       },
       workboxOptions: {
-            exclude: [/\.map$/, /_redirects/], //this fixed it.
+            exclude: [/_redirects/], //this fixed it.
         },
       //useCredentialsForManifestTag: false,
       manifest: {
