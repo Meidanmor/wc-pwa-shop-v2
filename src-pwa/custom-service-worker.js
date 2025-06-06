@@ -58,7 +58,7 @@ self.addEventListener('push', function (event) {
     icon: '/icons/icon-128x128.png',
     badge: '/icons/icon-128x128.png',
     data: data.data, // <-- ✅ This is critical
-    //tag: 'order-confirmation', // optional: prevents duplicates
+    tag: 'order-confirmation', // optional: prevents duplicates
     renotify: false
   };
 
