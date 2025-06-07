@@ -201,7 +201,7 @@ import { useSeo } from 'src/composables/useSeo'
 
 const $q = useQuasar()
 const route = useRoute()
-await useSeo(route.fullPath)
+await useSeo()
 const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
