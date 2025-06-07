@@ -205,7 +205,9 @@ const activeSlide = ref(0)
 const quantity = ref(1)
 
 const seoData = ref(null)
-
+if (process.env.SERVER) {
+  console.log('[SSR] ProductPage loaded on server')
+}
 // This URL must be reachable from your SSR server!
 //const apiUrl = `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${route.fullPath}`
 
@@ -216,6 +218,19 @@ async function fetchSeoData() {
     description: 'This is the hardcoded SEO description.'
   }
 }
+// Reactive meta binding
+useMeta(() => {
+  const title = seoData.value?.title || 'Fallback Title'
+  const description = seoData.value?.description || 'Fallback description.'
+  return {
+    title,
+    meta: {
+      description: { name: 'description', content: description },
+      'og:title': { property: 'og:title', content: title },
+      'og:description': { property: 'og:description', content: description }
+    }
+  }
+})
 
 // SSR + client-side fetch
 onServerPrefetch(fetchSeoData)
@@ -477,19 +492,6 @@ onMounted(() => {
   if (!seoData.value) fetchSeoData()
   fetchProduct(route.params.slug)
   //fetchWishlistData()
-})
-// Reactive meta binding
-useMeta(() => {
-  const title = seoData.value?.title || 'Fallback Title'
-  const description = seoData.value?.description || 'Fallback description.'
-  return {
-    title,
-    meta: {
-      description: { name: 'description', content: description },
-      'og:title': { property: 'og:title', content: title },
-      'og:description': { property: 'og:description', content: description }
-    }
-  }
 })
 
 watch(

@@ -159,6 +159,9 @@ import { useQuasar } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
 import gsap from 'gsap';
+if (process.env.SERVER) {
+  console.log('[SSR] IndexPage loaded on server')
+}
 
 export default {
   name: 'IndexPage',
