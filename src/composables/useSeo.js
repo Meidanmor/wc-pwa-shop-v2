@@ -6,7 +6,11 @@ import { onServerPrefetch, onMounted } from 'vue';
 
 export function useAppMeta(pageSpecificMeta = {}) {
   const route = useRoute();
-  // ... (fetchedData, isLoading, error refs)
+  // --- Data Fetching Logic ---
+  const fetchedData = ref(null);
+  const isLoading = ref(false);
+  const error = ref(null);
+
 
   const fetchData = async () => {
     const itemId = route.params.id;
