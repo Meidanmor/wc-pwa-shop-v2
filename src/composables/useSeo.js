@@ -1,24 +1,26 @@
-import { useMeta } from 'quasar'
 import { useRoute } from 'vue-router'
+import { useMeta, useAsyncData } from 'quasar'
 
-export async function useSeo() {
+export function useSeo() {
   const route = useRoute()
 
-  try {
+  const { data } = useAsyncData('seo', async () => {
     const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
-    if (!res.ok) throw new Error(`Failed to fetch SEO data: ${res.status}`)
-    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(`Failed to fetch SEO data: ${res.status}`)
+    }
+    return await res.json()
+  })
 
+  if (data.value) {
     useMeta(() => ({
-      title: data.title,
+      title: data.value.title,
       meta: {
-        description: { name: 'description', content: data.description },
-        ogTitle: { property: 'og:title', content: data.title },
-        ogDescription: { property: 'og:description', content: data.description },
-        ogType: { property: 'og:type', content: data.type }
+        description: { name: 'description', content: data.value.description },
+        ogTitle: { property: 'og:title', content: data.value.title },
+        ogDescription: { property: 'og:description', content: data.value.description },
+        ogType: { property: 'og:type', content: data.value.type }
       }
     }))
-  } catch (err) {
-    console.warn('[SEO] Failed to fetch:', err)
   }
 }
