@@ -202,14 +202,7 @@ import { useAppMeta  } from 'src/composables/useSeo'
 const $q = useQuasar()
 const route = useRoute()
 // Call the composable in your setup script
-useAppMeta({
-  // Optionally provide page-specific meta that will be merged/overridden
-  // by fetched data and global defaults.
-  title: 'Item Detail Loading...',
-  meta: {
-    description: { name: 'description', content: 'Details about a specific item.' }
-  }
-});
+useAppMeta();
 
 const product = ref(null)
 const activeSlide = ref(0)
