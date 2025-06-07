@@ -11,7 +11,6 @@
  */
 import express from 'express'
 import compression from 'compression'
-import serverless from 'serverless-http'
 
 import {
   defineSsrCreate,
@@ -58,18 +57,12 @@ export const create = defineSsrCreate((/* { ... } */) => {
  * Can be async: defineSsrListen(async ({ app, devHttpsApp, port }) => { ... })
  */
 export const listen = defineSsrListen(({ app, devHttpsApp, port, ssrHandler }) => {
-  if (process.env.DEV) {
     const server = devHttpsApp || app
     return server.listen(port, () => {
       if (process.env.PROD) {
         console.log('Server listening at port ' + port)
       }
     })
-  } else {
-    return {
-      handler: serverless(ssrHandler)
-    }
-  }
 })
 
 /**
