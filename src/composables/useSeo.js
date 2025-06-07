@@ -5,37 +5,40 @@ import { useRoute } from 'vue-router';
 import { onServerPrefetch, onMounted } from 'vue';
 
 export function useAppMeta(pageSpecificMeta = {}) {
-  const route = useRoute(); // Access the current route object
+  const route = useRoute();
+  // ... (fetchedData, isLoading, error refs)
 
-  // --- Data Fetching Logic ---
-  const fetchedData = ref(null);
-  const isLoading = ref(false);
-  const error = ref(null);
-
-  // Function to fetch data based on route parameters
   const fetchData = async () => {
-    const itemId = route.fullPath; // Example: Assuming your route path is /items/:id
+    const itemId = route.params.id;
     if (!itemId) {
       fetchedData.value = null;
+      console.log('[useAppMeta] No item ID found, skipping fetch.'); // Add this
       return;
     }
+
+    const apiUrl = `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${itemId}`; // <<< ENSURE THIS IS ABSOLUTE
+    console.log(`[useAppMeta] Attempting to fetch from: ${apiUrl}`); // Log the exact URL
 
     isLoading.value = true;
     error.value = null;
 
     try {
-      // Replace with your actual API endpoint
-      const response = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(itemId)}`);
+      const response = await fetch(apiUrl);
+      console.log(`[useAppMeta] Fetch response status: ${response.status}`);
 
-      if (!response.ok) { // Check for HTTP errors (e.g., 404, 500)
+      if (!response.ok) {
+        // Try to get more info from the response body if fetch failed
+        const errorBody = await response.text();
+        console.error(`[useAppMeta] HTTP error! Status: ${response.status}, Body: ${errorBody.substring(0, 500)}`); // Log partial body
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      fetchedData.value = await response.json(); // Parse the JSON response
+      fetchedData.value = await response.json();
+      console.log('[useAppMeta] Successfully fetched data.'); // Confirm success
     } catch (err) {
-      console.error('Error fetching meta data:', err);
+      console.error('[useAppMeta] Error during fetch or JSON parsing:', err.message || err); // Log the error message
       error.value = err;
-      fetchedData.value = null; // Clear data on error
+      fetchedData.value = null;
     } finally {
       isLoading.value = false;
     }
