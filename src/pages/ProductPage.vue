@@ -196,7 +196,7 @@ import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar } from 'quasar'
-import { useAppMeta  } from 'src/composables/useSeo'
+import { useSeo  } from 'src/composables/useSeo'
 
 
 const $q = useQuasar()
