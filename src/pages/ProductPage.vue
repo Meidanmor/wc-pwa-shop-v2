@@ -198,6 +198,11 @@ import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
 import { onServerPrefetch } from 'vue'
 
+const $q = useQuasar()
+const route = useRoute()
+const product = ref(null)
+const activeSlide = ref(0)
+const quantity = ref(1)
 
 const seoData = ref(null)
 
@@ -217,12 +222,6 @@ async function fetchSeoData() {
 // SSR + client-side fetch
 onServerPrefetch(fetchSeoData)
 
-
-const $q = useQuasar()
-const route = useRoute()
-const product = ref(null)
-const activeSlide = ref(0)
-const quantity = ref(1)
 //const addToCartLoading = ref(false);
 const availableAttributes = computed(() => {
   if (!product.value || !product.value.attributes) return []
