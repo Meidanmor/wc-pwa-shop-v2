@@ -196,12 +196,21 @@ import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar } from 'quasar'
-import { useSeo } from 'src/composables/useSeo'
+import { useAppMeta  } from 'src/composables/useSeo'
 
 
 const $q = useQuasar()
 const route = useRoute()
-useSeo()
+// Call the composable in your setup script
+useAppMeta({
+  // Optionally provide page-specific meta that will be merged/overridden
+  // by fetched data and global defaults.
+  title: 'Item Detail Loading...',
+  meta: {
+    description: { name: 'description', content: 'Details about a specific item.' }
+  }
+});
+
 const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
