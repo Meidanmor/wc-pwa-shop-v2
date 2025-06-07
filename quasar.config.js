@@ -158,7 +158,7 @@ export default defineConfig((/* ctx */) => {
       ],
 
       // extendPackageJson (json) {},
-      extendSSRWebserverConf (/*esbuildConf*/) {manualMetaInjection: true // Ensure Quasar uses meta from ssrContext},
+      extendSSRWebserverConf (/*esbuildConf*/) {manualMetaInjection: true /*Ensure Quasar uses meta from ssrContext*/ },
 
       // manualStoreSerialization: true,
       // manualStoreSsrContextInjection: true,
