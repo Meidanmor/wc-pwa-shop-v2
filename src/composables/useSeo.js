@@ -1,5 +1,5 @@
 import { useMeta } from 'quasar'
-import { ref, unref, computed, watchEffect, onMounted, onServerPrefetch } from 'vue'
+import { ref, unref, watchEffect, onMounted, onServerPrefetch } from 'vue'
 import { useRoute } from 'vue-router'
 
 export function useAppMeta(pageSpecificMeta = {}) {
