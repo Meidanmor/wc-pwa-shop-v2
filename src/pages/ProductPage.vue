@@ -195,7 +195,7 @@ import { useRoute } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
-import { useQuasar } from 'quasar'
+import { useQuasar, useMeta } from 'quasar'
 import { useSeoData  } from 'src/composables/useSeo'
 
 
