@@ -1,58 +1,53 @@
-import { useRoute } from 'vue-router'
-import { useMeta } from 'quasar'
-import { ref, onServerPrefetch, onMounted } from 'vue'
+// src/composables/use-app-meta.js
+import { useMeta } from 'quasar';
+import { computed, unref } from 'vue';
 
-export function useSeo() {
-  const route = useRoute()
-  const seoData = ref(null)
+export async function useAppMeta(pageSpecificMeta = {}) {
+  const defaultTitleTemplate = title => `${unref(title) || 'Untitled Page'} - My Awesome Quasar App`;
 
   const fetchSeo = async () => {
     try {
       const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
       if (!res.ok) throw new Error(`SEO fetch failed with ${res.status}`)
-      seoData.value = await res.json()
+      return await res.json()
     } catch (err) {
-      console.warn('[SEO] Failed to fetch:', err)
+      return console.warn('[SEO] Failed to fetch:', err)
     }
   }
+  // Define your global/default meta properties
+  const globalMeta = {
+    meta: {
+      description: { name: 'description', content: fetchSeo.value.description },
+      keywords: { name: 'keywords', content: '' },
+      'og:title': { property: 'og:title', content: fetchSeo.value.title },
+      'og:description': { property: 'og:description', content: fetchSeo.value.description },
+      'og:type': { property: 'og:type', content: 'website' },
+      'og:site_name': { property: 'og:site_name', content: 'My Awesome Quasar App' },
+      // Add other common meta tags
+    },
+    // You can also define a global titleTemplate here
+    titleTemplate: defaultTitleTemplate,
+  };
 
-  // Fetch before SSR renders
-  onServerPrefetch(fetchSeo)
+  // Merge global meta with page-specific meta
+  // Page-specific meta will override global meta if keys are the same
+  const finalMeta = computed(() => {
+    const mergedMeta = {
+      ...globalMeta.meta,
+      ...unref(pageSpecificMeta).meta, // Ensure pageSpecificMeta is unrefed if it's a ref
+    };
 
-  // Fallback for client navigation
-  onMounted(async () => {
-    if (!seoData.value) await fetchSeo()
-  })
+    const title = unref(pageSpecificMeta).title || 'Untitled Page';
+    const titleTemplate = unref(pageSpecificMeta).titleTemplate || defaultTitleTemplate;
 
-  // SSR-safe meta update
-  if (import.meta.env.SSR) {
-    // only when prefetch succeeded
-    onServerPrefetch(async () => {
-      if (!seoData.value) return
-      useMeta(() => ({
-        title: seoData.value.title,
-        meta: {
-          description: { name: 'description', content: seoData.value.description },
-          ogTitle: { property: 'og:title', content: seoData.value.title },
-          ogDescription: { property: 'og:description', content: seoData.value.description },
-          ogType: { property: 'og:type', content: seoData.value.type }
-        }
-      }))
-    })
-  } else {
-    // Client-side meta update
-    onMounted(() => {
-      if (seoData.value) {
-        useMeta(() => ({
-          title: seoData.value.title,
-          meta: {
-            description: { name: 'description', content: seoData.value.description },
-            ogTitle: { property: 'og:title', content: seoData.value.title },
-            ogDescription: { property: 'og:description', content: seoData.value.description },
-            ogType: { property: 'og:type', content: seoData.value.type }
-          }
-        }))
-      }
-    })
-  }
+    return {
+      title,
+      titleTemplate,
+      meta: mergedMeta,
+      // You can also add other root-level properties here like htmlAttr, bodyAttr, link, script etc.
+      // e.g., htmlAttr: { lang: 'en' },
+    };
+  });
+
+  useMeta(finalMeta);
 }
