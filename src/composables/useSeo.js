@@ -1,6 +1,6 @@
 // src/composables/useSeo.js
 import { useMeta } from 'quasar'
-import { ref, unref, computed, onServerPrefetch } from 'vue'
+import { ref, computed, onServerPrefetch } from 'vue'
 import { useRoute } from 'vue-router'
 
 export function useSeo() {
