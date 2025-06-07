@@ -13,7 +13,7 @@ export function useAppMeta(pageSpecificMeta = {}) {
 
 
   const fetchData = async () => {
-    const itemId = route.params.id;
+    const itemId = route.fullPath;
     if (!itemId) {
       fetchedData.value = null;
       console.log('[useAppMeta] No item ID found, skipping fetch.'); // Add this
