@@ -46,7 +46,7 @@ function getMatchedComponents (to, router) {
   }))
 }
 
-export function addPreFetchHooks ({ router, publicPath }) {
+export function addPreFetchHooks ({ router, ssrIsRunningOnClientPWA, publicPath }) {
   // Add router hook for handling preFetch.
   // Doing it after initial route is resolved so that we don't double-fetch
   // the data that we already have. Using router.beforeResolve() so that all
@@ -74,7 +74,7 @@ export function addPreFetchHooks ({ router, publicPath }) {
       .map(m => m.c.__c !== void 0 ? m.c.__c.preFetch : m.c.preFetch)
 
     
-    if (appPrefetch !== false) {
+    if (ssrIsRunningOnClientPWA === true && appPrefetch !== false) {
       preFetchList.unshift(appPrefetch)
       appPrefetch = false
     }

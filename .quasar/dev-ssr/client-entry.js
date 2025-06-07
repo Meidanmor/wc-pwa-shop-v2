@@ -12,7 +12,7 @@
  **/
 
 
-import { createApp } from 'vue'
+import { createSSRApp, createApp } from 'vue'
 
 
 
@@ -36,7 +36,7 @@ import 'quasar/dist/quasar.css'
 import 'src/css/app.css'
 
 
-import createQuasarApp from './app.js'
+import createQuasarApp, { ssrIsRunningOnClientPWA } from './app.js'
 import quasarUserOptions from './quasar-user-options.js'
 
 
@@ -46,7 +46,7 @@ import 'app/src-pwa/register-service-worker'
 
 
 
-console.info('[Quasar] Running PWA.')
+console.info('[Quasar] Running SSR + PWA.')
 
 
 const publicPath = `/`
@@ -114,17 +114,28 @@ async function start ({
   app.use(router)
 
   
-
     
-
+      if (ssrIsRunningOnClientPWA === true) {
+        
+        app.mount('#q-app')
+      }
+      else {
     
+    // wait until router has resolved all async before hooks
+    // and async components...
+    router.isReady().then(() => {
+      
       app.mount('#q-app')
+    })
     
+    }
+    
+
   
 
 }
 
-createQuasarApp(createApp, quasarUserOptions)
+createQuasarApp(ssrIsRunningOnClientPWA ? createApp : createSSRApp, quasarUserOptions)
 
   .then(app => {
     // eventually remove this when Cordova/Capacitor/Electron support becomes old
@@ -146,7 +157,11 @@ createQuasarApp(createApp, quasarUserOptions)
 
     return Promise[ method ]([
       
-      import('boot/push')
+      import('boot/push'),
+      
+      import('boot/woocommerce'),
+      
+      import('boot/seo')
       
     ]).then(bootFiles => {
       const boot = mapFn(bootFiles).filter(entry => typeof entry === 'function')

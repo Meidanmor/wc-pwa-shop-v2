@@ -48,8 +48,10 @@ export async function subscribeToPushNotifications() {
   }
 }
 
-if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
-  subscribeToPushNotifications();
-} else {
-  console.warn('Push notifications are not supported in this browser.');
+if (process.env.CLIENT) {
+  if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
+    subscribeToPushNotifications();
+  } else {
+    console.warn('Push notifications are not supported in this browser.');
+  }
 }

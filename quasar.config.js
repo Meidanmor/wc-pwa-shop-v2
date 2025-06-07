@@ -13,8 +13,9 @@ export default defineConfig((/* ctx */) => {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
-        'push',
-        'seo'
+        { path: 'push', client: true } ,
+        { path: 'woocommerce', client: true } ,
+        'seo' ,
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
@@ -38,6 +39,18 @@ export default defineConfig((/* ctx */) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#build
     build: {
+      afterBuild ({ quasarConf }) {
+        // Create the Netlify function
+        const distDir = path.resolve(__dirname, quasarConf.build.distDir)
+        const netifyFuncDir = path.join(distDir, '/netlify/functions')
+        fs.mkdirSync(netifyFuncDir, {
+          recursive: true
+        })
+        const code = 'const ssr = require(\'../../index.js\')\nexports.handler = ssr.default.handler'
+        fs.writeFileSync(path.join(netifyFuncDir, 'index.js'), code, {
+          encoding: 'utf-8'
+        })
+      },
       target: {
         browser: [ 'es2022', 'firefox115', 'chrome115', 'safari14' ],
         node: 'node20'
@@ -94,10 +107,8 @@ export default defineConfig((/* ctx */) => {
           primary: '#d8a7a7',
           secondary: '#4C6E5D',
           accent: 'rgb(163, 201, 168)',
-
           dark: '#1d1d1d',
           'dark-page': '#121212',
-
           positive: '#21BA45',
           negative: '#C10015',
           info: '#c9c5c0',

@@ -159,8 +159,6 @@ import { useQuasar } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
 import gsap from 'gsap';
-import ScrollToPlugin from 'gsap/ScrollToPlugin';
-gsap.registerPlugin(ScrollToPlugin);
 
 export default {
   name: 'IndexPage',
@@ -255,8 +253,18 @@ export default {
       }
     };
 
-    onMounted(() => {
-      fetchProducts();
+
+    onMounted(async () => {
+          if (process.env.CLIENT) {
+            const gsap = (await import('gsap')).default
+            const {ScrollToPlugin} = await import('gsap/ScrollToPlugin')
+
+            gsap.registerPlugin(ScrollToPlugin)
+
+            // Make available globally if needed
+            window.gsap = gsap
+            fetchProducts();
+          }
       gsap.from('.hero-content', {
         y: 50,
         opacity: 0,

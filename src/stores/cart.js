@@ -105,6 +105,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
 
 
 async function fetchWishlistItems() {
+    if (!process.env.CLIENT) return  // 💡 prevent SSR from running this
 
 try{
 
