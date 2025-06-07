@@ -1,47 +1,45 @@
-export default async ({ router, ssrContext }) => {
-  async function fetchSeo(path) {
+import { useMeta } from 'quasar'
+
+export default async ({ ssrContext, router }) => {
+  if (process.env.SERVER) {
+    const path = ssrContext.url
+
     try {
-      const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`);
-      if (!res.ok) throw new Error(`SEO fetch failed with status ${res.status}`);
-      return await res.json();
-    } catch (e) {
-      console.warn('SEO fetch error:', e);
-      return null;
-    }
-  }
+      const res = await fetch(`https://nuxt-meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`)
+      const data = await res.json()
 
-  // 1. Server-side: set meta directly using ssrContext
-  if (ssrContext) {
-    const seoData = await fetchSeo(ssrContext.url || '/');
-    if (seoData) {
+      // Inject meta into SSR context
       ssrContext.meta = {
-        title: seoData.title,
-        meta: [
-          { name: 'description', content: seoData.description },
-          { property: 'og:title', content: seoData.title },
-          { property: 'og:description', content: seoData.description },
-          { property: 'og:type', content: seoData.type }
-        ]
-      };
-    }
-  }
-
-  // 2. Client-side: useMeta after route changes
-  if (process.env.CLIENT) {
-    router.afterEach(async (to) => {
-      const seoData = await fetchSeo(to.fullPath);
-      if (seoData) {
-        const { useMeta } = await import('quasar'); // lazy import to ensure it's client-side
-        useMeta(() => ({
-          title: seoData.title,
-          meta: {
-            description: { name: 'description', content: seoData.description },
-            ogTitle: { property: 'og:title', content: seoData.title },
-            ogDescription: { property: 'og:description', content: seoData.description },
-            ogType: { property: 'og:type', content: seoData.type }
-          }
-        }));
+        title: data.title,
+        meta: {
+          description: { name: 'description', content: data.description },
+          ogTitle: { property: 'og:title', content: data.title },
+          ogDescription: { property: 'og:description', content: data.description },
+          ogType: { property: 'og:type', content: data.type }
+        }
       }
-    });
+    } catch (err) {
+      console.warn('SSR SEO fetch failed:', err)
+    }
+  } else {
+    // Fallback on client: still update meta dynamically for navigation
+    router.afterEach(async (to) => {
+      try {
+        const res = await fetch(`https://your-domain.com/wp-json/custom/v1/seo?path=${encodeURIComponent(to.fullPath)}`)
+        const data = await res.json()
+
+        useMeta(() => ({
+          title: data.title,
+          meta: {
+            description: { name: 'description', content: data.description },
+            ogTitle: { property: 'og:title', content: data.title },
+            ogDescription: { property: 'og:description', content: data.description },
+            ogType: { property: 'og:type', content: data.type }
+          }
+        }))
+      } catch (err) {
+        console.warn('Client SEO fetch failed:', err)
+      }
+    })
   }
-};
+}

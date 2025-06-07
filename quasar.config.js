@@ -128,7 +128,7 @@ export default defineConfig((/* ctx */) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Notify']
+      plugins: ['Notify','Meta']
     },
 
     // animations: 'all', // --- includes all animations
@@ -158,7 +158,7 @@ export default defineConfig((/* ctx */) => {
       ],
 
       // extendPackageJson (json) {},
-      // extendSSRWebserverConf (esbuildConf) {},
+      extendSSRWebserverConf (/*esbuildConf*/) {manualMetaInjection: true // Ensure Quasar uses meta from ssrContext},
 
       // manualStoreSerialization: true,
       // manualStoreSsrContextInjection: true,
