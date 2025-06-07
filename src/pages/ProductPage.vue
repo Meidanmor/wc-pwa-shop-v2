@@ -197,6 +197,26 @@ import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
 import { useSeoData  } from 'src/composables/useSeo'
+import { onServerPrefetch } from 'vue'
+
+
+const seoData = ref(null)
+
+// This URL must be reachable from your SSR server!
+const apiUrl = `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${route.fullPath}`
+
+// Fetch SEO data
+async function fetchSeoData() {
+  try {
+    const res = await fetch(apiUrl)
+    seoData.value = await res.json()
+  } catch (err) {
+    console.error('[SEO] Failed to fetch:', err)
+  }
+}
+
+// SSR + client-side fetch
+onServerPrefetch(fetchSeoData)
 
 
 const $q = useQuasar()
@@ -475,8 +495,22 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
 }
 
 onMounted(() => {
+  if (!seoData.value) fetchSeoData()
   fetchProduct(route.params.slug)
   //fetchWishlistData()
+})
+// Reactive meta binding
+useMeta(() => {
+  const title = seoData.value?.title || 'Fallback Title'
+  const description = seoData.value?.description || 'Fallback description.'
+  return {
+    title,
+    meta: {
+      description: { name: 'description', content: description },
+      'og:title': { property: 'og:title', content: title },
+      'og:description': { property: 'og:description', content: description }
+    }
+  }
 })
 
 watch(
