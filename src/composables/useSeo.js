@@ -1,4 +1,4 @@
-import { ref, unref, computed, onServerPrefetch } from 'vue'
+import { ref, onServerPrefetch } from 'vue'
 import { useRoute } from 'vue-router'
 
 export function useSeoData() {
