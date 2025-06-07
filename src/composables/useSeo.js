@@ -1,4 +1,5 @@
-import { useMeta, useRoute } from 'quasar'
+import { useMeta } from 'quasar'
+import { useRoute } from 'vue-router'
 
 export async function useSeo() {
   const route = useRoute()
