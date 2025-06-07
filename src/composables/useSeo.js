@@ -1,43 +1,26 @@
-// src/composables/useSeo.js
-import { useMeta } from 'quasar'
-import { ref, computed, onServerPrefetch } from 'vue'
+import { ref, unref, computed, onServerPrefetch } from 'vue'
 import { useRoute } from 'vue-router'
 
-export function useSeo() {
+export function useSeoData() {
   const route = useRoute()
-  const metaData = ref(null)
+  const seo = ref(null)
 
   const fetchSeo = async () => {
     try {
       const path = encodeURIComponent(route.fullPath)
       const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${path}`)
-
       if (!res.ok) throw new Error(`Failed: ${res.status}`)
-
-      metaData.value = await res.json()
+      seo.value = await res.json()
     } catch (err) {
-      console.error('[SEO] Failed to fetch:', err)
-      metaData.value = null
+      console.error('[useSeoData] Failed to fetch SEO:', err)
+      seo.value = null
     }
   }
 
   onServerPrefetch(fetchSeo)
 
-  const meta = computed(() => {
-    if (!metaData.value) return {}
-
-    const title = metaData.value.title || 'Fallback Title'
-    const description = metaData.value.description || 'Fallback description'
-
-    return {
-      title,
-      meta: {
-        description: { name: 'description', content: description },
-        'og:title': { property: 'og:title', content: title },
-        'og:description': { property: 'og:description', content: description }
-      }
-    }
-  })
-
-  useMeta(meta)
+  return {
+    seo,
+    fetchSeo,
+  }
 }

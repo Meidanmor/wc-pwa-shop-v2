@@ -196,14 +196,28 @@ import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar } from 'quasar'
-import { useSeo  } from 'src/composables/useSeo'
+import { useSeoData  } from 'src/composables/useSeo'
 
 
 const $q = useQuasar()
 const route = useRoute()
 // Call the composable in your setup script
-useSeo();
+const { seo } = useSeoData()
 
+const meta = computed(() => {
+  if (!seo.value) return {}
+
+  return {
+    title: seo.value.title || 'Fallback Title',
+    meta: {
+      description: { name: 'description', content: seo.value.description || '' },
+      'og:title': { property: 'og:title', content: seo.value.title || '' },
+      'og:description': { property: 'og:description', content: seo.value.description || '' }
+    }
+  }
+})
+
+useMeta(meta)
 const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
