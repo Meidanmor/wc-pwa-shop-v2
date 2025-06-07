@@ -207,15 +207,13 @@ const quantity = ref(1)
 const seoData = ref(null)
 
 // This URL must be reachable from your SSR server!
-const apiUrl = `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${route.fullPath}`
+//const apiUrl = `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${route.fullPath}`
 
 // Fetch SEO data
 async function fetchSeoData() {
-  try {
-    const res = await fetch(apiUrl)
-    seoData.value = await res.json()
-  } catch (err) {
-    console.error('[SEO] Failed to fetch:', err)
+  seoData.value = {
+    title: 'Hardcoded SEO Title',
+    description: 'This is the hardcoded SEO description.'
   }
 }
 
