@@ -5,7 +5,7 @@ export default async ({ ssrContext, router }) => {
     const path = ssrContext.url
 
     try {
-      const res = await fetch(`https://nuxt-meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`)
+      const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`)
       const data = await res.json()
 
       // Inject meta into SSR context
@@ -25,7 +25,7 @@ export default async ({ ssrContext, router }) => {
     // Fallback on client: still update meta dynamically for navigation
     router.afterEach(async (to) => {
       try {
-        const res = await fetch(`https://nuxt-meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(to.fullPath)}`)
+        const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(to.fullPath)}`)
         const data = await res.json()
 
         useMeta(() => ({
