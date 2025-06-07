@@ -1,67 +1,43 @@
+// src/composables/useSeo.js
 import { useMeta } from 'quasar'
-import { ref, unref, onServerPrefetch, onMounted } from 'vue'
+import { ref, unref, computed, onServerPrefetch } from 'vue'
 import { useRoute } from 'vue-router'
 
-export function useAppMeta(pageSpecificMeta = {}) {
+export function useSeo() {
   const route = useRoute()
-  const fetchedData = ref(null)
-  const error = ref(null)
+  const metaData = ref(null)
 
-  const setMeta = () => {
-    const pageMeta = unref(pageSpecificMeta)
-    const title = unref(pageMeta.title || fetchedData.value?.title || 'Untitled Page')
-    const description = unref(
-      pageMeta.meta?.description?.content ||
-      fetchedData.value?.description ||
-      'A Quasar Framework App.'
-    )
+  const fetchSeo = async () => {
+    try {
+      const path = encodeURIComponent(route.fullPath)
+      const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${path}`)
 
-    useMeta({
+      if (!res.ok) throw new Error(`Failed: ${res.status}`)
+
+      metaData.value = await res.json()
+    } catch (err) {
+      console.error('[SEO] Failed to fetch:', err)
+      metaData.value = null
+    }
+  }
+
+  onServerPrefetch(fetchSeo)
+
+  const meta = computed(() => {
+    if (!metaData.value) return {}
+
+    const title = metaData.value.title || 'Fallback Title'
+    const description = metaData.value.description || 'Fallback description'
+
+    return {
       title,
-      titleTemplate: pageMeta.titleTemplate || (t => `${t} - My Awesome Quasar App`),
       meta: {
         description: { name: 'description', content: description },
-        keywords: { name: 'keywords', content: 'quasar, vue, frontend, app' },
         'og:title': { property: 'og:title', content: title },
-        'og:description': { property: 'og:description', content: description },
-        'og:type': { property: 'og:type', content: 'website' },
-        'og:site_name': { property: 'og:site_name', content: 'My Awesome Quasar App' },
-        'og:image': {
-          property: 'og:image',
-          content: fetchedData.value?.imageUrl || 'https://example.com/default-image.jpg'
-        },
-        ...pageMeta.meta
+        'og:description': { property: 'og:description', content: description }
       }
-    })
-  }
-
-  const fetchData = async () => {
-    const fullPath = route.fullPath
-    if (!fullPath) return
-
-    try {
-      const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(fullPath)}`)
-      if (!res.ok) throw new Error(`Status: ${res.status}`)
-      fetchedData.value = await res.json()
-    } catch (err) {
-      error.value = err
-      console.error('[SEO] Fetch error:', err)
-    }
-  }
-
-  // Prefetch on SSR
-  onServerPrefetch(async () => {
-    await fetchData()
-    setMeta() // <-- set meta right after fetch during SSR
-  })
-
-  // Run on client if SSR didn’t run
-  onMounted(async () => {
-    if (!fetchedData.value) {
-      await fetchData()
-      setMeta()
     }
   })
 
-  return { fetchedData, error }
+  useMeta(meta)
 }

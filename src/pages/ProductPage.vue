@@ -202,7 +202,7 @@ import { useAppMeta  } from 'src/composables/useSeo'
 const $q = useQuasar()
 const route = useRoute()
 // Call the composable in your setup script
-useAppMeta();
+useSeo();
 
 const product = ref(null)
 const activeSlide = ref(0)
