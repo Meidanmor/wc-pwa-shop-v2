@@ -196,8 +196,12 @@ import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar } from 'quasar'
+import { useSeo } from 'src/composables/useSeo'
+
 
 const $q = useQuasar()
+await useSeo(route.fullPath)
+
 const route = useRoute()
 const product = ref(null)
 const activeSlide = ref(0)

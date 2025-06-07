@@ -16,7 +16,6 @@ export default defineConfig((/* ctx */) => {
     boot: [
         { path: 'push', client: true } ,
         { path: 'woocommerce', client: true } ,
-        'seo' ,
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
@@ -157,8 +156,9 @@ export default defineConfig((/* ctx */) => {
         'render' // keep this as last one
       ],
 
+      manualMetaInjection: true,
       // extendPackageJson (json) {},
-      extendSSRWebserverConf (/*esbuildConf*/) {manualMetaInjection: true /*Ensure Quasar uses meta from ssrContext*/ },
+      //extendSSRWebserverConf (/*esbuildConf*/) {manualMetaInjection: true /*Ensure Quasar uses meta from ssrContext*/ },
 
       // manualStoreSerialization: true,
       // manualStoreSsrContextInjection: true,
