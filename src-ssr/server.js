@@ -56,7 +56,7 @@ export const create = defineSsrCreate((/* { ... } */) => {
  *
  * Can be async: defineSsrListen(async ({ app, devHttpsApp, port }) => { ... })
  */
-export const listen = defineSsrListen(({ app, devHttpsApp, port, ssrHandler }) => {
+export const listen = defineSsrListen(({ app, devHttpsApp, port }) => {
     const server = devHttpsApp || app
     return server.listen(port, () => {
       if (process.env.PROD) {
