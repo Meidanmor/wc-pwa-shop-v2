@@ -11,21 +11,38 @@ export function useAppMeta(pageSpecificMeta = {}) {
   const isLoading = ref(false);
   const error = ref(null);
 
+
   const fetchData = async () => {
+    const itemId = route.fullPath;
+    if (!itemId) {
+      fetchedData.value = null;
+      console.log('[useAppMeta] No item ID found, skipping fetch.'); // Add this
+      return;
+    }
+
+    const apiUrl = `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${itemId}`; // <<< ENSURE THIS IS ABSOLUTE
+    console.log(`[useAppMeta] Attempting to fetch from: ${apiUrl}`); // Log the exact URL
+
     isLoading.value = true;
     error.value = null;
+
     try {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      fetchedData.value = {
-        name: 'Mock Item Name',
-        description: 'This is a mock description from local data.',
-        imageUrl: 'https://via.placeholder.com/200/0000FF/FFFFFF?text=Mock',
-      };
-      console.log('[useAppMeta] Mock data loaded.');
+      const response = await fetch(apiUrl);
+      console.log(`[useAppMeta] Fetch response status: ${response.status}`);
+
+      if (!response.ok) {
+        // Try to get more info from the response body if fetch failed
+        const errorBody = await response.text();
+        console.error(`[useAppMeta] HTTP error! Status: ${response.status}, Body: ${errorBody.substring(0, 500)}`); // Log partial body
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      fetchedData.value = await response.json();
+      console.log('[useAppMeta] Successfully fetched data.'); // Confirm success
     } catch (err) {
+      console.error('[useAppMeta] Error during fetch or JSON parsing:', err.message || err); // Log the error message
       error.value = err;
-      console.error('[useAppMeta] Mock data error:', err);
+      fetchedData.value = null;
     } finally {
       isLoading.value = false;
     }

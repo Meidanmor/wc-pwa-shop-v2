@@ -3,7 +3,6 @@
 
 import { defineConfig } from '#q-app/wrappers'
 import fs from 'fs';
-import path from 'path';
 
 export default defineConfig((/* ctx */) => {
   return {
@@ -39,18 +38,6 @@ export default defineConfig((/* ctx */) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#build
     build: {
-      afterBuild ({ quasarConf }) {
-        // Create the Netlify function
-        const distDir = path.resolve(__dirname, quasarConf.build.distDir)
-        const netifyFuncDir = path.join(distDir, '/netlify/functions')
-        fs.mkdirSync(netifyFuncDir, {
-          recursive: true
-        })
-        const code = 'const ssr = require(\'../../index.js\')\nexports.handler = ssr.default.handler'
-        fs.writeFileSync(path.join(netifyFuncDir, 'index.js'), code, {
-          encoding: 'utf-8'
-        })
-      },
       target: {
         browser: [ 'es2022', 'firefox115', 'chrome115', 'safari14' ],
         node: 'node20'
