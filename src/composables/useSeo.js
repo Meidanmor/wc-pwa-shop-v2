@@ -1,53 +1,137 @@
 // src/composables/use-app-meta.js
 import { useMeta } from 'quasar';
-import { computed, unref } from 'vue';
+import { computed, ref, watch, unref } from 'vue';
+import { useRoute } from 'vue-router';
+import { onServerPrefetch, onMounted } from 'vue';
 
-export async function useAppMeta(pageSpecificMeta = {}) {
+export function useAppMeta(pageSpecificMeta = {}) {
+  const route = useRoute(); // Access the current route object
+
+  // --- Data Fetching Logic ---
+  const fetchedData = ref(null);
+  const isLoading = ref(false);
+  const error = ref(null);
+
+  // Function to fetch data based on route parameters
+  const fetchData = async () => {
+    const itemId = route.fullPath; // Example: Assuming your route path is /items/:id
+    if (!itemId) {
+      fetchedData.value = null;
+      return;
+    }
+
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(itemId)}`);
+
+      if (!response.ok) { // Check for HTTP errors (e.g., 404, 500)
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      fetchedData.value = await response.json(); // Parse the JSON response
+    } catch (err) {
+      console.error('Error fetching meta data:', err);
+      error.value = err;
+      fetchedData.value = null; // Clear data on error
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  // --- SSR and Client-side Data Fetching ---
+
+  // onServerPrefetch is called on the server during SSR.
+  onServerPrefetch(async () => {
+    if (!fetchedData.value) { // Only fetch if data hasn't been fetched
+      await fetchData();
+    }
+  });
+
+  // onMounted is called only on the client-side.
+  onMounted(async () => {
+    if (!fetchedData.value) { // Check if data was not already pre-fetched by SSR
+      await fetchData();
+    }
+  });
+
+  // Watch for changes in route parameters to re-fetch data
+  watch(
+    () => route.params.id, // Watch a specific route param (e.g., 'id')
+    async (newId, oldId) => {
+      if (newId && newId !== oldId) {
+        await fetchData();
+      } else if (!newId) {
+        fetchedData.value = null; // Clear data if param is gone (e.g., navigating to a non-detail page)
+      }
+    },
+    { immediate: true } // Fetch data immediately when the component is mounted
+  );
+
+  // --- Meta Tag Generation Logic ---
   const defaultTitleTemplate = title => `${unref(title) || 'Untitled Page'} - My Awesome Quasar App`;
 
-  const fetchSeo = async () => {
-    try {
-      const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
-      if (!res.ok) throw new Error(`SEO fetch failed with ${res.status}`)
-      return await res.json()
-    } catch (err) {
-      return console.warn('[SEO] Failed to fetch:', err)
-    }
-  }
-  // Define your global/default meta properties
   const globalMeta = {
     meta: {
-      description: { name: 'description', content: fetchSeo.value.description },
-      keywords: { name: 'keywords', content: '' },
-      'og:title': { property: 'og:title', content: fetchSeo.value.title },
-      'og:description': { property: 'og:description', content: fetchSeo.value.description },
+      description: { name: 'description', content: 'A Quasar Framework App.' },
+      keywords: { name: 'keywords', content: 'quasar, vue, frontend, app' },
       'og:type': { property: 'og:type', content: 'website' },
       'og:site_name': { property: 'og:site_name', content: 'My Awesome Quasar App' },
       // Add other common meta tags
     },
-    // You can also define a global titleTemplate here
     titleTemplate: defaultTitleTemplate,
   };
 
-  // Merge global meta with page-specific meta
-  // Page-specific meta will override global meta if keys are the same
   const finalMeta = computed(() => {
+    const pageMetaUnref = unref(pageSpecificMeta); // Unref pageSpecificMeta early
+
+    // Default title from page, or fetched data, or fallback
+    let title = pageMetaUnref.title || (fetchedData.value && fetchedData.value.title) || 'Untitled Page';
+    if (typeof title === 'function') {
+      title = title(fetchedData.value); // Allow dynamic title based on fetched data
+    } else {
+      title = unref(title); // Ensure title is unrefed if passed as a ref
+    }
+
+    // Default description from page, or fetched data, or fallback
+    let descriptionContent = pageMetaUnref.meta?.description?.content || (fetchedData.value && fetchedData.value.description) || globalMeta.meta.description.content;
+    if (typeof descriptionContent === 'function') {
+      descriptionContent = descriptionContent(fetchedData.value);
+    } else {
+      descriptionContent = unref(descriptionContent);
+    }
+
+    // Merge meta tags, prioritizing page-specific, then fetched data, then global defaults
     const mergedMeta = {
       ...globalMeta.meta,
-      ...unref(pageSpecificMeta).meta, // Ensure pageSpecificMeta is unrefed if it's a ref
+      ...pageMetaUnref.meta, // Page-specific overrides global
+      // Overwrite/add based on fetchedData
+      ...(fetchedData.value ? {
+        description: { name: 'description', content: descriptionContent },
+        'og:title': { property: 'og:title', content: title },
+        'og:description': { property: 'og:description', content: descriptionContent },
+        'og:image': { property: 'og:image', content: fetchedData.value.imageUrl || 'https://example.com/default-image.jpg' },
+        // Add other dynamic meta tags based on fetchedData
+      } : {}),
     };
 
-    const title = unref(pageSpecificMeta).title || 'Untitled Page';
-    const titleTemplate = unref(pageSpecificMeta).titleTemplate || defaultTitleTemplate;
+    const titleTemplate = pageMetaUnref.titleTemplate || defaultTitleTemplate;
 
     return {
       title,
       titleTemplate,
       meta: mergedMeta,
-      // You can also add other root-level properties here like htmlAttr, bodyAttr, link, script etc.
-      // e.g., htmlAttr: { lang: 'en' },
     };
   });
 
   useMeta(finalMeta);
+
+  // Return data, loading, and error states for the component to use
+  return {
+    fetchedData,
+    isLoading,
+    error,
+  };
 }
