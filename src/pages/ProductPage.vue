@@ -190,13 +190,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, watchEffect } from 'vue'
+import { ref, onMounted, computed, watch, watchEffect, onServerPrefetch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
-//import { onServerPrefetch } from 'vue'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -204,24 +203,33 @@ const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
 
-const seoData = ref(null)
-
-async function fetchSeoData () {
-  try {
-    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
-    if (!res.ok) throw new Error(`SEO fetch failed: ${res.status}`)
-    return await res.json()
-  } catch (err) {
-    console.error('[SEO Fetch Error]', err)
-    return { title: 'Fallback Title', description: 'Fallback Description' }
-  }
-}
-
-// ✅ This runs on both server and client
-const p = fetchSeoData().then(data => {
-  seoData.value = data
+const seoData = ref({
+  title: 'Fallback Title',
+  description: 'Fallback description'
 })
 
+// ✅ Only fetch on server
+if (import.meta.env.SSR) {
+  console.log('[SSR] ProductPage loaded on server')
+
+  onServerPrefetch(async () => {
+    try {
+      const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
+      if (!res.ok) throw new Error(`SEO fetch failed: ${res.status}`)
+
+      const data = await res.json()
+      seoData.value = {
+        title: data.title || 'Fallback Title',
+        description: data.description || 'Fallback description'
+      }
+
+      console.log('[SSR] Fetched SEO:', seoData.value.title)
+
+    } catch (err) {
+      console.error('[SSR] SEO Fetch Error:', err)
+    }
+  })
+}
 // Reactive meta binding
 /*useMeta(() => {
   const title = seoData.value?.title || 'Fallback Title'
@@ -236,9 +244,8 @@ const p = fetchSeoData().then(data => {
   }
 })*/
 
+// ✅ Set meta reactively – this works both client & server
 watchEffect(() => {
-  if (!seoData.value) return
-
   useMeta({
     title: seoData.value.title,
     meta: {
