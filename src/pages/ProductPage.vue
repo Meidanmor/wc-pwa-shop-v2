@@ -520,7 +520,6 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
 
 onMounted(async() => {
   fetchProduct(route.params.slug);
-  p;
   //fetchWishlistData()
 })
 
