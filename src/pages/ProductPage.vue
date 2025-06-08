@@ -233,6 +233,10 @@ async function fetchSeoData() {
   }
 
 }
+
+// SSR + client-side fetch
+onServerPrefetch(fetchSeoData)
+
 // Reactive meta binding
 useMeta(() => {
   const title = seoData.value?.title || 'Fallback Title'
@@ -247,8 +251,6 @@ useMeta(() => {
   }
 })
 
-// SSR + client-side fetch
-onServerPrefetch(fetchSeoData)
 
 //const addToCartLoading = ref(false);
 const availableAttributes = computed(() => {
