@@ -204,40 +204,29 @@ const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
 
-const seoData = ref(null)
-if (process.env.SERVER) {
-  console.log('[SSR] ProductPage loaded on server')
-}
-// This URL must be reachable from your SSR server!
-//const apiUrl = `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${route.fullPath}`
+const seoData = ref({ title: 'Fallback Title', description: 'Fallback Description' })
 
-// Fetch SEO data
 async function fetchSeoData() {
   try {
-    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
+    const url = `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`
+    const res = await fetch(url)
 
-    if (!res.ok) {
-      throw new Error(`SEO fetch failed: ${res.status}`)
+    if (!res.ok) throw new Error(`SEO fetch failed: ${res.status}`)
+
+    const response = await res.json()
+    seoData.value = {
+      title: response.title || 'Untitled Product',
+      description: response.description || 'No description available'
     }
-
-    const response = await res.json();
-
-      seoData.value = {
-        title: response.title,
-        description: response.description
-      }
-    return response
   } catch (err) {
     console.error('[SEO Fetch Error]', err)
-    return {title: 'Fallback Title', description: 'Fallback description'}
   }
-
 }
 
-// SSR + client-side fetch
-// ⬇️ Fetch on server
+// Server-side SEO setup
 onServerPrefetch(async () => {
-  seoData.value = await fetchSeoData()
+  console.log('[SSR] Fetching SEO for', route.fullPath)
+  await fetchSeoData()
 
   useMeta({
     title: seoData.value.title,
@@ -256,8 +245,6 @@ onServerPrefetch(async () => {
       }
     }
   })
-
-  console.log('[SSR] SEO meta applied:', seoData.value.title)
 })
 
 // Reactive meta binding
@@ -528,8 +515,26 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
   console.log(wishlistAdded.value);
 }
 
-onMounted(() => {
-  if (!seoData.value) fetchSeoData()
+onMounted(async() => {
+    if (import.meta.env.SSR) return // Avoid double-fetch during hydration
+  await fetchSeoData()
+  useMeta({
+    title: seoData.value.title,
+    meta: {
+      description: {
+        name: 'description',
+        content: seoData.value.description
+      },
+      'og:title': {
+        property: 'og:title',
+        content: seoData.value.title
+      },
+      'og:description': {
+        property: 'og:description',
+        content: seoData.value.description
+      }
+    }
+  });
   fetchProduct(route.params.slug)
   //fetchWishlistData()
 })
