@@ -196,7 +196,7 @@ import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
-import { onServerPrefetch } from 'vue'
+//import { onServerPrefetch } from 'vue'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -512,7 +512,8 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
 }
 
 onMounted(async() => {
-  fetchProduct(route.params.slug)
+  fetchProduct(route.params.slug);
+  p;
   //fetchWishlistData()
 })
 
