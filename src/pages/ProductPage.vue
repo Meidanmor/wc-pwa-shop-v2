@@ -208,7 +208,16 @@ const seoData = ref({
   description: 'Fallback description'
 })
 
-// ✅ Register useMeta immediately
+onServerPrefetch(async () => {
+  const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
+  const data = await res.json()
+  seoData.value = {
+    title: data.title,
+    description: data.description
+  }
+})
+
+// ✅ Register meta AFTER data is ready — SSR will wait for Suspense
 useMeta(() => ({
   title: seoData.value.title,
   meta: {
@@ -226,23 +235,6 @@ useMeta(() => ({
     }
   }
 }))
-
-// ✅ Prefetch for SSR
-onServerPrefetch(async () => {
-  try {
-    console.log('[SSR] ProductPage loaded on server')
-    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
-    if (!res.ok) throw new Error(`SEO fetch failed: ${res.status}`)
-    const data = await res.json()
-    seoData.value = {
-      title: data.title || 'Fallback Title',
-      description: data.description || 'Fallback description'
-    }
-    console.log('[SSR] Fetched SEO:', seoData.value.title)
-  } catch (err) {
-    console.error('[SSR] SEO Fetch Error:', err)
-  }
-})
 
 //const addToCartLoading = ref(false);
 const availableAttributes = computed(() => {
