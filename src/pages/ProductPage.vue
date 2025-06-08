@@ -502,6 +502,18 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
 }
 
 onMounted(async() => {
+      try {
+        const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
+        const data = await res.json()
+        seoData.value = {
+          title: data.title || 'Fallback Title',
+          description: data.description || 'Fallback description'
+        }
+        console.log('[CSR] Fetched SEO:', seoData.value.title)
+        applySeoMeta() // ✅ Apply after fetch
+      } catch (err) {
+      console.error('[CSR] SEO Fetch Error:', err)
+    };
   fetchProduct(route.params.slug);
   //fetchWishlistData()
 })
