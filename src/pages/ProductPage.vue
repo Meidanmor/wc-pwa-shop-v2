@@ -190,7 +190,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
@@ -204,29 +204,40 @@ const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
 
-const seoData = ref({ title: 'Fallback Title', description: 'Fallback Description' })
+const seoData = ref(null)
 
-async function fetchSeoData() {
+async function fetchSeoData () {
   try {
-    const url = `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`
-    const res = await fetch(url)
-
+    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
     if (!res.ok) throw new Error(`SEO fetch failed: ${res.status}`)
-
-    const response = await res.json()
-    seoData.value = {
-      title: response.title || 'Untitled Product',
-      description: response.description || 'No description available'
-    }
+    return await res.json()
   } catch (err) {
     console.error('[SEO Fetch Error]', err)
+    return { title: 'Fallback Title', description: 'Fallback Description' }
   }
 }
 
-// Server-side SEO setup
-onServerPrefetch(async () => {
-  console.log('[SSR] Fetching SEO for', route.fullPath)
-  await fetchSeoData()
+// ✅ This runs on both server and client
+const p = fetchSeoData().then(data => {
+  seoData.value = data
+})
+
+// Reactive meta binding
+/*useMeta(() => {
+  const title = seoData.value?.title || 'Fallback Title'
+  const description = seoData.value?.description || 'Fallback description.'
+  return {
+    title,
+    meta: {
+      description: { name: 'description', content: description },
+      'og:title': { property: 'og:title', content: title },
+      'og:description': { property: 'og:description', content: description }
+    }
+  }
+})*/
+
+watchEffect(() => {
+  if (!seoData.value) return
 
   useMeta({
     title: seoData.value.title,
@@ -246,21 +257,6 @@ onServerPrefetch(async () => {
     }
   })
 })
-
-// Reactive meta binding
-/*useMeta(() => {
-  const title = seoData.value?.title || 'Fallback Title'
-  const description = seoData.value?.description || 'Fallback description.'
-  return {
-    title,
-    meta: {
-      description: { name: 'description', content: description },
-      'og:title': { property: 'og:title', content: title },
-      'og:description': { property: 'og:description', content: description }
-    }
-  }
-})*/
-
 
 //const addToCartLoading = ref(false);
 const availableAttributes = computed(() => {
@@ -516,25 +512,6 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
 }
 
 onMounted(async() => {
-    if (import.meta.env.SSR) return // Avoid double-fetch during hydration
-  await fetchSeoData()
-  useMeta({
-    title: seoData.value.title,
-    meta: {
-      description: {
-        name: 'description',
-        content: seoData.value.description
-      },
-      'og:title': {
-        property: 'og:title',
-        content: seoData.value.title
-      },
-      'og:description': {
-        property: 'og:description',
-        content: seoData.value.description
-      }
-    }
-  });
   fetchProduct(route.params.slug)
   //fetchWishlistData()
 })
