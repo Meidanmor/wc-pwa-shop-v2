@@ -228,7 +228,11 @@ async function fetchSeoData() {
   }
 }
 
-await fetchSeoData()
+// 🟢 Run on SSR only
+if (process.env.SERVER) {
+  await fetchSeoData()
+}
+
 useMeta(() => ({
   title: seoData.value.title,
   meta: {
@@ -499,9 +503,11 @@ console.log(cart.state.wishlist_items.wishlist.length);
 console.log(selectedVariation.value ? selectedVariation.value.id : product.value.id);
   console.log(wishlistAdded.value);
 }
-await fetchProduct(route.params.slug);
 onMounted(async() => {
-  //fetchProduct(route.params.slug);
+  if (process.env.SERVER) {
+    await fetchSeoData();
+  }
+  await fetchProduct(route.params.slug);
   //fetchWishlistData()
 })
 
