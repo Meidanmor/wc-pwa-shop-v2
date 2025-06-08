@@ -208,16 +208,28 @@ const seoData = ref({
   description: 'Fallback description'
 })
 
-onServerPrefetch(async () => {
-  const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
-  const data = await res.json()
-  seoData.value = {
-    title: data.title,
-    description: data.description
-  }
-})
+// Log for debugging
+if (process.env.SERVER) {
+  console.log('[SSR] ProductPage loaded on server')
+}
 
-// ✅ Register meta AFTER data is ready — SSR will wait for Suspense
+// Fetch SEO data during SSR
+async function fetchSeoData() {
+  try {
+    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
+    const json = await res.json()
+    seoData.value = {
+      title: json.title,
+      description: json.description
+    }
+    console.log('[SSR] Fetched SEO:', json.title)
+  } catch (err) {
+    console.error('[SSR] SEO Fetch Error:', err)
+  }
+}
+
+await fetchSeoData()
+
 useMeta(() => ({
   title: seoData.value.title,
   meta: {
