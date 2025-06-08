@@ -213,9 +213,22 @@ if (process.env.SERVER) {
 
 // Fetch SEO data
 async function fetchSeoData() {
+  try {
+    const res = await fetch(`https://your-domain.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
+
+    if (!res.ok) {
+      throw new Error(`SEO fetch failed: ${res.status}`)
+    }
+
+    return await res.json()
+  } catch (err) {
+    console.error('[SEO Fetch Error]', err)
+    return {title: 'Fallback Title', description: 'Fallback description'}
+  }
+
   seoData.value = {
-    title: 'Hardcoded SEO Title',
-    description: 'This is the hardcoded SEO description.'
+    title: res.title,
+    description: res.description
   }
 }
 // Reactive meta binding
