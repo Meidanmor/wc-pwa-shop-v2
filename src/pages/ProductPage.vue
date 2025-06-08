@@ -244,26 +244,24 @@ if (import.meta.env.SSR) {
   }
 })*/
 
-// ✅ Set meta reactively – this works both client & server
-watchEffect(() => {
-  useMeta({
-    title: seoData.value.title,
-    meta: {
-      description: {
-        name: 'description',
-        content: seoData.value.description
-      },
-      'og:title': {
-        property: 'og:title',
-        content: seoData.value.title
-      },
-      'og:description': {
-        property: 'og:description',
-        content: seoData.value.description
-      }
+// ✅ Meta MUST be injected synchronously
+useMeta(() => ({
+  title: seoData.value.title,
+  meta: {
+    description: {
+      name: 'description',
+      content: seoData.value.description
+    },
+    'og:title': {
+      property: 'og:title',
+      content: seoData.value.title
+    },
+    'og:description': {
+      property: 'og:description',
+      content: seoData.value.description
     }
-  })
-})
+  }
+}))
 
 //const addToCartLoading = ref(false);
 const availableAttributes = computed(() => {
