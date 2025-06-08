@@ -220,16 +220,18 @@ async function fetchSeoData() {
       throw new Error(`SEO fetch failed: ${res.status}`)
     }
 
-    return await res.json()
+    const response = await res.json();
+
+      seoData.value = {
+        title: response.title,
+        description: response.description
+      }
+    return response
   } catch (err) {
     console.error('[SEO Fetch Error]', err)
     return {title: 'Fallback Title', description: 'Fallback description'}
   }
 
-  seoData.value = {
-    title: res.title,
-    description: res.description
-  }
 }
 // Reactive meta binding
 useMeta(() => {
