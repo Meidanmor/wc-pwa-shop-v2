@@ -189,7 +189,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup async>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
@@ -204,8 +204,8 @@ const activeSlide = ref(0)
 const quantity = ref(1)
 
 const seoData = ref({
-  title: 'Fallback Title',
-  description: 'Fallback description'
+  title: '',
+  description: ''
 })
 
 // Log for debugging
@@ -227,29 +227,6 @@ async function fetchSeoData() {
     console.error('[SSR] SEO Fetch Error:', err)
   }
 }
-
-// 🟢 Run on SSR only
-if (process.env.SERVER) {
-  await fetchSeoData()
-}
-
-useMeta(() => ({
-  title: seoData.value.title,
-  meta: {
-    description: {
-      name: 'description',
-      content: seoData.value.description
-    },
-    'og:title': {
-      property: 'og:title',
-      content: seoData.value.title
-    },
-    'og:description': {
-      property: 'og:description',
-      content: seoData.value.description
-    }
-  }
-}))
 
 //const addToCartLoading = ref(false);
 const availableAttributes = computed(() => {
@@ -386,6 +363,41 @@ async function fetchProduct(slug) {
   fetchWishlistData()
 }
 
+
+// 🟢 Run on SSR only
+if (process.env.SERVER) {
+  await fetchSeoData()
+  try {
+  const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/products?per_page=100')
+  const products = await res.json()
+  product.value = products.find(p => getSlugFromPermalink(p.permalink) === route.params.slug)
+
+  console.log('[SSR] product applied:', seoData.value.title)
+} catch (err) {
+  console.error('[SEO Fetch Error]', err)
+}
+
+}
+
+useMeta(() => ({
+  title: seoData.value.title,
+  meta: {
+    description: {
+      name: 'description',
+      content: seoData.value.description
+    },
+    'og:title': {
+      property: 'og:title',
+      content: seoData.value.title
+    },
+    'og:description': {
+      property: 'og:description',
+      content: seoData.value.description
+    }
+  }
+}))
+
+
 const isVariable = computed(() => product.value?.type === 'variable')
 
 const selectedVariations = ref({})
@@ -504,9 +516,7 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
   console.log(wishlistAdded.value);
 }
 onMounted(async() => {
-  if (process.env.SERVER) {
-    await fetchSeoData();
-  }
+  await fetchSeoData();
   await fetchProduct(route.params.slug);
   //fetchWishlistData()
 })
