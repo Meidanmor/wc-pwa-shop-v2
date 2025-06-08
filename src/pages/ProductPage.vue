@@ -208,46 +208,42 @@ const seoData = ref({
   description: 'Fallback description'
 })
 
-// ✅ This will be called when data is ready
-function applySeoMeta() {
-  useMeta({
-    title: seoData.value.title,
-    meta: {
-      description: {
-        name: 'description',
-        content: seoData.value.description
-      },
-      'og:title': {
-        property: 'og:title',
-        content: seoData.value.title
-      },
-      'og:description': {
-        property: 'og:description',
-        content: seoData.value.description
-      }
+// ✅ Register useMeta immediately
+useMeta(() => ({
+  title: seoData.value.title,
+  meta: {
+    description: {
+      name: 'description',
+      content: seoData.value.description
+    },
+    'og:title': {
+      property: 'og:title',
+      content: seoData.value.title
+    },
+    'og:description': {
+      property: 'og:description',
+      content: seoData.value.description
     }
-  })
-}
+  }
+}))
 
-// ✅ Server-side: fetch before rendering
-if (import.meta.env.SSR) {
-  console.log('[SSR] ProductPage loaded on server')
-  await onServerPrefetch(async () => {
-    try {
-      const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
-      if (!res.ok) throw new Error(`SEO fetch failed: ${res.status}`)
-      const data = await res.json()
-      seoData.value = {
-        title: data.title || 'Fallback Title',
-        description: data.description || 'Fallback description'
-      }
-      console.log('[SSR] Fetched SEO:', seoData.value.title)
-      applySeoMeta() // ✅ Apply after fetch
-    } catch (err) {
-      console.error('[SSR] SEO Fetch Error:', err)
+// ✅ Prefetch for SSR
+onServerPrefetch(async () => {
+  try {
+    console.log('[SSR] ProductPage loaded on server')
+    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
+    if (!res.ok) throw new Error(`SEO fetch failed: ${res.status}`)
+    const data = await res.json()
+    seoData.value = {
+      title: data.title || 'Fallback Title',
+      description: data.description || 'Fallback description'
     }
-  })
-}
+    console.log('[SSR] Fetched SEO:', seoData.value.title)
+  } catch (err) {
+    console.error('[SSR] SEO Fetch Error:', err)
+  }
+})
+
 //const addToCartLoading = ref(false);
 const availableAttributes = computed(() => {
   if (!product.value || !product.value.attributes) return []
@@ -502,18 +498,17 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
 }
 
 onMounted(async() => {
-      try {
-        const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
-        const data = await res.json()
-        seoData.value = {
-          title: data.title || 'Fallback Title',
-          description: data.description || 'Fallback description'
-        }
-        console.log('[CSR] Fetched SEO:', seoData.value.title)
-        applySeoMeta() // ✅ Apply after fetch
-      } catch (err) {
-      console.error('[CSR] SEO Fetch Error:', err)
-    };
+  try {
+    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
+    const data = await res.json()
+    seoData.value = {
+      title: data.title || 'Fallback Title',
+      description: data.description || 'Fallback description'
+    }
+    console.log('[CSR] Fetched SEO:', seoData.value.title)
+  } catch (err) {
+    console.error('[CSR] SEO Fetch Error:', err)
+  }
   fetchProduct(route.params.slug);
   //fetchWishlistData()
 })
