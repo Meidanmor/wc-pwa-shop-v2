@@ -208,61 +208,46 @@ const seoData = ref({
   description: 'Fallback description'
 })
 
-// ✅ Only fetch on server
+// ✅ This will be called when data is ready
+function applySeoMeta() {
+  useMeta({
+    title: seoData.value.title,
+    meta: {
+      description: {
+        name: 'description',
+        content: seoData.value.description
+      },
+      'og:title': {
+        property: 'og:title',
+        content: seoData.value.title
+      },
+      'og:description': {
+        property: 'og:description',
+        content: seoData.value.description
+      }
+    }
+  })
+}
+
+// ✅ Server-side: fetch before rendering
 if (import.meta.env.SSR) {
   console.log('[SSR] ProductPage loaded on server')
-
-  onServerPrefetch(async () => {
+  await onServerPrefetch(async () => {
     try {
       const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
       if (!res.ok) throw new Error(`SEO fetch failed: ${res.status}`)
-
       const data = await res.json()
       seoData.value = {
         title: data.title || 'Fallback Title',
         description: data.description || 'Fallback description'
       }
-
       console.log('[SSR] Fetched SEO:', seoData.value.title)
-
+      applySeoMeta() // ✅ Apply after fetch
     } catch (err) {
       console.error('[SSR] SEO Fetch Error:', err)
     }
   })
 }
-// Reactive meta binding
-/*useMeta(() => {
-  const title = seoData.value?.title || 'Fallback Title'
-  const description = seoData.value?.description || 'Fallback description.'
-  return {
-    title,
-    meta: {
-      description: { name: 'description', content: description },
-      'og:title': { property: 'og:title', content: title },
-      'og:description': { property: 'og:description', content: description }
-    }
-  }
-})*/
-
-// ✅ Meta MUST be injected synchronously
-useMeta(() => ({
-  title: seoData.value.title,
-  meta: {
-    description: {
-      name: 'description',
-      content: seoData.value.description
-    },
-    'og:title': {
-      property: 'og:title',
-      content: seoData.value.title
-    },
-    'og:description': {
-      property: 'og:description',
-      content: seoData.value.description
-    }
-  }
-}))
-
 //const addToCartLoading = ref(false);
 const availableAttributes = computed(() => {
   if (!product.value || !product.value.attributes) return []
