@@ -378,7 +378,7 @@ async function fetchProduct(slug) {
   activeSlide.value = 0
   lightbox.value.open = false
   resetVariations()
-  console.log(products)
+  //console.log(products)
   fetchWishlistData()
 }
 
@@ -402,14 +402,14 @@ async function fetchWishlistData() {
 
   cart.fetchWishlistItems();
 
-console.log(cart.state.wishlist_items.wishlist);
+//console.log(cart.state.wishlist_items.wishlist);
 if(cart.state.wishlist_items.wishlist && Object.values(cart.state.wishlist_items.wishlist).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)){
     wishlistAdded.value = true
   } else{
     wishlistAdded.value = false
   }
 
-console.log(wishlistAdded.value);
+//console.log(wishlistAdded.value);
  }
 
 async function onVariationChange() {
