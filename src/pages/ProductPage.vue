@@ -190,7 +190,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, watchEffect, onServerPrefetch } from 'vue'
+import { ref, onMounted, computed, watch, onServerPrefetch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
