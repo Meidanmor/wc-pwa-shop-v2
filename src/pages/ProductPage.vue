@@ -214,7 +214,7 @@ if (process.env.SERVER) {
 // Fetch SEO data
 async function fetchSeoData() {
   try {
-    const res = await fetch(`https://your-domain.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
+    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
 
     if (!res.ok) {
       throw new Error(`SEO fetch failed: ${res.status}`)
