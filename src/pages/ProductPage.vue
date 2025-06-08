@@ -235,10 +235,33 @@ async function fetchSeoData() {
 }
 
 // SSR + client-side fetch
-onServerPrefetch(fetchSeoData)
+// ⬇️ Fetch on server
+onServerPrefetch(async () => {
+  seoData.value = await fetchSeoData()
+
+  useMeta({
+    title: seoData.value.title,
+    meta: {
+      description: {
+        name: 'description',
+        content: seoData.value.description
+      },
+      'og:title': {
+        property: 'og:title',
+        content: seoData.value.title
+      },
+      'og:description': {
+        property: 'og:description',
+        content: seoData.value.description
+      }
+    }
+  })
+
+  console.log('[SSR] SEO meta applied:', seoData.value.title)
+})
 
 // Reactive meta binding
-useMeta(() => {
+/*useMeta(() => {
   const title = seoData.value?.title || 'Fallback Title'
   const description = seoData.value?.description || 'Fallback description.'
   return {
@@ -249,7 +272,7 @@ useMeta(() => {
       'og:description': { property: 'og:description', content: description }
     }
   }
-})
+})*/
 
 
 //const addToCartLoading = ref(false);
