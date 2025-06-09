@@ -5,7 +5,7 @@ export async function fetchWithToken(url, options = {}) {
 
     const headers = {
       'Content-Type': 'application/json',
-      ...(token ? {Authorization: `Bearer ${token}`} : {})
+      ...(token && token != null ? {Authorization: `Bearer ${token}`} : {})
     }
 
     return fetch(url, {
