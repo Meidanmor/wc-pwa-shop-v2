@@ -5,6 +5,7 @@ export async function fetchWithToken(url, options = {}) {
 
     const isValidToken = token && typeof token === 'string' && token.trim().split('.').length === 3;
 
+    console.log(token);
     const headers = {
       'Content-Type': 'application/json',
       ...(isValidToken ? {Authorization: `Bearer ${token}`} : {})
