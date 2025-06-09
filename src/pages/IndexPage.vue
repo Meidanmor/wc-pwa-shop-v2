@@ -352,6 +352,10 @@ watch(() => $q.screen.name, () => {
   margin: 0 auto;
 }
 
+.hero-content h1 {
+  overflow-wrap: anywhere;
+}
+
 .featured-products-section {
   margin-top: 40px;
 }
@@ -468,5 +472,10 @@ watch(() => $q.screen.name, () => {
   width: 100%;
   margin-right: auto;
   margin-left: auto;
+}
+@media(max-width: 767px){
+  h1 {
+    font-size: 40px;
+  }
 }
 </style>

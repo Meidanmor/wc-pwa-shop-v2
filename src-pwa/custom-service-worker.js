@@ -28,7 +28,7 @@ cleanupOutdatedCaches()
 registerRoute(
   ({ url }) =>
       url.origin === 'https://nuxt.meidanm.com' &&
-    url.pathname === '/wp-json/wc/store/v1/products' &&
+    url.pathname === ('/wp-json/wc/store/v1/products' || '/wp-json/wc/store/v1/products/categories') &&
     url.searchParams.has('per_page'),
   new NetworkFirst({
     cacheName: 'woocommerce-api',
