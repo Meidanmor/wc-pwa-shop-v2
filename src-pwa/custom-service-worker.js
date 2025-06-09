@@ -8,11 +8,11 @@
 
 import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute, cleanupOutdatedCaches, /*createHandlerBoundToURL*/ } from 'workbox-precaching'
-//import { registerRoute, NavigationRoute } from 'workbox-routing'
+import { registerRoute, /*NavigationRoute*/ } from 'workbox-routing'
 
 // ✅ IMPORT THESE
-//import { NetworkFirst } from 'workbox-strategies'
-//import { ExpirationPlugin } from 'workbox-expiration'
+import { NetworkFirst } from 'workbox-strategies'
+import { ExpirationPlugin } from 'workbox-expiration'
 
 // Setup service worker behavior
 self.skipWaiting()
@@ -25,8 +25,11 @@ precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
 // ✅ API caching for WooCommerce backend
-/*registerRoute(
-  ({ url }) => url.origin === 'https://nuxt.meidanm.com' && url.pathname.startsWith('/wp-json/wc/store/v1/products?per_page='),
+registerRoute(
+  ({ url }) =>
+      url.origin === 'https://nuxt.meidanm.com' &&
+    url.pathname === '/wp-json/wc/store/v1/products' &&
+    url.searchParams.has('per_page'),
   new NetworkFirst({
     cacheName: 'woocommerce-api',
     plugins: [
@@ -36,7 +39,22 @@ cleanupOutdatedCaches()
       }),
     ],
   })
-)*/
+)
+registerRoute(
+  ({ url }) =>
+      url.origin === 'https://nuxt.meidanm.com' &&
+    url.pathname === '/wp-json/custom/v1/seo' &&
+    url.searchParams.has('path'),
+  new NetworkFirst({
+    cacheName: 'seo-api',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      }),
+    ],
+  })
+)
 
 self.addEventListener('install', (/*event*/) => {
   console.log('🛠️ Service Worker installing');

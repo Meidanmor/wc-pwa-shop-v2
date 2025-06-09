@@ -161,7 +161,11 @@ import cart from 'src/stores/cart';
 import { useRouter } from 'vue-router';
 import { fetchWithToken } from 'src/composables/useApiFetch.js';
 
-const token = ref(localStorage.getItem('jwt_token'))
+const token = ref('');
+
+if(process.env.Client) {
+  token.value = localStorage.getItem('jwt_token');
+}
 const router = useRouter();
 
 const form = reactive({
@@ -257,7 +261,7 @@ const updateShippingAddress = async () => {
   try {
     const response = await fetchWithToken('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart/update-customer', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.value}` },
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
         billing_address: {
@@ -407,6 +411,7 @@ console.log(form);
 onMounted( async () => {
   await initializeFormFromCart();
   await fetchShippingRates();
+  await updateShippingAddress();
 });
 
 </script>
