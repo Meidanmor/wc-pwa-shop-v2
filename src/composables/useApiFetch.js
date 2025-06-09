@@ -3,9 +3,11 @@ export async function fetchWithToken(url, options = {}) {
   if (process.env.CLIENT) {
     const token = localStorage.getItem('jwt_token') // or use Vue state if stored globally
 
+    const isValidToken = token && typeof token === 'string' && token.trim().split('.').length === 3;
+
     const headers = {
       'Content-Type': 'application/json',
-      ...(token && token != null ? {Authorization: `Bearer ${token}`} : {})
+      ...(isValidToken ? {Authorization: `Bearer ${token}`} : {})
     }
 
     return fetch(url, {
