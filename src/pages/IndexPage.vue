@@ -153,168 +153,188 @@
   </q-page>
 </template>
 
-<script>
+<script setup async>
 import { ref, onMounted, nextTick, watch } from 'vue';
-import { useQuasar } from 'quasar';
+//import { useRoute } from 'vue-router';
+import { useQuasar, useMeta } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
 import gsap from 'gsap';
-if (process.env.SERVER) {
-  console.log('[SSR] IndexPage loaded on server')
+//import { useSeo } from 'src/composables/useSeo';
+
+const $q = useQuasar();
+//const route = useRoute();
+
+const products = ref([]);
+const featuredProducts = ref([]);
+const productSection = ref(null);
+//const carousel = ref(null);
+const ctaBtn = ref(null);
+const slideChunks = ref(false);
+const slide = ref(0);
+const email = ref('');
+const seoData = ref({
+  title: 'Home page',
+  description: 'Home page description'
+});
+
+// Fetch SEO data during SSR
+async function fetchSeoData() {
+  try {
+    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent('homepage')}`)
+    const json = await res.json()
+    console.log(json);
+    seoData.value = {
+      title: json.title,
+      description: json.description
+    }
+    console.log('[SSR] Fetched SEO:', json.title)
+  } catch (err) {
+    console.error('[SSR] SEO Fetch Error:', err)
+  }
 }
 
-export default {
-  name: 'IndexPage',
-  setup() {
-    const $q = useQuasar();
-    const products = ref([]);
-    const featuredProducts = ref([]);
-    const productSection = ref(null);
-    const carousel = ref(null);
-    const ctaBtn = ref(null);
-    const slideChunks = ref(false);
-    const slide = ref(0);
-    const email = ref('');
-    const testimonials = ref([
-      {
-        name: 'Alice Johnson',
-        feedback: 'NaturaBloom products have transformed my skincare routine!',
-        avatar: 'https://example.com/avatar1.jpg',
-      },
-      {
-        name: 'Mark Thompson',
-        feedback: 'I love the organic ingredients and sustainable packaging.',
-        avatar: '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>',
-      },
-      {
-        name: 'Sophie Lee',
-        feedback: 'Fast shipping and excellent customer service.',
-        avatar: 'https://example.com/avatar3.jpg',
-      },
-    ]);
-
-    const instagramPosts = ref([
-      { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Our latest product launch!' },
-      { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Behind the scenes at NaturaBloom.' },
-      { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Customer favorites this month.' },
-      { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Sustainable packaging in action.' },
-    ]);
-
-    const subscribeNewsletter = () => {
-      if (email.value) {
-        $q.notify({ type: 'positive', message: 'Subscribed successfully!' });
-        email.value = '';
-      } else {
-        $q.notify({ type: 'negative', message: 'Please enter a valid email.' });
-      }
-    };
-
-    const getChunks = (array, size) => {
-      const chunks = [];
-      for (let i = 0; i < array.length; i += size) {
-        chunks.push(array.slice(i, i + size));
-      }
-      return chunks;
-    };
-
-    const computeSlideChunks = () => {
-      const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3;
-      slideChunks.value = getChunks(featuredProducts.value, chunkSize);
-    };
-
-    const fetchProducts = async () => {
-      const allProducts = await api.getProducts();
-      products.value = allProducts;
-      featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
-      computeSlideChunks();
-    };
-
-    const addToCart = (product) => {
-      cart.add(product.id, 1);
-    };
-
-    const getSlugFromPermalink = (permalink) =>
-      permalink.split('/').filter(Boolean).pop();
-
-    const scrollToProducts = () => {
-      gsap.to(window, {
-        duration: 1,
-        scrollTo: {
-          y: productSection.value,
-          offsetY: 80,
-        },
-        ease: 'power2.out',
-      });
-    };
-
-    const subscribe = () => {
-      if (email.value) {
-        $q.notify({ type: 'positive', message: 'Thanks for subscribing!' });
-        email.value = '';
-      } else {
-        $q.notify({ type: 'warning', message: 'Please enter a valid email.' });
-      }
-    };
-
-
-    onMounted(async () => {
-          if (process.env.CLIENT) {
-            const gsap = (await import('gsap')).default
-            const {ScrollToPlugin} = await import('gsap/ScrollToPlugin')
-
-            gsap.registerPlugin(ScrollToPlugin)
-
-            // Make available globally if needed
-            window.gsap = gsap
-            fetchProducts();
-          }
-      gsap.from('.hero-content', {
-        y: 50,
-        opacity: 0,
-        duration: 1.2,
-        ease: 'power3.out',
-      });
-      gsap.from('.testimonials-section', { opacity: 0, y: 50, duration: 1 });
-      gsap.from('.sustainability-section', { opacity: 0, x: -50, duration: 1, delay: 0.5 });
-      gsap.from('.newsletter-section', { opacity: 0, y: 50, duration: 1, delay: 1 });
-      gsap.from('.instagram-section', { opacity: 0, y: 50, duration: 1, delay: 1.5 });
-      gsap.from('.about-section', { opacity: 0, y: 50, duration: 1, delay: 2 });
-
-      nextTick(() => {
-        gsap.from(ctaBtn.value.$el, {
-          opacity: 0,
-          y: 20,
-          duration: 1.2,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: '.cta-section',
-            start: 'top 80%',
-          },
-        });
-      });
-    });
-
-    watch(() => $q.screen.name, () => {
-      computeSlideChunks();
-    });
-
-    return {
-      slideChunks,
-      addToCart,
-      getSlugFromPermalink,
-      scrollToProducts,
-      productSection,
-      carousel,
-      ctaBtn,
-      slide,
-      testimonials,
-      email,
-      instagramPosts,
-      subscribeNewsletter,
-      subscribe
-    };
+if (process.env.SERVER) {
+  await fetchSeoData()
+}
+useMeta(() => ({
+  title: seoData.value.title,
+  meta: {
+    description: {
+      name: 'description',
+      content: seoData.value.description
+    },
+    'og:title': {
+      property: 'og:title',
+      content: seoData.value.title
+    },
+    'og:description': {
+      property: 'og:description',
+      content: seoData.value.description
+    }
+  }
+}))
+const testimonials = ref([
+  {
+    name: 'Alice Johnson',
+    feedback: 'NaturaBloom products have transformed my skincare routine!',
+    avatar: 'https://example.com/avatar1.jpg'
   },
+  {
+    name: 'Mark Thompson',
+    feedback: 'I love the organic ingredients and sustainable packaging.',
+    avatar:
+      '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>'
+  },
+  {
+    name: 'Sophie Lee',
+    feedback: 'Fast shipping and excellent customer service.',
+    avatar: 'https://example.com/avatar3.jpg'
+  }
+]);
+
+const instagramPosts = ref([
+  { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Our latest product launch!' },
+  { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Behind the scenes at NaturaBloom.' },
+  { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Customer favorites this month.' },
+  { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Sustainable packaging in action.' }
+]);
+
+const subscribeNewsletter = () => {
+  if (email.value) {
+    $q.notify({ type: 'positive', message: 'Subscribed successfully!' });
+    email.value = '';
+  } else {
+    $q.notify({ type: 'negative', message: 'Please enter a valid email.' });
+  }
 };
+
+const getChunks = (array, size) => {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+};
+
+const computeSlideChunks = () => {
+  const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3;
+  slideChunks.value = getChunks(featuredProducts.value, chunkSize);
+};
+
+const fetchProducts = async () => {
+  const allProducts = await api.getProducts();
+  products.value = allProducts;
+  featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
+  computeSlideChunks();
+};
+
+const addToCart = (product) => {
+  cart.add(product.id, 1);
+};
+
+const getSlugFromPermalink = (permalink) =>
+  permalink.split('/').filter(Boolean).pop();
+
+const scrollToProducts = () => {
+  gsap.to(window, {
+    duration: 1,
+    scrollTo: {
+      y: productSection.value,
+      offsetY: 80
+    },
+    ease: 'power2.out'
+  });
+};
+
+/*const subscribe = () => {
+  if (email.value) {
+    $q.notify({ type: 'positive', message: 'Thanks for subscribing!' });
+    email.value = '';
+  } else {
+    $q.notify({ type: 'warning', message: 'Please enter a valid email.' });
+  }
+};*/
+
+onMounted(async () => {
+  if (process.env.CLIENT) {
+    await fetchSeoData();
+    const gsap = (await import('gsap')).default;
+    const { ScrollToPlugin } = await import('gsap/ScrollToPlugin');
+    gsap.registerPlugin(ScrollToPlugin);
+    window.gsap = gsap;
+    fetchProducts();
+  }
+
+  gsap.from('.hero-content', {
+    y: 50,
+    opacity: 0,
+    duration: 1.2,
+    ease: 'power3.out'
+  });
+  gsap.from('.testimonials-section', { opacity: 0, y: 50, duration: 1 });
+  gsap.from('.sustainability-section', { opacity: 0, x: -50, duration: 1, delay: 0.5 });
+  gsap.from('.newsletter-section', { opacity: 0, y: 50, duration: 1, delay: 1 });
+  gsap.from('.instagram-section', { opacity: 0, y: 50, duration: 1, delay: 1.5 });
+  gsap.from('.about-section', { opacity: 0, y: 50, duration: 1, delay: 2 });
+
+  nextTick(() => {
+    gsap.from(ctaBtn.value.$el, {
+      opacity: 0,
+      y: 20,
+      duration: 1.2,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: '.cta-section',
+        start: 'top 80%'
+      }
+    });
+  });
+});
+
+watch(() => $q.screen.name, () => {
+  computeSlideChunks();
+});
 </script>
 
 <style scoped>

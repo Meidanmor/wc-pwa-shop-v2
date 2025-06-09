@@ -516,8 +516,10 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
   console.log(wishlistAdded.value);
 }
 onMounted(async() => {
-  await fetchSeoData();
-  await fetchProduct(route.params.slug);
+    if (process.env.CLIENT) {
+      await fetchSeoData();
+      await fetchProduct(route.params.slug);
+    }
   //fetchWishlistData()
 })
 

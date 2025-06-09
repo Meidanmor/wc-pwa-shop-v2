@@ -39,7 +39,7 @@
 
 
       <!-- Total Products -->
-      <div class="text-subtitle1 q-mb-sm">
+      <div v-if="filteredProducts && filteredProducts.length" class="text-subtitle1 q-mb-sm">
         Found {{ filteredProducts.length }} product{{ filteredProducts.length === 1 ? '' : 's' }}
       </div>
 
@@ -99,112 +99,157 @@
   </q-page>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch } from 'vue';
-import api from 'src/boot/woocommerce';
-import cart from 'src/stores/cart';
+<script setup async>
+import { ref, computed, onMounted, watch } from 'vue'
+import api from 'src/boot/woocommerce'
+import cart from 'src/stores/cart'
+import { useMeta } from 'quasar'
 
-export default {
-  name: 'ProductsPage',
-  setup() {
-    const products = ref([]);
-    const categories = ref([]);
-    const selectedCategory = ref(null);
-    const search = ref('');
-    const currentPage = ref(1);
-    const perPage = 6;
+// Refs and state
+const products = ref([])
+const categories = ref([])
+const selectedCategory = ref(null)
+const search = ref('')
+const currentPage = ref(1)
+const perPage = 6
 
-    // Price filter refs
-    const priceMin = ref(0);
-    const priceMax = ref(1000);
-    const priceRange = ref({min: 0,max: 1000});
+const seoData = ref({
+  title: 'Home page',
+  description: 'Home page description'
+});
 
-    const categoryOptions = computed(() =>
-      categories.value.map((cat) => ({
-        label: cat.name,
-        value: cat.id,
-      }))
-    );
+// Fetch SEO data during SSR
+async function fetchSeoData() {
+  try {
+    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent('shop')}`)
+    const json = await res.json()
+    console.log(json);
+    seoData.value = {
+      title: json.title,
+      description: json.description
+    }
+    console.log('[SSR] Fetched SEO:', json.title)
+  } catch (err) {
+    console.error('[SSR] SEO Fetch Error:', err)
+  }
+}
 
-    const filteredProducts = computed(() => {
-    console.log(products);
-      return products.value.filter((p) => {
-        const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase());
-        const matchCategory =
-          !selectedCategory.value ||
-          p.categories.some((c) => c.id === selectedCategory.value);
-        const productPrice = parseFloat( (p.prices.price) ) / 100;
-        const matchPrice =
-          productPrice >= priceRange.value.min && productPrice <= priceRange.value.max;
+// Fetch products and auto-set price range
+const fetchProducts = async () => {
+  const res = await api.getProducts()
+  products.value = Array.isArray(res) ? res : []
 
-        return matchSearch && matchCategory && matchPrice;
-      });
-    });
+  const prices = products.value.map((p) =>
+    parseFloat(
+      p.prices.price_range != null
+        ? p.prices.price_range.max_amount
+        : p.prices.price
+    ) / 100
+  )
 
-    const totalPages = computed(() => Math.ceil(filteredProducts.value.length / perPage));
+  const min = Math.floor(Math.min(...prices))
+  const max = Math.ceil(Math.max(...prices))
+  priceMin.value = min
+  priceMax.value = max
+  priceRange.value = { min, max }
+}
 
-    const paginatedProducts = computed(() => {
-      const start = (currentPage.value - 1) * perPage;
-      return filteredProducts.value.slice(start, start + perPage);
-    });
+// Fetch categories
+const fetchCategories = async () => {
+  categories.value = await api.getCategories()
+}
+const isServer = process.env.SERVER
 
-    const fetchProducts = async () => {
-      products.value = await api.getProducts();
+if (isServer) {
+  await fetchSeoData()
+  await fetchProducts()
+  await fetchCategories()
+}
 
-      // Auto-calculate price range
-      const prices = products.value.map((p) => parseFloat( (p.prices.price_range != null ? p.prices.price_range.max_amount : p.prices.price) ) / 100);
-      console.log(prices);
-      const min = Math.floor(Math.min(...prices));
-      const max = Math.ceil(Math.max(...prices));
-      priceMin.value = min;
-      priceMax.value = max;
-      priceRange.value = {min: min,max: max};
-      console.log(priceRange.value);
+useMeta(() => ({
+  title: seoData.value.title,
+  meta: {
+    description: {
+      name: 'description',
+      content: seoData.value.description
+    },
+    'og:title': {
+      property: 'og:title',
+      content: seoData.value.title
+    },
+    'og:description': {
+      property: 'og:description',
+      content: seoData.value.description
+    }
+  }
+}))
 
-    };
+// Price filter
+const priceMin = ref(0)
+const priceMax = ref(1000)
+const priceRange = ref({ min: 0, max: 1000 })
 
-    const fetchCategories = async () => {
-      categories.value = await api.getCategories();
-    };
+// Computed: category options
+const categoryOptions = computed(() =>
+    categories.value.map((cat) => ({
+      label: cat.name,
+      value: cat.id
+    }))
+)
 
-    const addToCart = (product) => {
-      cart.add(product.id, 1);
-      console.log('Added to cart:', product.id);
-    };
+// Computed: filtered products
+const filteredProducts = computed(() => {
+  return products.value.filter((p) => {
+    const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
+    const matchCategory =
+        !selectedCategory.value ||
+        p.categories.some((c) => c.id === selectedCategory.value)
 
-    const getSlugFromPermalink = (permalink) => {
-      return permalink.split('/').filter(Boolean).pop();
-    };
+    const productPrice = parseFloat(p.prices.price) / 100
+    const matchPrice =
+        productPrice >= priceRange.value.min &&
+        productPrice <= priceRange.value.max
 
-  // ✅ Add the watch here
-  watch(priceRange, (val) => {
-    console.log('🧪 priceRange changed:', val, 'min:', priceMin.value, 'max:', priceMax.value);
-  });
+    return matchSearch && matchCategory && matchPrice
+  })
+})
 
-    onMounted(() => {
-      fetchProducts();
-      fetchCategories();
-    });
+// Computed: pagination
+const totalPages = computed(() => {
+  return Math.ceil((filteredProducts.value?.length || 0) / perPage)
+})
 
-    return {
-      products,
-      filteredProducts,
-      paginatedProducts,
-      search,
-      selectedCategory,
-      categoryOptions,
-      currentPage,
-      totalPages,
-      addToCart,
-      getSlugFromPermalink,
 
-      // expose price filter
-      priceMin,
-      priceMax,
-      priceRange
-    };
-  },
-};
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * perPage
+  return filteredProducts.value.slice(start, start + perPage)
+})
+
+
+// Add to cart handler
+const addToCart = (product) => {
+  cart.add(product.id, 1)
+  console.log('Added to cart:', product.id)
+}
+
+// Slug from permalink
+const getSlugFromPermalink = (permalink) => {
+  return permalink.split('/').filter(Boolean).pop()
+}
+
+// Watch price range
+watch(priceRange, (val) => {
+  console.log('🧪 priceRange changed:', val, 'min:', priceMin.value, 'max:', priceMax.value)
+})
+
+// Lifecycle
+onMounted(async() => {
+      if (process.env.CLIENT) {
+        await fetchSeoData()
+        await fetchProducts()
+        await fetchCategories()
+      }
+})
 </script>
 
 <style scoped>
