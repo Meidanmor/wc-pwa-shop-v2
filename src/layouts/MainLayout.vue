@@ -96,7 +96,7 @@
       <q-scroll-area class="fit q-pa-sm" v-if="cartCount > 0">
         <h4> Cart </h4>
         <div v-for="item in cartItems" :key="item.id" class="q-pa-sm row items-center">
-          <img :src="item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
+          <img v-if="item.images" :src="item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
           <div class="q-ml-sm column">
             <div>{{ item.name }}</div>
            <div v-if="item.variation && item.variation.length > 0">
@@ -107,7 +107,7 @@
              {{variation.attribute}}: {{variation.value}}
              </div>
           </div>
-            <div>{{ item.prices.price }} {{ item.prices.currency_code }}</div>
+            <div v-if="item.prices">{{ item.prices.price }} {{ item.prices.currency_code }}</div>
             <div class="row items-center q-mt-xs">
               <q-btn dense round icon="remove" @click="decrease(item.key)" :disable="item.quantity === 1" />
               <span class="q-mx-sm">{{ item.quantity }}</span>
