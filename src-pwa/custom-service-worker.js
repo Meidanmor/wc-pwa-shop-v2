@@ -109,15 +109,13 @@ if (process.env.MODE !== 'ssr' || process.env.PROD) {
   registerRoute(
     new NavigationRoute(
       //createHandlerBoundToURL(process.env.PWA_FALLBACK_HTML),
-    createHandlerBoundToURL('/index.html'),
-    {
-      denylist: [
-        // Don't hijack requests for service-worker, workbox libs, or assets
-        new RegExp('service-worker\\.js$'),
-        /workbox-(.)*\.js$/,
-        /\/api\//, // optional: exclude API routes
-      ]
-    }
+      createHandlerBoundToURL(process.env.PWA_FALLBACK_HTML),
+      {
+        denylist: [
+          new RegExp(process.env.PWA_SERVICE_WORKER_REGEX),
+          /workbox-(.)*\.js$/
+        ]
+      }
     )
   )
 }
