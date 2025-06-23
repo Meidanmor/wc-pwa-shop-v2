@@ -83,6 +83,7 @@ function loadOfflineWishlist() {
     try {
       wishlistQueue = JSON.parse(queue);
     } catch (e) {
+      console.log(e);
       wishlistQueue = [];
     }
   }
@@ -450,6 +451,7 @@ async function syncOfflineWishlist() {
         body: JSON.stringify({ product_id: entry.product_id }),
       });
     } catch (err) {
+      console.log(err)
       console.warn('Wishlist sync failed for', entry.product_id);
     }
   }
