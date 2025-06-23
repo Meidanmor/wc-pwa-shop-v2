@@ -2,7 +2,7 @@
 import { reactive, computed } from 'vue';
 import { fetchWithToken } from 'src/composables/useApiFetch.js';
 
-const API_BASE = 'MY_ENDPOINT_URL';
+const API_BASE = 'https://nuxt.meidanm.com/wp-json/wc/store';
 const state = reactive({
   items: [],
   items_count: 0,
