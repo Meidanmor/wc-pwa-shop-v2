@@ -151,8 +151,19 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
 
     const offlineItem = { ...payload };
 
+    let itemUpdated = false;
     console.log(offlineItem);
-    state.items.push(offlineItem);
+    state.items.forEach((item) => {
+      if(item.id === offlineItem.id && item.key.includes('offline')) {
+        item.quantity = (item.quantity + offlineItem.quantity);
+        itemUpdated = true;
+      }
+    })
+
+    if(!itemUpdated) {
+      state.items.push(offlineItem);
+    }
+
     state.items_count += quantity;
     persistCartOffline();
 
@@ -161,6 +172,8 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     }
 
     state.loading.cart = false;
+    state.loading.quickbuy = false;
+
     return;
   }
 

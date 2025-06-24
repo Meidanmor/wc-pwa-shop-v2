@@ -95,7 +95,7 @@
     >
       <q-scroll-area class="fit q-pa-sm" v-if="cartCount > 0">
         <h4> Cart </h4>
-        <div v-for="item in cartItems" :key="item.id" class="q-pa-sm row items-center">
+        <div v-for="item in cartItems" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
           <img v-if="item.images" :src="item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
           <div class="q-ml-sm column">
             <div>{{ item.name }}</div>
