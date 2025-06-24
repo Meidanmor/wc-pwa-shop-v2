@@ -3,6 +3,8 @@ import { reactive, computed } from 'vue';
 import { fetchWithToken } from 'src/composables/useApiFetch.js';
 
 const API_BASE = 'https://nuxt.meidanm.com/wp-json/wc/store';
+//const offlineQueue = []; // Top of cart.js
+
 const state = reactive({
   items: [],
   items_count: 0,
@@ -14,9 +16,6 @@ const state = reactive({
   wishlist_items: [],
   offline: typeof navigator !== 'undefined' ? !navigator.onLine : true,
 });
-
-let wishlistQueue = [];
-
 /* =============================
    Offline Storage Helpers
 ============================= */
@@ -25,26 +24,36 @@ function hasOfflineItems() {
     ? state.items.some(item => item.key?.startsWith('offline-'))
     : false;
 }
-
 async function replayOfflineItems() {
   const offlineItems = state.items.filter(item =>
     item.key?.startsWith('offline-')
   );
+  console.log(offlineItems);
+
   for (const item of offlineItems) {
     try {
       const res = await fetchWithToken(`${API_BASE}/cart/add-item`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ id: item.id, quantity: item.quantity }),
+        body: JSON.stringify({
+          id: item.id,
+          quantity: item.quantity,
+        }),
       });
+
       if (!res.ok) throw new Error('Add to cart failed during replay');
+      console.log(`[cart.js] Replayed offline item: ${item.id}`);
     } catch (err) {
       console.warn(`[cart.js] Failed to replay item ${item.id}: ${err.message}`);
     }
   }
-  state.items = state.items.filter(item => !item.key?.startsWith('offline-'));
-  persistCartOffline();
+
+  // Clear offline items from local state
+  state.items = state.items.filter(
+    item => !item.key?.startsWith('offline-')
+  );
+  persistCartOffline(); // Save cleaned local state
 }
 
 function persistCartOffline() {
@@ -64,45 +73,19 @@ function loadOfflineCart() {
   }
 }
 
-function persistWishlistOffline() {
-  localStorage.setItem('offline_wishlist', JSON.stringify(state.wishlist_items));
-  localStorage.setItem('wishlist_queue', JSON.stringify(wishlistQueue));
-}
-
-function loadOfflineWishlist() {
-  const local = localStorage.getItem('offline_wishlist');
-  const queue = localStorage.getItem('wishlist_queue');
-  if (local) {
-    try {
-      state.wishlist_items = JSON.parse(local);
-    } catch (e) {
-      console.warn('Failed to parse wishlist:', e);
-    }
-  }
-  if (queue) {
-    try {
-      wishlistQueue = JSON.parse(queue);
-    } catch (e) {
-      console.log(e);
-      wishlistQueue = [];
-    }
-  }
-}
-
-/* =============================
-   Event Listeners
-============================= */
+// Watch online/offline
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
     console.log('[cart.js] Went online');
     state.offline = false;
-    replayOfflineItems();
-    syncOfflineWishlist();
   });
   window.addEventListener('offline', () => {
     console.log('[cart.js] Went offline');
     state.offline = true;
   });
+
+  console.log('[cart.js] online/offline status listener attached');
+
 }
 
 /* =============================
@@ -114,7 +97,9 @@ async function fetchCart() {
     return;
   }
 
+  // Before we fetch: replay offline actions if any
   if (hasOfflineItems()) {
+    console.log('[cart.js] Replaying offline items...');
     await replayOfflineItems();
   }
 
@@ -134,7 +119,7 @@ async function fetchCart() {
     state.coupons = data.coupons || [];
     state.cart_array = data || [];
 
-    persistCartOffline();
+    persistCartOffline(); // Save latest version locally
   } catch (err) {
     state.error = err.message;
     loadOfflineCart();
@@ -152,17 +137,21 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
   if (variationId) payload.variation = variation;
 
   if (state.offline) {
-    const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/products?per_page=100');
-    const products = await res.json();
+    const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/products?per_page=100')
+    const products = await res.json()
     const id = variationId || productId;
-    const productArr = products.find(p => p.id === id) || {};
+    const productArr = products.find(p => p.id === id) ? products.find(p => p.id === id): {};
     productArr.quantity = quantity;
-    payload = productArr;
+
+   payload = productArr;
+   console.log(payload);
 
     const key = 'offline-' + Date.now();
     productArr.key = key;
 
     const offlineItem = { ...payload };
+
+    console.log(offlineItem);
     state.items.push(offlineItem);
     state.items_count += quantity;
     persistCartOffline();
@@ -313,7 +302,7 @@ async function clear() {
 }
 
 /* =============================
-   Wishlist
+   Wishlist / Order APIs
 ============================= */
 async function applyCoupon(code) {
   try {
@@ -370,10 +359,7 @@ async function placeOrder(payload) {
    Wishlist Support
 ----------------------------- */
 async function fetchWishlistItems() {
-  if (!process.env.CLIENT || state.offline) {
-    loadOfflineWishlist();
-    return;
-  }
+  if (!process.env.CLIENT) return;
 
   try {
     const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
@@ -383,7 +369,6 @@ async function fetchWishlistItems() {
 
     const wishlistItems = await res.json();
     state.wishlist_items = wishlistItems;
-    persistWishlistOffline();
   } catch (err) {
     state.error = err.message;
     console.log(err);
@@ -396,42 +381,25 @@ async function toggleWishlistItem(productId, $q = null) {
   state.loading.wishlist = true;
 
   try {
-    if (state.offline) {
-      const current = state.wishlist_items.wishlist || [];
-      const exists = current.includes(productId);
-      const updated = exists
-        ? current.filter(id => id !== productId)
-        : [...current, productId];
+    const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ product_id: productId }),
+    });
 
-      state.wishlist_items.wishlist = updated;
-      wishlistQueue.push({ product_id: productId, action: exists ? 'remove' : 'add' });
-      persistWishlistOffline();
+    const wishlistItems = await res.json();
+    state.wishlist_items = wishlistItems;
 
-      if ($q) {
-        $q.notify({
-          type: exists ? 'warning' : 'positive',
-          message: exists ? 'Removed from wishlist (offline).' : 'Added to wishlist (offline).',
-          icon: exists ? 'delete' : 'favorite',
-        });
-      }
-    } else {
-      const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
-        method: 'POST',
-        credentials: 'include',
-        body: JSON.stringify({ product_id: productId }),
+    if ($q) {
+      const oldCount = Object.keys(state.wishlist_items.wishlist || {}).length;
+      const newCount = Object.keys(wishlistItems.wishlist || {}).length;
+
+      $q.notify({
+        progress: true,
+        type: oldCount > newCount ? 'warning' : 'positive',
+        message: oldCount > newCount ? 'Removed from wishlist.' : 'Added to wishlist!',
+        icon: oldCount > newCount ? 'delete' : 'favorite',
       });
-
-      const wishlistItems = await res.json();
-      state.wishlist_items = wishlistItems;
-      persistWishlistOffline();
-
-      if ($q) {
-        $q.notify({
-          type: 'positive',
-          message: 'Wishlist updated!',
-          icon: 'favorite',
-        });
-      }
     }
   } catch (err) {
     state.error = err.message;
@@ -441,25 +409,8 @@ async function toggleWishlistItem(productId, $q = null) {
   }
 }
 
-async function syncOfflineWishlist() {
-  if (!wishlistQueue.length) return;
-  for (const entry of wishlistQueue) {
-    try {
-      await fetchWithToken(`${API_BASE}/wishlist/`, {
-        method: 'POST',
-        credentials: 'include',
-        body: JSON.stringify({ product_id: entry.product_id }),
-      });
-    } catch (err) {
-      console.log(err)
-      console.warn('Wishlist sync failed for', entry.product_id);
-    }
-  }
-  wishlistQueue = [];
-  localStorage.removeItem('wishlist_queue');
-  fetchWishlistItems();
-}
 
+/* Init on client side */
 if (typeof window !== 'undefined') {
   fetchCart();
   fetchWishlistItems();
