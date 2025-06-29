@@ -155,6 +155,7 @@ function loadOfflineCart() {
 function loadOfflineWL() {
   const offlineCart = localStorage.getItem('offline_wl');
   if (offlineCart) {
+    console.log(offlineCart);
     try {
       const parsed = JSON.parse(offlineCart);
       state.wishlist_items = parsed;
