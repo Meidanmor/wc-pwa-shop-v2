@@ -515,7 +515,7 @@ async function toggleWishlistItem(productId, $q = null) {
   state.loading.wishlist = true;
 
   if(state.offline){
-    console.log(state.wishlist_items.wishlist)
+    //console.log(state.wishlist_items.wishlist)
 
     const res = await fetch(`${API_BASE}/v1/products?per_page=100`)
     const products = await res.json()
