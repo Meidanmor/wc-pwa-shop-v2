@@ -6,6 +6,7 @@
        <div class="flex">
      <!-- Desktop Navigation -->
           <q-toolbar-title class="nav-bar" v-if="$q.screen.gt.sm">
+            <router-link v-if="isSuperAdmin" to="/admin" class="text-h6 no-decoration"><q-icon name="admin_panel_settings" /> Go to Admin Panel</router-link>
             <router-link to="/" class="text-h6 no-decoration">My Shop</router-link>
             <router-link to="/products/" class="text-h6 no-decoration">Products</router-link>
             <router-link to="/cart/" class="text-h6 no-decoration">Cart</router-link>
@@ -47,6 +48,19 @@
         <div class="q-pa-md">
           <div class="text-h6 q-mb-md">Menu</div>
           <q-list bordered padding>
+            <q-item
+      v-if="isSuperAdmin"
+      clickable
+      v-ripple
+      to="/admin"
+      active-class="text-primary"
+    >
+      <q-item-section avatar>
+        <q-icon name="admin_panel_settings" />
+      </q-item-section>
+      <q-item-section>Go to Admin Panel</q-item-section>
+    </q-item>
+
             <q-item clickable v-ripple to="/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon name="home" /></q-item-section>
               <q-item-section>Home</q-item-section>
@@ -158,8 +172,11 @@
 import { ref, computed } from 'vue'
 import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
-import { useQuasar} from "quasar";
+import { useQuasar } from "quasar";
 import AiAssistant from "src/components/AiAssistant.vue";
+
+
+const isSuperAdmin = computed(() => cart.state.user?.is_super_admin === true)
 
 const $q = useQuasar()
 const mobileMenuDrawer = ref(false)

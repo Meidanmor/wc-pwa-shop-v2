@@ -22,10 +22,16 @@ export async function fetchAllProducts() {
   const data = await response.json();
   return data;
 }
+export async function fetchAdminProducts() {
+  const response = await fetchWithToken(`https://nuxt.meidanm.com/wp-json/wc/v3/products?per_page=100`, {credentials: 'include'});
+  const data = await response.json();
+  return data;
+}
 
 
 export default {
   getProducts: () => fetchAPI('/products?per_page=100'),
   getProductBySlug: (slug) => fetchAPI(`/products/slug/${slug}`),
   getCategories: () => fetchAPI('/products/categories'),
+  getAdminProducts: () => fetchAdminProducts()
 };

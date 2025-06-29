@@ -13,6 +13,17 @@ const routes = [
     ]
   },
 
+  {
+  path: '/admin',
+  component: () => import('layouts/AdminLayout.vue'),
+  meta: { requiresAdmin: true },
+  children: [
+    { path: '', component: () => import('pages/Admin/DashboardPage.vue') },
+    { path: 'products', component: () => import('pages/Admin/ProductsPage.vue') },
+    { path: 'products/:id', component: () => import('pages/Admin/ProductDetailPage.vue'), props: true }
+    // Orders and statistics will be added later
+  ]
+},
   // Always leave this as last one,
   // but you can also remove it
   {

@@ -39,7 +39,7 @@ const updateOnlineStatus = () => {
   });
 
   cart.fetchCart();
-  //cart.fetchWishlistItems();
+  cart.fetchWishlistItems();
 
 };
 

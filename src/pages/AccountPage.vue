@@ -42,35 +42,50 @@ import AccountDetails from 'components/AccountDetails.vue'
 import cart from 'src/stores/cart.js';
 
 const tab = ref('dashboard')
-const token = ref(localStorage.getItem('jwt_token'))
+
 const userData = ref(null)
-const isLoggedIn = ref(!!token.value)
+const token = ref(null)
 
-async function onLogin(newToken) {
-  token.value = newToken
-  localStorage.setItem('jwt_token', newToken)
-  //alert(localStorage.getItem('jwt_token'));
-  await fetchUser()
-  isLoggedIn.value = true
+if(process.env.CLIENT) {
+  token.value = localStorage.getItem('jwt_token')
 }
+  const isLoggedIn = ref(!!token.value)
 
-async function fetchUser() {
-console.log('fech');
-  const res = await fetch('https://nuxt.meidanm.com/wp-json/wp/v2/users/me', {
-  credentials: 'include', // crucial for cookie auth
-    headers: { Authorization: `Bearer ${token.value}` }
-  })
-  userData.value = await res.json()
-  console.log(userData.value);
-}
+  async function onLogin(newToken) {
+    token.value = newToken
+    if(process.env.CLIENT) {
 
-function logout() {
-  token.value = null
-  userData.value = null
-  isLoggedIn.value = false
-  localStorage.removeItem('jwt_token')
-  cart.clear();
-}
+      localStorage.setItem('jwt_token', newToken)
+    }
+    //alert(localStorage.getItem('jwt_token'));
+    await fetchUser()
+    isLoggedIn.value = true
+  }
+
+  async function fetchUser() {
+    console.log('fech');
+    const res = await fetch('https://nuxt.meidanm.com/wp-json/wp/v2/users/me', {
+      credentials: 'include', // crucial for cookie auth
+      headers: {Authorization: `Bearer ${token.value}`}
+    })
+    userData.value = await res.json()
+    console.log(userData.value);
+    cart.state.user = userData.value
+  }
+
+  function logout() {
+    token.value = null
+    userData.value = null
+    isLoggedIn.value = false
+    if(process.env.CLIENT) {
+      localStorage.removeItem('jwt_token')
+    }
+    cart.clear();
+    cart.state.user = {};
+  }
+
+
+
 
 onMounted(() => {
   if (isLoggedIn.value) fetchUser()

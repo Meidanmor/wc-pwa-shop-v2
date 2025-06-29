@@ -4,13 +4,13 @@
       <q-spinner />
     </div>
 
-    <div v-else-if="wishlist.length === 0" class="text-center text-grey">
+    <div v-else-if="cart.state.wishlist_items.wishlist && cart.state.wishlist_items.wishlist.length === 0" class="text-center text-grey">
       Your wishlist is empty.
     </div>
 
-    <div v-else>
+    <div v-else-if="cart.state.wishlist_items.wishlist && cart.state.wishlist_items.wishlist.length > 0">
     <h4> Wishlist </h4>
-      <q-item v-for="product in wishlist" :key="product.id">
+      <q-item v-for="product in cart.state.wishlist_items.wishlist" :key="product.id">
         <q-item-section avatar>
         </q-item-section>
         <q-item-section>
@@ -40,9 +40,10 @@ cart.add(p.id, 1);
 async function fetchWishlist() {
 await cart.fetchWishlistItems();
 
-if(cart.state.wishlist_items.wishlist){
-wishlist.value = cart.state.wishlist_items.wishlist;
+if(cart.state.wishlist_items.wishlist) {
+  wishlist.value = cart.state.wishlist_items.wishlist;
 }
+
 loading.value = false;
 
 }

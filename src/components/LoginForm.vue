@@ -51,6 +51,8 @@ const userRes = await fetch('https://nuxt.meidanm.com/wp-json/wp/v2/users/me', {
 });
 const user = await userRes.json();
 console.log(user);
+cart.state.user = user;
+console.log(cart.state.user);
 const guestCart = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart', {
   credentials: 'include'
 }).then(res => res.json())
