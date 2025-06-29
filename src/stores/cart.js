@@ -157,8 +157,8 @@ function loadOfflineWL() {
   if (offlineCart) {
     try {
       const parsed = JSON.parse(offlineCart);
-      state.items = parsed;
-      state.items_count = parsed.reduce((sum, i) => sum + i.quantity, 0);
+      state.wishlist_items = parsed;
+      //state.items_count = parsed.reduce((sum, i) => sum + i.quantity, 0);
     } catch (e) {
       console.warn('Failed to parse offline wl:', e);
     }
