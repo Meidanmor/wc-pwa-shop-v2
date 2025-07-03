@@ -1,45 +1,83 @@
 <template>
   <q-btn
-    color="primary"
     label="Sign in with Google"
-    @click="handleLogin"
     icon="login"
+    color="primary"
+    :loading="loading"
+    @click="handleLogin"
   />
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref } from 'vue';
 
 const GOOGLE_CLIENT_ID = '484223740755-cjhfcl0as9hmo0a1866o596m6r7ed8sa.apps.googleusercontent.com'; // Replace with actual client ID
 
-function handleLogin() {
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse,
-  });
+const loading = ref(false);
 
-  google.accounts.id.prompt(); // opens native popup
+async function handleLogin() {
+  loading.value = true;
+  try {
+    await loadGoogleSdk();
+
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredentialResponse,
+    });
+
+    window.google.accounts.id.prompt(); // Shows native popup
+  } catch (err) {
+    console.error('Failed to load Google SDK:', err);
+  } finally {
+    loading.value = false;
+  }
 }
 
 function handleCredentialResponse(response) {
   const idToken = response.credential;
 
-  // Send token to your WordPress backend for validation & login
   fetch('https://nuxt.meidanm.com/wp-json/your-namespace/google-login', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token: idToken }),
   })
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        // store auth cookie or user info in cart state
         console.log('Login successful:', data.user);
+        // TODO: store user in cart state or Vue global state
       } else {
         console.error('Login failed:', data.message);
       }
+    })
+    .catch(error => {
+      console.error('Login request failed:', error);
     });
 }
+
+// Dynamically load the Google Identity Services SDK
+function loadGoogleSdk() {
+  return new Promise((resolve, reject) => {
+    if (window.google && window.google.accounts) {
+      return resolve();
+    }
+
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    if (existing) {
+      existing.addEventListener('load', resolve);
+      existing.addEventListener('error', reject);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = resolve;
+    script.onerror = reject;
+
+    document.head.appendChild(script);
+  });
+}
 </script>
+
