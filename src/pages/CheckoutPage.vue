@@ -2,6 +2,7 @@
   <q-page class="q-pa-md">
   <div class="container">
     <h2>Checkout</h2>
+    <GoogleLoginButton/>
     <q-form v-if="itemsCount!='0'" @submit.prevent="submitOrder">
       <!-- Personal Info -->
       <q-card class="q-mb-md">
@@ -160,6 +161,9 @@ import { ref, computed, reactive, onMounted } from 'vue';
 import cart from 'src/stores/cart';
 import { useRouter } from 'vue-router';
 import { fetchWithToken } from 'src/composables/useApiFetch.js';
+import GoogleLoginButton from 'src/components/GoogleLoginButton.vue';
+
+
 
 const token = ref('');
 
