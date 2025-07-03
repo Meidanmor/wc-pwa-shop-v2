@@ -36,7 +36,7 @@ async function handleLogin() {
 function handleCredentialResponse(response) {
   const idToken = response.credential;
 
-  fetch('https://nuxt.meidanm.com/wp-json/your-namespace/google-login', {
+  fetch('https://nuxt.meidanm.com/wp-json/custom/v1/google-login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token: idToken }),
