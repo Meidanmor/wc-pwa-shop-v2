@@ -10,6 +10,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import cart from 'src/stores/cart.js';
 
 const GOOGLE_CLIENT_ID = '484223740755-cjhfcl0as9hmo0a1866o596m6r7ed8sa.apps.googleusercontent.com'; // Replace with actual client ID
 
