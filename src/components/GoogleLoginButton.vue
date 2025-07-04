@@ -48,9 +48,11 @@ function handleCredentialResponse(response) {
         console.log('Login successful:', data.user);
         if (data.token) {
           localStorage.setItem('jwt_token', data.token); // Store token
+          console.log(localStorage.getItem('jwt_token'));
         }
         if (data.user) {
           cart.state.user = data.user;
+          console.log(cart.state.user)
         }
         // TODO: store user in cart state or Vue global state
       } else {
