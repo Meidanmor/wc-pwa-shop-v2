@@ -4,25 +4,25 @@
       <q-spinner />
     </div>
 
-    <div v-else-if="cart.state.wishlist_items.wishlist && cart.state.wishlist_items.wishlist.length === 0" class="text-center text-grey">
+    <div v-else-if="cart.state.wishlist_items && cart.state.wishlist_items.length === 0" class="text-center text-grey">
       Your wishlist is empty.
     </div>
 
-    <div v-else-if="cart.state.wishlist_items.wishlist && cart.state.wishlist_items.wishlist.length > 0">
+    <div v-else-if="cart.state.wishlist_items && cart.state.wishlist_items.length > 0">
     <h4> Wishlist </h4>
-      <q-item v-for="product in cart.state.wishlist_items.wishlist" :key="product.id">
-        <q-item-section avatar>
-        </q-item-section>
-        <q-item-section>
-          <q-img :src="product.image" :alt="product.name" />
-          <router-link :to="`/product/${product.slug}/`"><q-item-label>{{ product.name }}</q-item-label></router-link>
-          <q-btn label="Add to Cart" color="primary" @click="addToCart(product)" />
-          <q-item-label caption>{{ product.price_html }}</q-item-label>
-        </q-item-section>
-        <q-item-section side>
-          <q-btn icon="close" flat @click.stop.prevent="removeFromWishlist(product.id)" />
-        </q-item-section>
-      </q-item>
+      <div v-for="product in cart.state.wishlist_items" :key="product.id" class="relative-position q-pa-sm row">
+        <router-link :to="`/product/${product.slug}/`" class="flex no-wrap q-pr-lg no-decoration text-secondary">
+
+          <img v-if="product.image" :src="product.image" :alt="product.name" style="width: 100px; height: 100px; object-fit: cover" />
+          <div class="q-ml-sm column">
+            <div>{{ product.name }}</div>
+            <q-btn label="Add to Cart" color="primary" @click="addToCart(product)" />
+          </div>
+        </router-link>
+        <q-btn class="absolute absolute-top-right" icon="close" flat @click.stop.prevent="removeFromWishlist(product.id)" />
+
+      </div>
+
     </div>
     </q-scroll-area>
 
@@ -40,8 +40,8 @@ cart.add(p.id, 1);
 async function fetchWishlist() {
 await cart.fetchWishlistItems();
 
-if(cart.state.wishlist_items.wishlist) {
-  wishlist.value = cart.state.wishlist_items.wishlist;
+if(cart.state.wishlist_items) {
+  wishlist.value = cart.state.wishlist_items;
 }
 
 loading.value = false;
@@ -65,8 +65,8 @@ fetchWishlist()
 watch(
   () => cart.state.wishlist_items,
   (newWishlist, oldWishlist) => {
-  if(newWishlist.wishlist && oldWishlist.wishlist){
-  if(newWishlist.wishlist.length != oldWishlist.wishlist.length){
+  if(newWishlist && oldWishlist){
+  if(newWishlist.length != oldWishlist.length){
     fetchWishlist();
     }
     }

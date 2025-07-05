@@ -23,7 +23,7 @@
         </router-link>
           <div>
           <q-btn flat icon="favorite_border" @click="toggleWishlistDrawer">
-          <q-badge v-if="cart.state.wishlist_items.wishlist && Object.keys(cart.state.wishlist_items.wishlist).length > 0" floating color="red">{{ Object.keys(cart.state.wishlist_items.wishlist).length }}</q-badge>
+          <q-badge v-if="cart.state.wishlist_items && Object.keys(cart.state.wishlist_items).length > 0" floating color="red">{{ Object.keys(cart.state.wishlist_items).length }}</q-badge>
         </q-btn>
 
         <q-btn flat icon="shopping_cart" @click="toggleCart">

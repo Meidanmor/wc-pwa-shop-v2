@@ -419,7 +419,7 @@ async function fetchWishlistData() {
   cart.fetchWishlistItems();
 
 //console.log(cart.state.wishlist_items.wishlist);
-if(cart.state.wishlist_items.wishlist && Object.values(cart.state.wishlist_items.wishlist).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)){
+if(cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)){
     wishlistAdded.value = true
   } else{
     wishlistAdded.value = false
@@ -502,12 +502,14 @@ if(selectedVariation.value){
 } else {
   cart.toggleWishlistItem(product.value.id, $q);
 }
-console.log(Object.values(cart.state.wishlist_items.wishlist).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id));
+if(cart.state.wishlist_items) {
+  console.log(Object.values(cart.state.wishlist_items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id));
 
-console.log(cart.state.wishlist_items.wishlist);
-console.log(cart.state.wishlist_items.wishlist.length);
+  console.log(cart.state.wishlist_items);
+  console.log(cart.state.wishlist_items.length);
+}
 
-  if (cart.state.wishlist_items.wishlist && Object.values(cart.state.wishlist_items.wishlist).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)) {
+  if (cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)) {
     wishlistAdded.value = false;
   } else{
     wishlistAdded.value = true;
