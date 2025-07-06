@@ -133,7 +133,7 @@
         <div v-else> Out of stock </div>
 
        <div class="full-width">
-        <q-btn :loading="cart.state.loading.wishlist" v-if="wishlistAdded" @click="addToWishlist" color="accent" label="Remove from wishlist" icon="favorite_border" />
+        <q-btn :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation ? selectedVariation.id : product.id === obj.id)" @click="addToWishlist" color="accent" label="Remove from wishlist" icon="favorite_border" />
         <q-btn :loading="cart.state.loading.wishlist" v-else @click="addToWishlist" color="accent" label="Add to wishlist" icon="favorite_border" />
         </div>
       </div>
@@ -358,9 +358,9 @@ async function fetchProduct(slug) {
   quantity.value = 1
   activeSlide.value = 0
   lightbox.value.open = false
-  resetVariations()
+  await resetVariations()
   //console.log(products)
-  fetchWishlistData()
+  await fetchWishlistData()
 }
 
 
@@ -416,7 +416,7 @@ const shouldDisableCartButtons = computed(() => {
 })
 async function fetchWishlistData() {
 
-  cart.fetchWishlistItems();
+  await cart.fetchWishlistItems();
 
 //console.log(cart.state.wishlist_items.wishlist);
 if(cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)){
@@ -498,9 +498,9 @@ function addToCartHandler(e) {
 
 async function addToWishlist() {
 if(selectedVariation.value){
-  cart.toggleWishlistItem(selectedVariation.value.id, $q);
+  await cart.toggleWishlistItem(selectedVariation.value.id, $q);
 } else {
-  cart.toggleWishlistItem(product.value.id, $q);
+  await cart.toggleWishlistItem(product.value.id, $q);
 }
 if(cart.state.wishlist_items) {
   console.log(Object.values(cart.state.wishlist_items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id));
@@ -514,6 +514,7 @@ if(cart.state.wishlist_items) {
   } else{
     wishlistAdded.value = true;
   }
+
 console.log(selectedVariation.value ? selectedVariation.value.id : product.value.id);
   console.log(wishlistAdded.value);
 }
@@ -521,16 +522,16 @@ onMounted(async() => {
     if (process.env.CLIENT) {
       await fetchSeoData();
       await fetchProduct(route.params.slug);
+      await fetchWishlistData()
     }
-  //fetchWishlistData()
 })
 
 watch(
   () => route.params.slug,
-  (newSlug, oldSLug) => {
+  async (newSlug, oldSLug) => {
   if(newSlug != oldSLug){
     product.value = '';
-    fetchProduct(newSlug)
+    await fetchProduct(newSlug)
     }
   }
 )

@@ -52,6 +52,7 @@ async function removeFromWishlist(id) {
   try {
     await cart.toggleWishlistItem(id)
     wishlist.value = wishlist.value.filter(p => p.id !== id)
+    console.log(wishlist.value);
   } catch (err) {
     console.error('Error removing from wishlist:', err)
   }

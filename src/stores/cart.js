@@ -63,80 +63,73 @@ async function replayOfflineItems() {
 
 async function WLreplayOfflineItems(fetchedWL) {
   const offlineItems = state.wishlist_items;
+  const currentFetchedItems = fetchedWL.wishlist;
   console.log(offlineItems);
   console.log(fetchedWL.wishlist);
 
   console.log(fetchedWL.wishlist.length > offlineItems.length);
   console.log(fetchedWL.wishlist.length);
-  console.log( offlineItems.length);
-  if (fetchedWL.wishlist.length > offlineItems.length) {
-    for (const fetchedItem of fetchedWL.wishlist) {
-      let removeItem = false;
-      let offlineItemsIDs = [];
-      for (const fetchedItemOffline of offlineItems) {
-        offlineItemsIDs.push(fetchedItemOffline.id);
-        if (fetchedItemOffline.id === fetchedItem.id) {
-          removeItem = true;
-          break;
-        }
+  console.log(offlineItems.length);
+  const currentFetchedIDs = [];
+  const currentOfflineIDs = [];
+  if(currentFetchedItems.length > 0) {
+    for (const currentFetchedItem of currentFetchedItems) {
+      if (currentFetchedItem.id) {
+        currentFetchedIDs.push(currentFetchedItem.id);
       }
-      console.log(!offlineItemsIDs.includes(fetchedItem.id));
-      /*if (!offlineItemsIDs.includes(fetchedItem.id)){
-        removeItem = false;
-      }*/
-      if (removeItem === false) {
+    }
+  }
+  if(offlineItems.length > 0) {
+
+    for (const offlineItem of offlineItems) {
+      console.log(offlineItem.id);
+
+      if (offlineItem.id) {
+        console.log(offlineItem.id);
+        currentOfflineIDs.push(offlineItem.id);
+      }
+    }
+  }
+
+  if(currentOfflineIDs.length > 0) {
+    for (const itemID of currentOfflineIDs) {
+      if (!currentFetchedIDs.includes(itemID)) {
         try {
           const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
             method: 'POST',
             credentials: 'include',
-            body: JSON.stringify({product_id: fetchedItem.id}),
+            body: JSON.stringify({product_id: itemID}),
           });
 
           if (res.ok) {
-            console.log('Item has been removed!' + fetchedItem.name + ' ' + res)
+            console.log('Item has been removed!' + itemID + ' ' + res)
           }
         } catch (err) {
           console.log(err)
         }
+
       }
+
     }
-
   }
+  for( const fetchedItemID of currentFetchedIDs) {
+    if (currentOfflineIDs.length>0 && !currentOfflineIDs.includes(fetchedItemID)) {
+      try {
+        const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({product_id: fetchedItemID}),
+        });
 
-    console.log(state.wishlist_items);
-  for (const item of offlineItems) {
-    let itemExists = false;
-
-    try {
-      for(const fetchedWLItem of fetchedWL.wishlist) {
-        if (fetchedWLItem.id === item.id) {
-          itemExists = true;
-          break;
+        if (res.ok) {
+          console.log('Item has been removed!' + fetchedItemID + ' ' + res)
         }
+      } catch (err) {
+        console.log(err)
       }
-        if (itemExists === false) {
-
-          const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
-            method: 'POST',
-            credentials: 'include',
-            body: JSON.stringify({product_id: item.id}),
-          });
-
-          if (!res.ok) throw new Error('Add to cart failed during replay');
-          console.log(`[cart.js] Replayed offline item: ${item.id}`);
-          const newWishlistItems = await res.json();
-          state.wishlist_items = newWishlistItems.wishlist;
-        } else {
-          console.log('ITEM EXISTS!!!!!!!!!!!---'+ item.name);
-        }
-    } catch (err) {
-      console.warn(`[cart.js] Failed to replay item ${item.id}: ${err.message}`);
     }
   }
 
-
-
-  persistWLOffline(); // Save cleaned local state
 }
 
 function persistCartOffline() {
@@ -482,30 +475,12 @@ async function placeOrder(payload) {
 async function fetchWishlistItems() {
   if (!process.env.CLIENT) return;
 
-  if(state.offline) {
+  if (state.offline) {
     loadOfflineWL();
     return;
   }
 
   // Before we fetch: replay offline actions if any
-      try {
-        const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        const wishlistItems = await res.json();
-            console.log('[cart.js] Replaying offline WL items...');
-            await WLreplayOfflineItems(wishlistItems);
-
-      } catch (err) {
-        state.error = err.message;
-        console.log(err);
-      } /*finally {
-    state.loading.wishlist = false;
-  }*/
-
-
   try {
     const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
       method: 'GET',
@@ -513,14 +488,33 @@ async function fetchWishlistItems() {
     });
 
     const wishlistItems = await res.json();
-    state.wishlist_items = wishlistItems.wishlist;
+    console.log('[cart.js] Replaying offline WL items...');
+    await WLreplayOfflineItems(wishlistItems);
+
   } catch (err) {
     state.error = err.message;
     console.log(err);
-    loadOfflineWL();
   } finally {
-    state.loading.wishlist = false;
+    try {
+      const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      const wishlistItems = await res.json();
+      state.wishlist_items = wishlistItems.wishlist;
+    } catch (err) {
+      state.error = err.message;
+      console.log(err);
+      loadOfflineWL();
+    } finally {
+      state.loading.wishlist = false;
+    }
   }
+
+  persistWLOffline(); // Save cleaned local state
+
+
 }
 
 
@@ -547,7 +541,7 @@ async function toggleWishlistItem(productId, $q = null) {
 
       console.log(state.wishlist_items);
       if(!state.wishlist_items || state.wishlist_items.length === 0){
-        state.wishlist_items = payload;
+        state.wishlist_items = [payload];
       } else {
         if(!state.wishlist_items.find(p => p.id === productArr.id)) {
           state.wishlist_items.push(payload)
