@@ -71,12 +71,16 @@ self.addEventListener('push', function (event) {
   const data = event.data.json();
   console.log('[Service Worker] Push Data:', data);
 
+  let tag = 'order-confirmation';
+  if(data.product_id){
+      tag = 'product_'+data.product_id+'_sale';
+  }
   const options = {
     body: data.body,
     icon: '/icons/icon-128x128.png',
     badge: '/icons/icon-128x128.png',
     data: data.data, // <-- ✅ This is critical
-    tag: 'order-confirmation', // optional: prevents duplicates
+    tag: tag, // optional: prevents duplicates
     renotify: false
   };
 
