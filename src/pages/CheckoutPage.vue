@@ -134,7 +134,7 @@
           <div class="text-h6">Payment Method</div>
           <q-option-group
             v-model="paymentMethod"
-            :options="[{ label: 'Bank Transfer', value: 'bacs' }]"
+            :options="paymentMethods"
             type="radio"
           />
         </q-card-section>
@@ -200,6 +200,7 @@ const itemsCount = ref("0");
 const couponError = ref(null);
 //const deliveryMethod = ref('pickup');
 const paymentMethod = ref('bacs');
+const paymentMethods = ref([]);
 const selectedShippingRateId = ref(null);
 const shippingOptions = ref([]);
 
@@ -241,6 +242,16 @@ const getSlugFromPermalink = (permalink) => {
 const initializeFormFromCart = async () => {
   await cart.fetchCart(); // Make sure cart is up to date
 
+  cart.state.cart_array.payment_methods.forEach((method) => {
+    let label = '';
+    if(method == 'bacs'){
+      label = 'Bank transfer';
+    } else {
+      label = method;
+    }
+
+    paymentMethods.value.push({ label: label, value: method });
+  })
   itemsCount.value = cart.state.cart_array.items_count;
   const billing = cart.state.cart_array.billing_address || {};
   const shipping = cart.state.cart_array.shipping_address || {};
@@ -393,9 +404,12 @@ const payload = {
     email: form.email,
   },
   payment_method: paymentMethod.value,
+  payment_data: {},
+  extensions: {},
   billing_same_as_shipping: billingSameAsShipping.value
 };
 
+console.log(paymentMethod.value);
 
 console.log(payload);
 console.log(form);

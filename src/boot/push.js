@@ -54,4 +54,19 @@ if (process.env.CLIENT) {
   } else {
     console.warn('Push notifications are not supported in this browser.');
   }
+  // 🚦 Listen for push navigation from the service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.action === 'navigate' && event.data.url) {
+        const targetUrl = event.data.url;
+
+        if (window.$router) {
+          window.$router.push(targetUrl).catch(() => {
+          });
+        } else {
+          window.location.href = targetUrl;
+        }
+      }
+    });
+  }
 }
