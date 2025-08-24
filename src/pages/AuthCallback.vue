@@ -6,42 +6,46 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import cart from 'src/stores/cart.js'
 
 const router = useRouter()
+const route = useRoute()
 
-onMounted(() => {
-  // Google sends code and state in query params
+onMounted(async () => {
   const params = new URLSearchParams(window.location.search)
   const code = params.get('code')
   const state = params.get('state') || '/'
 
   if (!code) {
-    router.replace('/') // fallback
+    console.error('No code returned from Google')
+    router.replace('/')
     return
   }
 
-  // Send code to your backend endpoint to exchange for token
-  fetch('https://nuxt.meidanm.com/wp-json/custom/v1/google-login-redirect', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        localStorage.setItem('jwt_token', data.token)
-        // You might also update your cart.state.user here
-        router.replace(state) // redirect to original page
-      } else {
-        console.error('Google redirect login failed', data)
-        router.replace('/')
-      }
+  try {
+    const res = await fetch('https://nuxt.meidanm.com/wp-json/custom/v1/google-login-redirect', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
     })
-    .catch(err => {
-      console.error('Redirect login error', err)
+
+    const data = await res.json()
+
+    if (data.success) {
+      if (data.token) localStorage.setItem('jwt_token', data.token)
+      if (data.user) cart.state.user = data.user
+
+      // Redirect to original page from state, fallback to homepage
+      router.replace(state)
+    } else {
+      console.error('Google redirect login failed', data)
       router.replace('/')
-    })
+    }
+  } catch (err) {
+    console.error('Redirect login error', err)
+    router.replace('/')
+  }
 })
 </script>
