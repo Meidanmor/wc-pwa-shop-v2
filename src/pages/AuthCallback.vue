@@ -10,7 +10,6 @@ import { useRouter, useRoute } from 'vue-router'
 import cart from 'src/stores/cart.js'
 
 const router = useRouter()
-const route = useRoute()
 
 onMounted(async () => {
   const params = new URLSearchParams(window.location.search)
