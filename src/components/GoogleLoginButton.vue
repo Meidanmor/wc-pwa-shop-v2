@@ -10,11 +10,14 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import cart from 'src/stores/cart.js';
 
 const GOOGLE_CLIENT_ID = '484223740755-cjhfcl0as9hmo0a1866o596m6r7ed8sa.apps.googleusercontent.com'; // Replace with actual client ID
 
 const loading = ref(false);
+const router = useRouter();
+const route = useRoute();
 
 async function handleLogin() {
   loading.value = true;
@@ -47,15 +50,20 @@ function handleCredentialResponse(response) {
     .then(data => {
       if (data.success) {
         console.log('Login successful:', data.user);
+
         if (data.token) {
           localStorage.setItem('jwt_token', data.token); // Store token
-          console.log(localStorage.getItem('jwt_token'));
         }
+
         if (data.user) {
           cart.state.user = data.user;
-          console.log(cart.state.user)
         }
-        // TODO: store user in cart state or Vue global state
+
+        // 🔄 Soft reload the current route
+        router.replace({
+          path: route.fullPath,
+          query: { ...route.query, t: Date.now() } // force re-mount with dummy param
+        });
       } else {
         console.error('Login failed:', data.message);
       }
@@ -90,4 +98,3 @@ function loadGoogleSdk() {
   });
 }
 </script>
-
