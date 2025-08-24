@@ -6,6 +6,8 @@
 
     <div v-if="!isLoggedIn">
       <LoginForm @login-success="onLogin" />
+      <h3> OR </h3>
+      <GoogleLoginButton/>
     </div>
 
     <div v-else>
@@ -40,6 +42,8 @@ import LoginForm from 'components/LoginForm.vue'
 import OrdersSection from 'components/OrdersSection.vue'
 import AccountDetails from 'components/AccountDetails.vue'
 import cart from 'src/stores/cart.js';
+import GoogleLoginButton from 'src/components/GoogleLoginButton.vue';
+
 
 const tab = ref('dashboard')
 
