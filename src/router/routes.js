@@ -10,6 +10,12 @@ const routes = [
       { path: 'products', name: 'products', component: () => import('pages/ProductsPage.vue') },
       { path: 'thank-you', name: 'thank-you', component: () => import('pages/ThankYouPage.vue') },
       { path: 'my-account', name: 'my-account', component: () => import('pages/AccountPage.vue') },
+        {
+  path: '/auth/callback',
+  component: () => import('pages/AuthCallback.vue'),
+  meta: { public: true } // optional, if you have auth guards
+}
+
     ]
   },
 

@@ -101,15 +101,18 @@ function handleCredentialResponse(response) {
 
 // Redirect fallback to Google OAuth
 function redirectToGoogleLogin() {
-  const redirectUri = `${window.location.origin}/auth/callback`;
-  const state = window.location.href; // current page to return after login
+  const redirectUri = 'https://wc-pwa-shop-v2.onrender.com/auth/callback'; // must match Google app redirect URI
+  const state = encodeURIComponent(window.location.href); // save current page
 
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(
-    redirectUri
-  )}&response_type=code&scope=openid%20email%20profile&state=${encodeURIComponent(
-    state
-  )}&access_type=offline&include_granted_scopes=true`;
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?` +
+              `client_id=${GOOGLE_CLIENT_ID}` +
+              `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+              `&response_type=code` +
+              `&scope=openid%20email%20profile` +
+              `&state=${state}` +
+              `&prompt=select_account`; // optional: forces account selection
 
   window.location.href = url;
 }
+
 </script>
