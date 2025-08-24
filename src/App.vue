@@ -22,7 +22,19 @@ watch(() => cart.state.offline, (off) => {
 });
 
 
-onMounted(() => {
+onMounted(async () => {
+    if (!window.google || !window.google.accounts) {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+      });
+    }
   if (typeof navigator !== 'undefined') {
     isOnline.value = navigator.onLine;
 

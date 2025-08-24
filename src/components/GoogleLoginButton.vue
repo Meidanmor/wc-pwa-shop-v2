@@ -9,92 +9,107 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import cart from 'src/stores/cart.js';
+import { ref, nextTick } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import cart from "src/stores/cart.js";
 
-const GOOGLE_CLIENT_ID = '484223740755-cjhfcl0as9hmo0a1866o596m6r7ed8sa.apps.googleusercontent.com'; // Replace with actual client ID
+// 🔒 Use environment variable in production
+const GOOGLE_CLIENT_ID =
+  "484223740755-cjhfcl0as9hmo0a1866o596m6r7ed8sa.apps.googleusercontent.com";
 
 const loading = ref(false);
 const router = useRouter();
 const route = useRoute();
 
-async function handleLogin() {
-  loading.value = true;
-  try {
-    await loadGoogleSdk();
+let loginInProgress = false;
 
+function handleLogin() {
+  if (loginInProgress) return;
+  loginInProgress = true;
+  loading.value = true; // show spinner immediately
+
+  try {
+    // Initialize Google Identity Services
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: handleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true,
     });
 
-    window.google.accounts.id.prompt(); // Shows native popup
+    // Prompt with notification callback
+    window.google.accounts.id.prompt((notification) => {
+      if (
+        notification.isNotDisplayed() ||
+        notification.isSkippedMoment() ||
+        notification.isDismissedMoment()
+      ) {
+        console.warn(
+          "Google popup blocked, dismissed, or skipped – using redirect fallback"
+        );
+        loginInProgress = false;
+        loading.value = false;
+
+        // Redirect fallback
+        redirectToGoogleLogin();
+      }
+    });
   } catch (err) {
-    console.error('Failed to load Google SDK:', err);
-  } finally {
+    console.error("Google login failed:", err);
+    loginInProgress = false;
     loading.value = false;
+
+    // Optional: fallback
+    redirectToGoogleLogin();
   }
 }
 
 function handleCredentialResponse(response) {
+  loading.value = true; // spinner
   const idToken = response.credential;
 
-  fetch('https://nuxt.meidanm.com/wp-json/custom/v1/google-login', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+  fetch("https://nuxt.meidanm.com/wp-json/custom/v1/google-login", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token: idToken }),
   })
-    .then(res => res.json())
-    .then(data => {
+    .then((res) => res.json())
+    .then(async (data) => {
       if (data.success) {
-        console.log('Login successful:', data.user);
+        if (data.token) localStorage.setItem("jwt_token", data.token);
+        if (data.user) cart.state.user = data.user;
 
-        if (data.token) {
-          localStorage.setItem('jwt_token', data.token); // Store token
-        }
-
-        if (data.user) {
-          cart.state.user = data.user;
-        }
-
-        // 🔄 Soft reload the current route
+        // 🔄 Force route refresh
+        await nextTick();
         router.replace({
-          path: route.fullPath,
-          query: { ...route.query, t: Date.now() } // force re-mount with dummy param
+          path: route.path,
+          query: { ...route.query, t: Date.now() },
         });
       } else {
-        console.error('Login failed:', data.message);
+        console.error("Login failed:", data.message);
       }
     })
-    .catch(error => {
-      console.error('Login request failed:', error);
+    .catch((error) => {
+      console.error("Login request failed:", error);
+    })
+    .finally(() => {
+      loginInProgress = false;
+      loading.value = false;
     });
 }
 
-// Dynamically load the Google Identity Services SDK
-function loadGoogleSdk() {
-  return new Promise((resolve, reject) => {
-    if (window.google && window.google.accounts) {
-      return resolve();
-    }
+// Redirect fallback to Google OAuth
+function redirectToGoogleLogin() {
+  const redirectUri = `${window.location.origin}/auth/callback`;
+  const state = window.location.href; // current page to return after login
 
-    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-    if (existing) {
-      existing.addEventListener('load', resolve);
-      existing.addEventListener('error', reject);
-      return;
-    }
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(
+    redirectUri
+  )}&response_type=code&scope=openid%20email%20profile&state=${encodeURIComponent(
+    state
+  )}&access_type=offline&include_granted_scopes=true`;
 
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = resolve;
-    script.onerror = reject;
-
-    document.head.appendChild(script);
-  });
+  window.location.href = url;
 }
 </script>
