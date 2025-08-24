@@ -158,7 +158,7 @@
     <q-page-container>
         <Suspense>
         <template #default>
-          <router-view />
+          <router-view :key="$route.fullPath" />
         </template>
         <template #fallback>
           <div class="q-pa-md">Loading...</div>
