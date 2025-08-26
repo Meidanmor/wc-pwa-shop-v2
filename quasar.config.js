@@ -12,6 +12,20 @@ export default defineConfig((/* ctx */) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
+    htmlVariables: {
+      csp: `
+        default-src 'self';
+        script-src 'self' https://accounts.google.com 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: https:;
+        connect-src 'self' https://nuxt.meidanm.com;
+        font-src 'self' https://fonts.gstatic.com;
+        frame-src https://accounts.google.com;
+      `
+    },
+    htmlVariablesRender: {
+      csp: (val) => val.replace(/\s+/g, ' ').trim()
+    },
     boot: [
         { path: 'push', client: true } ,
         { path: 'woocommerce', client: true } ,
