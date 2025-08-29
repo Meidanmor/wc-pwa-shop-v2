@@ -44,6 +44,9 @@ onMounted(async () => {
           state = url.pathname + url.search + url.hash
         }
       } catch (e) {
+        if(e.data){
+          console.warn(e.data);
+        }
         console.warn('Invalid state URL, fallback to /')
         state = '/'
       }
