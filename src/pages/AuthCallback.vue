@@ -14,7 +14,7 @@ const router = useRouter()
 onMounted(async () => {
   const params = new URLSearchParams(window.location.search)
   const code = params.get('code')
-  const state = params.get('state') || '/'
+  let state = params.get('state') || '/'
 
   if (!code) {
     console.error('No code returned from Google')
@@ -26,8 +26,8 @@ onMounted(async () => {
     const res = await fetch('https://nuxt.meidanm.com/wp-json/custom/v1/google-login-redirect', {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({code})
     })
 
     const data = await res.json()
@@ -35,6 +35,18 @@ onMounted(async () => {
     if (data.success) {
       if (data.token) localStorage.setItem('jwt_token', data.token)
       if (data.user) cart.state.user = data.user
+
+
+// If state contains full URL, extract just the pathname
+      try {
+        if (state.startsWith('http')) {
+          const url = new URL(state)
+          state = url.pathname + url.search + url.hash
+        }
+      } catch (e) {
+        console.warn('Invalid state URL, fallback to /')
+        state = '/'
+      }
 
       // Redirect to original page from state, fallback to homepage
       router.replace(state)
