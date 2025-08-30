@@ -40,9 +40,7 @@ function handleLogin() {
     // Prompt with notification callback
     window.google.accounts.id.prompt((notification) => {
       if (
-        notification.isNotDisplayed() ||
-        notification.isSkippedMoment() ||
-        notification.isDismissedMoment()
+        notification.isNotDisplayed()
       ) {
         console.warn(
           "Google popup blocked, dismissed, or skipped – using redirect fallback"
