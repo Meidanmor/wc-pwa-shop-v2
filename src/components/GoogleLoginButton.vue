@@ -40,16 +40,22 @@ function handleLogin() {
     // Prompt with notification callback
     window.google.accounts.id.prompt((notification) => {
       if (
-        notification.isNotDisplayed()
+          notification.isNotDisplayed()
       ) {
         console.warn(
-          "Google popup blocked, dismissed, or skipped – using redirect fallback"
+            "Google popup blocked, dismissed, or skipped – using redirect fallback"
         );
         loginInProgress = false;
         loading.value = false;
 
         // Redirect fallback
         redirectToGoogleLogin();
+      } else if (notification.isDismissedMoment() || notification.isSkippedMoment()) {
+        // user manually closed it → maybe don’t force redirect,
+        // instead let them try again
+        console.log("User dismissed Google popup")
+        loginInProgress = false;
+        loading.value = false;
       }
     });
   } catch (err) {
