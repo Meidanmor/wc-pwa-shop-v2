@@ -2,7 +2,9 @@
   <q-page class="q-pa-md">
   <div class="container">
     <h2>Checkout</h2>
+    <div v-if="!isLoggedIn">
     <GoogleLoginButton/>
+    </div>
     <q-form v-if="itemsCount!='0'" @submit.prevent="submitOrder">
       <!-- Personal Info -->
       <q-card class="q-mb-md">
@@ -170,6 +172,9 @@ const token = ref('');
 if(process.env.Client) {
   token.value = localStorage.getItem('jwt_token');
 }
+
+const isLoggedIn = ref(!!token.value)
+
 const router = useRouter();
 
 const form = reactive({
