@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted } from "vue";
+import { ref, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import cart from "src/stores/cart.js";
 
@@ -39,6 +39,7 @@ function handleLogin() {
 
     // Prompt with notification callback
     window.google.accounts.id.prompt((notification) => {
+      console.log(notification);
       if (
           notification.isNotDisplayed()
       ) {
@@ -118,23 +119,4 @@ function redirectToGoogleLogin() {
 
   window.location.href = url;
 }
-
-// --- FedCM fallback handler ---
-function fedcmErrorHandler(event) {
-  console.log(event);
-  if (event.reason && String(event.reason).includes("NetworkError")) {
-    console.warn("FedCM disabled or failed, falling back to redirect");
-    loginInProgress = false;
-    loading.value = false;
-    //redirectToGoogleLogin();
-  }
-}
-
-onMounted(() => {
-  window.addEventListener("unhandledrejection", fedcmErrorHandler);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("unhandledrejection", fedcmErrorHandler);
-});
 </script>
