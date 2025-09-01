@@ -162,9 +162,6 @@ import gsap from 'gsap';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
-gsap.registerPlugin(ScrollToPlugin);
-gsap.registerPlugin(ScrollTrigger);
-
 const $q = useQuasar();
 
 const products = ref([]);
@@ -284,6 +281,9 @@ function revealFallback() {
 onMounted(async () => {
 
   if (process.env.CLIENT) {
+    gsap.registerPlugin(ScrollToPlugin);
+    gsap.registerPlugin(ScrollTrigger);
+
     setTimeout(function () {
       // Ensure elements are visible to GSAP (autoAlpha will animate them)
       document.querySelectorAll('.hero-content.pre-animate').forEach(el => {
