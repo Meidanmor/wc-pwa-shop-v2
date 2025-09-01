@@ -16,6 +16,7 @@ const state = reactive({
   wishlist_items: {},
   user: {},
   offline: typeof navigator !== 'undefined' ? !navigator.onLine : true,
+  drawerOpen: false
 });
 /* =============================
    Offline Storage Helpers
@@ -273,7 +274,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
 
     state.loading.cart = false;
     state.loading.quickbuy = false;
-
+    state.drawerOpen = true;
     return;
   }
 
@@ -291,6 +292,8 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     if ($q) {
       $q.notify({ type: 'positive', message: 'Product added to cart!', icon: 'shopping_cart' });
     }
+    state.drawerOpen = true;
+
   } catch (err) {
     state.error = err.message;
     if ($q) {

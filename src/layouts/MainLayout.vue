@@ -169,7 +169,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
@@ -194,4 +194,12 @@ const cartCount = computed(() => cart.state.items_count)
 const increase = (id) => cart.increase(id, $q)
 const decrease = (id) => cart.decrease(id, $q)
 const remove = (id) => cart.remove(id, $q)
+
+watch(() => cart.state.drawerOpen, val => {
+  if(val === true) {
+    cartDrawer.value = val;
+    cart.state.drawerOpen = false;
+  }
+})
+
 </script>

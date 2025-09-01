@@ -3,7 +3,7 @@
 
     <!-- Hero Section -->
     <div class="hero-section q-mb-xl">
-      <div class="hero-content container">
+      <div class="hero-content pre-animate container">
         <h1 class="text-h1 q-mb-sm">NaturaBloom</h1>
         <p class="text-h6 text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
         <q-btn label="Browse Products" color="primary" class="q-mt-md" @click="scrollToProducts" />
@@ -71,7 +71,7 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="cta-section">
+    <section class="cta-section pre-animate">
       <div class="container">
         <div class="cta-overlay">
           <div class="cta-content">
@@ -88,7 +88,7 @@
       </div>
     </section>
     <!-- Testimonials Section -->
-    <section class="testimonials-section container q-my-xl">
+    <section class="testimonials-section container pre-animate q-my-xl">
       <h2 class="text-h3 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
@@ -109,7 +109,7 @@
     </section>
 
     <!-- Sustainability Section -->
-    <section class="sustainability-section container q-my-xl">
+    <section class="sustainability-section container pre-animate q-my-xl">
       <div class="row items-center">
         <div class="col-12 col-md-6">
           <img src="https://example.com/sustainability.jpg" alt="Sustainability" class="full-width" />
@@ -124,7 +124,7 @@
     </section>
 
     <!-- Newsletter Signup Section -->
-    <section class="newsletter-section container q-my-xl text-center">
+    <section class="newsletter-section pre-animate container q-my-xl text-center">
       <h2 class="text-h3 text-weight-light q-mb-md">Stay Updated</h2>
       <p class="text-body1 q-mb-lg">Subscribe to our newsletter for the latest products and offers.</p>
       <q-input filled v-model="email" label="Your Email" class="subscribe-email-input q-mb-md" />
@@ -132,7 +132,7 @@
     </section>
 
     <!-- Instagram Feed Section -->
-    <section class="instagram-section container q-my-xl">
+    <section class="instagram-section pre-animate container q-my-xl">
       <h2 class="text-h3 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
       <div class="row q-col-gutter-md">
         <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
@@ -142,7 +142,7 @@
     </section>
 
     <!-- Enhanced About Section -->
-    <section class="about-section container q-my-xl">
+    <section class="about-section pre-animate container q-my-xl">
       <h2 class="text-h3 text-weight-light text-center q-mb-md">About NaturaBloom</h2>
       <p class="text-body1 text-center">
         NaturaBloom blends modern technology with nature's purity, offering organic, cruelty-free, and environmentally friendly products.
@@ -155,20 +155,21 @@
 
 <script setup async>
 import { ref, onMounted, nextTick, watch } from 'vue';
-//import { useRoute } from 'vue-router';
 import { useQuasar, useMeta } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
 import gsap from 'gsap';
-//import { useSeo } from 'src/composables/useSeo';
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollToPlugin);
+gsap.registerPlugin(ScrollTrigger);
 
 const $q = useQuasar();
-//const route = useRoute();
 
 const products = ref([]);
 const featuredProducts = ref([]);
 const productSection = ref(null);
-//const carousel = ref(null);
 const ctaBtn = ref(null);
 const slideChunks = ref(false);
 const slide = ref(0);
@@ -178,12 +179,10 @@ const seoData = ref({
   description: 'Home page description'
 });
 
-// Fetch SEO data during SSR
 async function fetchSeoData() {
   try {
     const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent('homepage')}`)
     const json = await res.json()
-    console.log(json);
     seoData.value = {
       title: json.title,
       description: json.description
@@ -214,23 +213,11 @@ useMeta(() => ({
     }
   }
 }))
+
 const testimonials = ref([
-  {
-    name: 'Alice Johnson',
-    feedback: 'NaturaBloom products have transformed my skincare routine!',
-    avatar: 'https://example.com/avatar1.jpg'
-  },
-  {
-    name: 'Mark Thompson',
-    feedback: 'I love the organic ingredients and sustainable packaging.',
-    avatar:
-      '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>'
-  },
-  {
-    name: 'Sophie Lee',
-    feedback: 'Fast shipping and excellent customer service.',
-    avatar: 'https://example.com/avatar3.jpg'
-  }
+  { name: 'Alice Johnson', feedback: 'NaturaBloom products have transformed my skincare routine!', avatar: 'https://example.com/avatar1.jpg' },
+  { name: 'Mark Thompson', feedback: 'I love the organic ingredients and sustainable packaging.', avatar: '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>' },
+  { name: 'Sophie Lee', feedback: 'Fast shipping and excellent customer service.', avatar: 'https://example.com/avatar3.jpg' }
 ]);
 
 const instagramPosts = ref([
@@ -287,50 +274,85 @@ const scrollToProducts = () => {
   });
 };
 
-/*const subscribe = () => {
-  if (email.value) {
-    $q.notify({ type: 'positive', message: 'Thanks for subscribing!' });
-    email.value = '';
-  } else {
-    $q.notify({ type: 'warning', message: 'Please enter a valid email.' });
-  }
-};*/
+// --- Fallback helper ---
+function revealFallback() {
+  document.querySelectorAll('.pre-animate').forEach(el => {
+    el.classList.remove('pre-animate');
+  });
+}
 
 onMounted(async () => {
+
   if (process.env.CLIENT) {
-    await fetchSeoData();
-    const gsap = (await import('gsap')).default;
-    const { ScrollToPlugin } = await import('gsap/ScrollToPlugin');
-    gsap.registerPlugin(ScrollToPlugin);
-    window.gsap = gsap;
-    fetchProducts();
+    setTimeout(function () {
+      // Ensure elements are visible to GSAP (autoAlpha will animate them)
+      document.querySelectorAll('.hero-content.pre-animate').forEach(el => {
+        el.classList.remove('pre-animate');
+      })
+    }, 500);
+    await fetchSeoData()
+    fetchProducts()
   }
 
-  gsap.from('.hero-content', {
-    y: 50,
-    opacity: 0,
-    duration: 1.2,
-    ease: 'power3.out'
-  });
-  gsap.from('.testimonials-section', { opacity: 0, y: 50, duration: 1 });
-  gsap.from('.sustainability-section', { opacity: 0, x: -50, duration: 1, delay: 0.5 });
-  gsap.from('.newsletter-section', { opacity: 0, y: 50, duration: 1, delay: 1 });
-  gsap.from('.instagram-section', { opacity: 0, y: 50, duration: 1, delay: 1.5 });
-  gsap.from('.about-section', { opacity: 0, y: 50, duration: 1, delay: 2 });
+  await nextTick()
 
-  nextTick(() => {
-    gsap.from(ctaBtn.value.$el, {
-      opacity: 0,
-      y: 20,
-      duration: 1.2,
-      ease: 'power2.out',
-      scrollTrigger: {
-        trigger: '.cta-section',
-        start: 'top 80%'
-      }
-    });
-  });
-});
+  try {
+    // Ensure elements are visible to GSAP (autoAlpha will animate them)
+    document.querySelectorAll('.pre-animate').forEach(el => {
+      el.classList.remove('pre-animate');
+    })
+
+    // Hero animation
+    /*gsap.from('.hero-content', {
+      y: 30,
+      autoAlpha: 0,
+      duration: 0.8,
+      ease: 'power2.out'
+    })*/
+
+    // Below-the-fold with ScrollTrigger
+    const sections = [
+      { selector: '.testimonials-section', y: 40 },
+      { selector: '.sustainability-section', x: -40 },
+      { selector: '.newsletter-section', y: 40 },
+      { selector: '.instagram-section', y: 40 },
+      { selector: '.about-section', y: 40 }
+    ]
+
+    sections.forEach(({ selector, x, y }) => {
+      gsap.from(selector, {
+        autoAlpha: 0,
+        x: x || 0,
+        y: y || 0,
+        duration: 0.8,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: selector,
+          start: 'top 80%',
+          once: true
+        }
+      })
+    })
+
+    // CTA button
+    if (ctaBtn.value?.$el) {
+      gsap.from(ctaBtn.value.$el, {
+        autoAlpha: 0,
+        y: 20,
+        duration: 0.8,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: '.cta-section',
+          start: 'top 80%',
+          once: true
+        }
+      })
+    }
+  } catch (err) {
+    console.error('GSAP failed, using fallback:', err)
+    revealFallback()
+  }
+})
 
 watch(() => $q.screen.name, () => {
   computeSlideChunks();
@@ -472,6 +494,17 @@ watch(() => $q.screen.name, () => {
   width: 100%;
   margin-right: auto;
   margin-left: auto;
+}
+.hero-content {
+  transition: 0.3s ease;
+}
+.hero-content.pre-animate {
+  transform: translateY(40px);
+}
+
+.pre-animate {
+  opacity: 0;
+  visibility: hidden;
 }
 @media(max-width: 767px){
   h1 {
