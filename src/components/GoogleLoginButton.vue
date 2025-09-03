@@ -9,27 +9,25 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import cart from "src/stores/cart.js";
+import { ref, /*nextTick*/ } from "vue";
+//import { useRouter, useRoute } from "vue-router";
 
 // 🔒 Use environment variable in production
 const GOOGLE_CLIENT_ID =
   "484223740755-cjhfcl0as9hmo0a1866o596m6r7ed8sa.apps.googleusercontent.com";
 
 const loading = ref(false);
-const router = useRouter();
-const route = useRoute();
+/*const router = useRouter();
+const route = useRoute();*/
 
 let loginInProgress = false;
 
 function handleLogin() {
-  if (loginInProgress) return;
-  loginInProgress = true;
+  /*if (loginInProgress) return;
+  loginInProgress = true;*/
   loading.value = true; // show spinner immediately
 
   try {
-
     // Optional: fallback
     redirectToGoogleLogin();
 
