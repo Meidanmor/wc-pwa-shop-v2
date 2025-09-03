@@ -20,7 +20,7 @@ const loading = ref(false);
 /*const router = useRouter();
 const route = useRoute();*/
 
-let loginInProgress = false;
+//let loginInProgress = false;
 
 function handleLogin() {
   /*if (loginInProgress) return;
