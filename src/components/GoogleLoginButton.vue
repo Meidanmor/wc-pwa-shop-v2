@@ -29,47 +29,19 @@ function handleLogin() {
   loading.value = true; // show spinner immediately
 
   try {
-    // Initialize Google Identity Services
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse,
-      auto_select: false,
-      cancel_on_tap_outside: true,
-    });
 
-    // Prompt with notification callback
-    window.google.accounts.id.prompt((notification) => {
-      console.log(notification);
-      if (
-          notification.isNotDisplayed()
-      ) {
-        console.warn(
-            "Google popup blocked, dismissed, or skipped – using redirect fallback"
-        );
-        loginInProgress = false;
-        loading.value = false;
+    // Optional: fallback
+    redirectToGoogleLogin();
 
-        // Redirect fallback
-        redirectToGoogleLogin();
-      } else if (notification.isDismissedMoment() || notification.isSkippedMoment()) {
-        // user manually closed it → maybe don’t force redirect,
-        // instead let them try again
-        console.log("User dismissed Google popup")
-        loginInProgress = false;
-        loading.value = false;
-      }
-    });
   } catch (err) {
     console.error("Google login failed:", err);
     loginInProgress = false;
     loading.value = false;
 
-    // Optional: fallback
-    redirectToGoogleLogin();
   }
 }
 
-function handleCredentialResponse(response) {
+/*function handleCredentialResponse(response) {
   loading.value = true; // spinner
   const idToken = response.credential;
 
@@ -87,10 +59,8 @@ function handleCredentialResponse(response) {
 
         // 🔄 Force route refresh
         await nextTick();
-        router.replace({
-          path: route.path,
-          query: { ...route.query, t: Date.now() },
-        });
+        router.replace(route.path);
+
       } else {
         console.error("Login failed:", data.message);
       }
@@ -102,7 +72,7 @@ function handleCredentialResponse(response) {
       loginInProgress = false;
       loading.value = false;
     });
-}
+}*/
 
 // Redirect fallback to Google OAuth
 function redirectToGoogleLogin() {
