@@ -59,7 +59,7 @@ registerRoute(
   })
 );
 
-registerRoute(
+/*registerRoute(
   ({ url }) =>
       url.origin === 'https://nuxt.meidanm.com' &&
     url.pathname === '/wp-json/custom/v1/seo' &&
@@ -73,8 +73,22 @@ registerRoute(
       }),
     ],
   })
-)
-
+)*/
+registerRoute(
+  ({ url }) =>
+    url.origin === 'https://nuxt.meidanm.com' &&
+    url.pathname === '/wp-json/custom/v1/seo' &&
+    url.searchParams.has('path'),
+  new StaleWhileRevalidate({
+    cacheName: 'seo-api',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      }),
+    ],
+  })
+);
 self.addEventListener('install', (/*event*/) => {
   console.log('🛠️ Service Worker installing');
   self.skipWaiting(); // Optional but useful
