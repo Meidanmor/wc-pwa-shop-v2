@@ -154,7 +154,7 @@
 </template>
 
 <script setup async>
-import { ref, onMounted, nextTick, watch, onServerPrefetch } from 'vue';
+import { ref, onMounted, nextTick, watch } from 'vue';
 import { useQuasar, useMeta } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
@@ -190,8 +190,16 @@ async function fetchSeoData() {
   }
 }
 
+const fetchProducts = async () => {
+  const allProducts = await api.getProducts();
+  products.value = allProducts;
+  featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
+  computeSlideChunks();
+};
+
 if (process.env.SERVER) {
   await fetchSeoData()
+  await fetchProducts()
 }
 useMeta(() => ({
   title: seoData.value.title,
@@ -246,13 +254,6 @@ const computeSlideChunks = () => {
   slideChunks.value = getChunks(featuredProducts.value, chunkSize);
 };
 
-const fetchProducts = async () => {
-  const allProducts = await api.getProducts();
-  products.value = allProducts;
-  featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
-  computeSlideChunks();
-};
-
 const addToCart = (product) => {
   cart.add(product.id, 1);
 };
@@ -277,16 +278,8 @@ function revealFallback() {
     el.classList.remove('pre-animate');
   });
 }
-// ✅ Runs on the server for the initial request; data is serialized for hydration
-onServerPrefetch(async () => {
-  if (!products.value.length) {
-    await fetchProducts()
-  }
-})
+
 onMounted(async () => {
-  if (!products.value.length) {
-    fetchProducts()
-  }
   if (process.env.CLIENT) {
     gsap.registerPlugin(ScrollToPlugin);
     gsap.registerPlugin(ScrollTrigger);
@@ -298,7 +291,7 @@ onMounted(async () => {
       })
     }, 500);
     await fetchSeoData()
-    //fetchProducts()
+    fetchProducts()
   }
 
   await nextTick()
