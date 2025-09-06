@@ -11,7 +11,7 @@ import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from
 import { registerRoute, NavigationRoute } from 'workbox-routing'
 
 // ✅ IMPORT THESE
-import { NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies'
+import { /*NetworkFirst*/, StaleWhileRevalidate } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 
 // Setup service worker behavior
