@@ -11,7 +11,7 @@ import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from
 import { registerRoute, NavigationRoute } from 'workbox-routing'
 
 // ✅ IMPORT THESE
-import { NetworkFirst } from 'workbox-strategies'
+import { NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 
 // Setup service worker behavior
@@ -25,7 +25,7 @@ precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
 // ✅ API caching for WooCommerce backend
-registerRoute(
+/*registerRoute(
   ({ url }) =>
       url.origin === 'https://nuxt.meidanm.com' &&
       (url.pathname === '/wp-json/wc/store/v1/products' || url.pathname === '/wp-json/wc/store/v1/products/categories') &&
@@ -39,7 +39,26 @@ registerRoute(
       }),
     ],
   })
-)
+)*/
+registerRoute(
+  ({ url }) =>
+    url.origin === 'https://nuxt.meidanm.com' &&
+    (
+      url.pathname === '/wp-json/wc/store/v1/products' ||
+      url.pathname === '/wp-json/wc/store/v1/products/categories'
+    ) &&
+    url.searchParams.has('per_page'),
+  new StaleWhileRevalidate({
+    cacheName: 'woocommerce-api',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      }),
+    ],
+  })
+);
+
 registerRoute(
   ({ url }) =>
       url.origin === 'https://nuxt.meidanm.com' &&

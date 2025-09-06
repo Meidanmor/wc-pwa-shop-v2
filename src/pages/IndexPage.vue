@@ -154,7 +154,7 @@
 </template>
 
 <script setup async>
-import { ref, onMounted, nextTick, watch } from 'vue';
+import { ref, onMounted, nextTick, watch, onServerPrefetch } from 'vue';
 import { useQuasar, useMeta } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
@@ -277,9 +277,16 @@ function revealFallback() {
     el.classList.remove('pre-animate');
   });
 }
-
+// ✅ Runs on the server for the initial request; data is serialized for hydration
+onServerPrefetch(async () => {
+  if (!products.value.length) {
+    await fetchProducts()
+  }
+})
 onMounted(async () => {
-
+  if (!products.value.length) {
+    fetchProducts()
+  }
   if (process.env.CLIENT) {
     gsap.registerPlugin(ScrollToPlugin);
     gsap.registerPlugin(ScrollTrigger);
@@ -291,7 +298,7 @@ onMounted(async () => {
       })
     }, 500);
     await fetchSeoData()
-    fetchProducts()
+    //fetchProducts()
   }
 
   await nextTick()

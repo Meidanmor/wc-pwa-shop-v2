@@ -33,7 +33,7 @@ function handleLogin() {
 
   } catch (err) {
     console.error("Google login failed:", err);
-    loginInProgress = false;
+    //loginInProgress = false;
     loading.value = false;
 
   }
