@@ -190,6 +190,16 @@ if (typeof window !== 'undefined') {
 /* =============================
    Cart Logic
 ============================= */
+async function updateCartState(data) {
+  state.items = data.items || [];
+  state.items_count = data.items_count || 0;
+  state.totals = data.totals || {};
+  state.coupons = data.coupons || [];
+  state.cart_array = data || [];
+  persistCartOffline(); // Save latest version locally
+
+}
+
 async function fetchCart() {
   if (state.offline) {
     loadOfflineCart();
@@ -206,19 +216,14 @@ async function fetchCart() {
   state.error = null;
 
   try {
+
     const res = await fetchWithToken(`${API_BASE}/cart`, {
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to fetch cart');
     const data = await res.json();
+    updateCartState(data);
 
-    state.items = data.items || [];
-    state.items_count = data.items_count || 0;
-    state.totals = data.totals || {};
-    state.coupons = data.coupons || [];
-    state.cart_array = data || [];
-
-    persistCartOffline(); // Save latest version locally
   } catch (err) {
     state.error = err.message;
     loadOfflineCart();
@@ -287,7 +292,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Add to cart failed');
 
-    await fetchCart();
+    await updateCartState(data);
 
     if ($q) {
       $q.notify({ type: 'positive', message: 'Product added to cart!', icon: 'shopping_cart' });
@@ -335,8 +340,12 @@ async function decrease(cartItemKey, $q = null) {
       credentials: 'include',
       body: JSON.stringify({ key: cartItemKey, quantity: newQty }),
     });
+
+    const data = await res.json();
+
     if (!res.ok) throw new Error('Failed to update quantity');
-    await fetchCart();
+
+    await updateCartState(data);
 
     if ($q) {
       $q.notify({ type: 'positive', message: 'Quantity updated.', icon: 'shopping_cart' });
@@ -372,8 +381,11 @@ async function remove(cartItemKey, $q = null) {
       credentials: 'include',
       body: JSON.stringify({ key: cartItemKey }),
     });
+
+    const data = await res.json();
     if (!res.ok) throw new Error('Failed to remove item');
-    await fetchCart();
+
+        await updateCartState(data);
 
     if ($q) {
       $q.notify({ type: 'positive', message: 'Removed from cart.', icon: 'shopping_cart' });
@@ -405,12 +417,11 @@ async function clear() {
       method: 'DELETE',
       credentials: 'include',
     });
+
+    const data = await res.json();
+
     if (!res.ok) throw new Error('Failed to clear cart');
-    state.items = [];
-    state.items_count = 0;
-    state.totals = {};
-    state.cart_array = [];
-    persistCartOffline();
+    await updateCartState(data);
   } catch (err) {
     state.error = err.message;
   } finally {
@@ -429,8 +440,10 @@ async function applyCoupon(code) {
       body: JSON.stringify({ code }),
     });
 
+    const data = await res.json();
+
     if (!res.ok) throw new Error('Coupon failed');
-    await fetchCart();
+    await updateCartState(data);
   } catch (err) {
     console.error(err);
   }
@@ -444,8 +457,9 @@ async function removeCoupon(code) {
       body: JSON.stringify({ code }),
     });
 
+    const data = await res.json();
     if (!res.ok) throw new Error('Coupon removal failed');
-    await fetchCart();
+        await updateCartState(data);
   } catch (err) {
     console.error(err);
   }
