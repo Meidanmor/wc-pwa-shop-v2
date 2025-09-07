@@ -43,7 +43,7 @@
       :width="260"
       transition-show="slide-right"
       transition-hide="slide-left"
-      :touch-area-width="80"
+      :touch-area-width="150"
     >
       <q-scroll-area class="fit">
         <div class="q-pa-md">
@@ -107,7 +107,7 @@
       overlay
       behavior="mobile"
       :width="300"
-      :touch-area-width="80"
+      :touch-area-width="150"
     >
       <q-scroll-area class="fit q-pa-sm" v-if="cartCount > 0">
         <h4> Cart </h4>
