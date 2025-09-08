@@ -44,6 +44,8 @@
 
     <!-- SLIDER MODE -->
     <q-carousel
+        @touchstart.stop
+        @mousedown.stop
       v-else
       v-model="slide"
       animated

@@ -5,6 +5,8 @@
       <div class="col-12 col-md-6">
         <div v-if="product.images.length > 1">
           <q-carousel
+              @touchstart.stop
+            @mousedown.stop
             animated
             v-model="activeSlide"
             height="400px"
