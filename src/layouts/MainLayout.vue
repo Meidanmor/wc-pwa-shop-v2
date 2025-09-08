@@ -157,7 +157,7 @@
     </q-drawer>
     <ai-assistant></ai-assistant>
 
-    <q-page-container>
+    <q-page-container v-touch-pan.horizontal="onPan" v-touch-pan.mouse.horizontal="onPan">
         <Suspense>
         <template #default>
           <router-view :key="$route.fullPath" />
@@ -196,6 +196,27 @@ const cartCount = computed(() => cart.state.items_count)
 const increase = (id) => cart.increase(id, $q)
 const decrease = (id) => cart.decrease(id, $q)
 const remove = (id) => cart.remove(id, $q)
+
+function onPan(evt) {
+  if (evt.isFinal) {
+    //if (evt.direction === 'right') cartDrawer.value = true
+    const screenWidth = window.innerWidth
+    const swipePercent = (evt.distance.x / screenWidth) * 100
+
+    console.log('Swipe percent:', swipePercent)
+
+    if(swipePercent > 20) {
+      if (evt.direction === 'left') {
+        cartDrawer.value = true
+        console.log(evt);
+
+      } else if(evt.direction === 'right'){
+        mobileMenuDrawer.value = true;
+      }
+    }
+    // Do NOT call evt.preventDefault() unless you want to block child interactions
+  }
+}
 
 watch(() => cart.state.drawerOpen, val => {
   if(val === true) {
