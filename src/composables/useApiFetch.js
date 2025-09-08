@@ -1,22 +1,19 @@
 export async function fetchWithToken(url, options = {}) {
   if (process.env.CLIENT) {
-    const token = localStorage.getItem('jwt_token');
+    // client-side: include JWT if exists
+    const token = localStorage.getItem('jwt_token')
     const headers = {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {})
-    };
+    }
 
     return fetch(url, {
       credentials: 'include',
       ...options,
       headers: { ...headers, ...(options.headers || {}) }
-    });
+    })
   } else {
-    // SSR: return a dummy resolved response so client code won’t crash
-    return {
-      ok: false,
-      json: async () => null,
-      status: 0
-    };
+    // SSR: directly fetch the API
+    return fetch(url, { ...options })
   }
 }

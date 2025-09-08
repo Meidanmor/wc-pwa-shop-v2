@@ -4,22 +4,17 @@ import { fetchWithToken } from 'src/composables/useApiFetch.js';
 const baseURL = 'https://nuxt.meidanm.com/wp-json/wc/store/v1';
 
 export const fetchAPI = async (endpoint) => {
-  const res = await fetchWithToken(`${baseURL}${endpoint}`, { credentials: 'include' })
-
-  if (!res) {
-    console.warn('[fetchAPI] fetchWithToken returned undefined')
-    return null // return null or empty array depending on your usage
-  }
-
-  if (!res.ok) {
-    console.error(`[fetchAPI] WooCommerce API error: ${res.status}`)
-    return null // or throw if you want to handle it further
-  }
-
   try {
+    const res = await fetchWithToken(`${baseURL}${endpoint}`, { credentials: 'include' })
+
+    if (!res || !res.ok) {
+      console.error(`[fetchAPI] WooCommerce API error: ${res?.status ?? 'unknown'}`)
+      return null
+    }
+
     return await res.json()
   } catch (err) {
-    console.error('[fetchAPI] Failed to parse JSON:', err)
+    console.error('[fetchAPI] Failed to fetch:', err)
     return null
   }
 }
