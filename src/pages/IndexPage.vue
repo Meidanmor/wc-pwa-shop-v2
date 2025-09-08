@@ -273,7 +273,7 @@ function revealFallback() {
 }
 
 onMounted(async () => {
-  console.log(API_BASE);
+  //console.log(API_BASE);
 
   if (process.env.CLIENT) {
     gsap.registerPlugin(ScrollToPlugin);
@@ -289,7 +289,6 @@ onMounted(async () => {
     fetchProducts()
   }
 
-  console.log('check_log');
   await nextTick()
 
   try {

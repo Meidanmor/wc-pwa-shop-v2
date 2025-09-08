@@ -6,7 +6,6 @@ import { useMeta } from 'quasar'
 export function useSeo(pathOverride = null, initialSeo = { title: '', description: '' }) {
   const route = useRoute()
   const seoData = ref(initialSeo) // hardcoded defaults shown immediately
-
   // reactive meta including Open Graph tags
   useMeta(() => ({
     title: seoData.value.title,
