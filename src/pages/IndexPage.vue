@@ -183,6 +183,15 @@ const initialSeo = {
 
 const fetchProducts = async () => {
   const allProducts = await api.getProducts();
+
+  if (!allProducts) {
+    console.warn('[fetchProducts] api.getProducts returned null or undefined');
+    products.value = [];
+    featuredProducts.value = [];
+    computeSlideChunks();
+    return;
+  }
+
   products.value = allProducts;
   featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
   computeSlideChunks();
