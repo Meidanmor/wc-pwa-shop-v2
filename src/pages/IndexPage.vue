@@ -44,7 +44,7 @@
                   <q-img
                     width="100%"
                     height="300px"
-                    :src="fp.images[0]?.src || 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png'"
+                    :src="fp.images[0]?.src || `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`"
                     :alt="fp.name"
                   />
                   <q-card-section>
@@ -157,12 +157,15 @@
 
 <script setup async>
 import { ref, onMounted, nextTick, watch } from 'vue';
-import { useQuasar, useMeta } from 'quasar';
+import { useQuasar } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
 import gsap from 'gsap';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useSeo } from 'src/composables/useSeo'
+
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 const $q = useQuasar();
 
@@ -173,23 +176,9 @@ const ctaBtn = ref(null);
 const slideChunks = ref(false);
 const slide = ref(0);
 const email = ref('');
-const seoData = ref({
+const initialSeo = {
   title: 'Home page',
   description: 'Home page description'
-});
-
-async function fetchSeoData() {
-  try {
-    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent('homepage')}`)
-    const json = await res.json()
-    seoData.value = {
-      title: json.title,
-      description: json.description
-    }
-    console.log('[SSR] Fetched SEO:', json.title)
-  } catch (err) {
-    console.error('[SSR] SEO Fetch Error:', err)
-  }
 }
 
 const fetchProducts = async () => {
@@ -200,10 +189,11 @@ const fetchProducts = async () => {
 };
 
 if (process.env.SERVER) {
-  await fetchSeoData()
+  //await fetchSeoData()
+  await useSeo('homepage', initialSeo)
   await fetchProducts()
 }
-useMeta(() => ({
+/*useMeta(() => ({
   title: seoData.value.title,
   meta: {
     description: {
@@ -219,19 +209,20 @@ useMeta(() => ({
       content: seoData.value.description
     }
   }
-}))
+}))*/
 
+const avatarSVG = '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>';
 const testimonials = ref([
-  { name: 'Alice Johnson', feedback: 'NaturaBloom products have transformed my skincare routine!', avatar: 'https://example.com/avatar1.jpg' },
-  { name: 'Mark Thompson', feedback: 'I love the organic ingredients and sustainable packaging.', avatar: '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>' },
-  { name: 'Sophie Lee', feedback: 'Fast shipping and excellent customer service.', avatar: 'https://example.com/avatar3.jpg' }
+  { name: 'Alice Johnson', feedback: 'NaturaBloom products have transformed my skincare routine!', avatar: avatarSVG },
+  { name: 'Mark Thompson', feedback: 'I love the organic ingredients and sustainable packaging.', avatar: avatarSVG },
+  { name: 'Sophie Lee', feedback: 'Fast shipping and excellent customer service.', avatar: avatarSVG }
 ]);
 
 const instagramPosts = ref([
-  { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Our latest product launch!' },
-  { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Behind the scenes at NaturaBloom.' },
-  { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Customer favorites this month.' },
-  { image: 'https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png', caption: 'Sustainable packaging in action.' }
+  { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Our latest product launch!' },
+  { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Behind the scenes at NaturaBloom.' },
+  { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Customer favorites this month.' },
+  { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Sustainable packaging in action.' }
 ]);
 
 const subscribeNewsletter = () => {
@@ -282,6 +273,8 @@ function revealFallback() {
 }
 
 onMounted(async () => {
+  console.log(API_BASE);
+
   if (process.env.CLIENT) {
     gsap.registerPlugin(ScrollToPlugin);
     gsap.registerPlugin(ScrollTrigger);
@@ -292,7 +285,7 @@ onMounted(async () => {
         el.classList.remove('pre-animate');
       })
     }, 500);
-    await fetchSeoData()
+    await useSeo('homepage', initialSeo)
     fetchProducts()
   }
 

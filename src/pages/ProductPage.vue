@@ -197,7 +197,9 @@ import { useRoute } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
-import { useQuasar, useMeta } from 'quasar'
+import { useQuasar } from 'quasar'
+import { useSeo } from 'src/composables/useSeo'
+
 
 const $q = useQuasar()
 const route = useRoute()
@@ -205,29 +207,14 @@ const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
 
-const seoData = ref({
-  title: '',
-  description: ''
-})
+const initialSeo = {
+  title: 'Product',
+  description: 'product page'
+}
 
 // Log for debugging
 if (process.env.SERVER) {
   console.log('[SSR] ProductPage loaded on server')
-}
-
-// Fetch SEO data during SSR
-async function fetchSeoData() {
-  try {
-    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(route.fullPath)}`)
-    const json = await res.json()
-    seoData.value = {
-      title: json.title,
-      description: json.description
-    }
-    console.log('[SSR] Fetched SEO:', json.title)
-  } catch (err) {
-    console.error('[SSR] SEO Fetch Error:', err)
-  }
 }
 
 //const addToCartLoading = ref(false);
@@ -368,37 +355,17 @@ async function fetchProduct(slug) {
 
 // 🟢 Run on SSR only
 if (process.env.SERVER) {
-  await fetchSeoData()
+  await useSeo('', initialSeo);
   try {
   const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/products?per_page=100')
   const products = await res.json()
   product.value = products.find(p => getSlugFromPermalink(p.permalink) === route.params.slug)
 
-  console.log('[SSR] product applied:', seoData.value.title)
 } catch (err) {
   console.error('[SEO Fetch Error]', err)
 }
 
 }
-
-useMeta(() => ({
-  title: seoData.value.title,
-  meta: {
-    description: {
-      name: 'description',
-      content: seoData.value.description
-    },
-    'og:title': {
-      property: 'og:title',
-      content: seoData.value.title
-    },
-    'og:description': {
-      property: 'og:description',
-      content: seoData.value.description
-    }
-  }
-}))
-
 
 const isVariable = computed(() => product.value?.type === 'variable')
 
@@ -522,7 +489,7 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
 }
 onMounted(async() => {
     if (process.env.CLIENT) {
-      await fetchSeoData();
+      await useSeo('', initialSeo);
       await fetchProduct(route.params.slug);
       await fetchWishlistData()
     }
