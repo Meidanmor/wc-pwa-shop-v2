@@ -205,6 +205,7 @@ function onPan(evt) {
 
     console.log('Swipe percent:', swipePercent)
 
+    console.log(evt.evt.target.closest('.q-carousel'));
     if(swipePercent > 20) {
       if (evt.direction === 'left') {
         cartDrawer.value = true

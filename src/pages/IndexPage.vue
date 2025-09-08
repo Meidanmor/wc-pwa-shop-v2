@@ -15,6 +15,8 @@
       <div class="container">
         <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
         <q-carousel
+            @touchstart.stop
+            @mousedown.stop
           v-if="slideChunks && slideChunks.length > 0"
           v-model="slide"
           animated
