@@ -156,7 +156,7 @@
 </template>
 
 <script setup async>
-import { ref, onMounted, nextTick, watch } from 'vue';
+import { ref, onMounted, nextTick, watch, onServerPrefetch } from 'vue';
 import { useQuasar } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
@@ -196,6 +196,10 @@ const fetchProducts = async () => {
   featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
   computeSlideChunks();
 };
+
+// This will run on the server **before rendering**
+onServerPrefetch(fetchProducts)
+
 
 if (process.env.SERVER) {
   //await fetchSeoData()
