@@ -289,6 +289,7 @@ onMounted(async () => {
     fetchProducts()
   }
 
+  console.log('check_log');
   await nextTick()
 
   try {
