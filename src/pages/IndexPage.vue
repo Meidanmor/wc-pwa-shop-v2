@@ -17,17 +17,17 @@
         <q-carousel
             @touchstart.stop
             @mousedown.stop
-          v-if="slideChunks && slideChunks.length > 0"
-          v-model="slide"
-          animated
-          infinite
-          autoplay
-          navigation
-          swipeable
-          arrows
-          height="550px"
-          control-color="primary"
-          class="rounded-borders"
+            v-if="!productsLoading && slideChunks && slideChunks.length > 0"
+            v-model="slide"
+            animated
+            infinite
+            autoplay
+            navigation
+            swipeable
+            arrows
+            height="550px"
+            control-color="primary"
+            class="rounded-borders"
         >
           <q-carousel-slide
             v-for="(slideGroup, index) in slideChunks"
@@ -65,7 +65,7 @@
             </div>
           </q-carousel-slide>
         </q-carousel>
-        <q-banner v-else-if="slideChunks && slideChunks.length === 0" class="bg-grey-2 text-center q-pa-md">No featured products found.</q-banner>
+        <q-banner v-else-if="!productsLoading && slideChunks && slideChunks.length === 0" class="bg-grey-2 text-center q-pa-md">No featured products found.</q-banner>
         <div v-else class="q-pa-md flex items-center justify-center">
           <q-spinner color="primary" size="6em" />
         </div>
@@ -242,14 +242,15 @@ if (import.meta.env.SSR) {
 // ----------------- SEO: pass initialSeo to composable (registers useMeta synchronously) ---
 const { seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
-// ----------------- Products ---
+// ----------------- Products -----------------
 const products = ref(preProducts || [])
 const featuredProducts = ref((preProducts && preProducts.filter(p => p.id).slice(0, 6)) || [])
 const productSection = ref(null)
 const ctaBtn = ref(null)
-const slideChunks = ref(false)
+const slideChunks = ref([]) // <- initialize as empty array, not false
 const slide = ref(0)
 const email = ref('')
+const productsLoading = ref(!preProducts?.length)
 
 const getChunks = (array, size) => {
   const chunks = []
@@ -260,6 +261,10 @@ const getChunks = (array, size) => {
 }
 
 const computeSlideChunks = () => {
+  if (!featuredProducts.value.length) {
+    slideChunks.value = []
+    return
+  }
   const chunkSize = import.meta.env.SSR
     ? 1
     : $q.screen.lt.sm
@@ -270,7 +275,20 @@ const computeSlideChunks = () => {
   slideChunks.value = getChunks(featuredProducts.value, chunkSize)
 }
 
+// --- run immediately if SSR prefetch provided products
+// compute chunks for SSR safely
+const computeSlideChunksSSR = (featured) => {
+  const chunkSize = import.meta.env.SSR ? 1 : $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
+  slideChunks.value = getChunks(featured, chunkSize)
+}
+if (preProducts?.length) {
+  featuredProducts.value = preProducts.filter(p => p.id).slice(0, 6)
+  computeSlideChunksSSR(featuredProducts.value) // SSR-safe
+  productsLoading.value = false
+}
+
 const fetchProducts = async () => {
+  productsLoading.value = true
   try {
     const allProducts = await api.getProducts()
     if (!allProducts) {
@@ -288,6 +306,8 @@ const fetchProducts = async () => {
     featuredProducts.value = []
     computeSlideChunks()
     return []
+  } finally {
+    productsLoading.value = false
   }
 }
 
