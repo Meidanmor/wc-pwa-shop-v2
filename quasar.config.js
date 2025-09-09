@@ -7,7 +7,7 @@ import fs from 'fs';
 export default defineConfig((/* ctx */) => {
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
-    // preFetch: true,
+     preFetch: true,
 
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"

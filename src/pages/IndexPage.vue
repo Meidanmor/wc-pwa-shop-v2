@@ -155,201 +155,247 @@
   </q-page>
 </template>
 
-<script setup async>
-import { ref, onMounted, nextTick, watch } from 'vue';
-import { useQuasar } from 'quasar';
-import api from 'src/boot/woocommerce';
-import cart from 'src/stores/cart';
-import { useSeo } from 'src/composables/useSeo'
+<script setup>
+import { ref, onMounted, nextTick, watch } from 'vue'
+import { useSSRContext } from 'vue'
+import { useQuasar } from 'quasar'
+import api from 'src/boot/woocommerce'
+import cart from 'src/stores/cart'
+import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
 
-const API_BASE = import.meta.env.VITE_API_BASE;
+// --- defineOptions preFetch (hoisted) ---
+// Only uses imported functions and literals. NO local variables!
+defineOptions({
+  // preFetch runs during SSR and on client navigation (Quasar's prefetch feature)
+  async preFetch (ctx) {
+    // fetch SEO for this page
+    const seo = await fetchSeoForPath('homepage')
 
-const $q = useQuasar();
+    // fetch products for SSR too (so page can render with products)
+    let products = []
+    try {
+      products = await api.getProducts()
+    } catch (err) {
+      products = []
+      console.error('[preFetch] products error', err)
+    }
 
-const products = ref([]);
-const featuredProducts = ref([]);
-const productSection = ref(null);
-const ctaBtn = ref(null);
-const slideChunks = ref(false);
-const slide = ref(0);
-const email = ref('');
-const initialSeo = {title: 'Loading...', description: '...'};
-const seoDATA = ref('');
-const getChunks = (array, size) => {
-  const chunks = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
+    // If we have SSR context, store per-request values there (safe)
+    if (ctx && ctx.ssrContext) {
+      ctx.ssrContext.__PRE_FETCH_SEO__ = ctx.ssrContext.__PRE_FETCH_SEO__ || {}
+      ctx.ssrContext.__PRE_FETCH_SEO__['homepage'] = seo
+
+      ctx.ssrContext.__PRE_FETCH_PRODUCTS__ = ctx.ssrContext.__PRE_FETCH_PRODUCTS__ || {}
+      ctx.ssrContext.__PRE_FETCH_PRODUCTS__['homepage'] = products
+    } else {
+      // Client navigation fallback: store on window so setup can read it
+      if (typeof window !== 'undefined') {
+        window.__PRE_FETCH_SEO__ = window.__PRE_FETCH_SEO__ || {}
+        window.__PRE_FETCH_SEO__['homepage'] = seo
+
+        window.__PRE_FETCH_PRODUCTS__ = window.__PRE_FETCH_PRODUCTS__ || {}
+        window.__PRE_FETCH_PRODUCTS__['homepage'] = products
+      }
+    }
   }
-  return chunks;
-};
+})
+
+// ----------------- page setup starts here -----------------
+const API_BASE = import.meta.env.VITE_API_BASE
+const $q = useQuasar()
+
+// Try to read pre-fetched data (server or client nav)
+let initialSeo = { title: '', description: '' }
+let fallbackSeo = { title: 'Loading...', description: '...' }
+let preProducts = []
+
+if (import.meta.env.SSR) {
+  // server side: use SSR context
+  try {
+    const ssr = useSSRContext()
+    initialSeo = ssr.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
+    preProducts = ssr.__PRE_FETCH_PRODUCTS__?.['homepage'] || []
+  } catch (err) {
+    // fallback (shouldn't normally happen)
+    console.log(err)
+    preProducts = []
+  }
+} else {
+  // client: maybe we arrived via client navigation (preFetch stored on window)
+  if (typeof window !== 'undefined') {
+    initialSeo = (window.__PRE_FETCH_SEO__ && window.__PRE_FETCH_SEO__['homepage']) || initialSeo
+    preProducts = (window.__PRE_FETCH_PRODUCTS__ && window.__PRE_FETCH_PRODUCTS__['homepage']) || []
+
+    // IMPORTANT fallback:
+    // If we don't have prefetch data on the client (full page load), read the already-rendered head
+    // so we don't overwrite server-provided meta during hydration.
+    /*if ((!initialSeo || !initialSeo.title) && typeof document !== 'undefined') {
+      const domTitle = document.title && document.title.trim()
+      const descMeta = document.querySelector('meta[name="description"]')
+      const domDesc = descMeta ? (descMeta.getAttribute('content') || '').trim() : ''
+      if (domTitle) initialSeo.title = domTitle
+      if (domDesc) initialSeo.description = domDesc
+    }*/
+  }
+}
+
+// ----------------- SEO: pass initialSeo to composable (registers useMeta synchronously) ---
+const { seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
+
+// ----------------- Products ---
+const products = ref(preProducts || [])
+const featuredProducts = ref((preProducts && preProducts.filter(p => p.id).slice(0, 6)) || [])
+const productSection = ref(null)
+const ctaBtn = ref(null)
+const slideChunks = ref(false)
+const slide = ref(0)
+const email = ref('')
+
+const getChunks = (array, size) => {
+  const chunks = []
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size))
+  }
+  return chunks
+}
 
 const computeSlideChunks = () => {
-  // Use mobile default for SSR/hydration safety
-  const chunkSize = process.env.SERVER ? 1 : $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
+  const chunkSize = import.meta.env.SSR
+    ? 1
+    : $q.screen.lt.sm
+    ? 1
+    : $q.screen.lt.md
+    ? 2
+    : 3
   slideChunks.value = getChunks(featuredProducts.value, chunkSize)
 }
 
 const fetchProducts = async () => {
-  const allProducts = await api.getProducts();
-
-  if (!allProducts) {
-    console.warn('[fetchProducts] api.getProducts returned null or undefined');
-    products.value = [];
-    featuredProducts.value = [];
-    computeSlideChunks();
-    return;
+  try {
+    const allProducts = await api.getProducts()
+    if (!allProducts) {
+      products.value = []
+      featuredProducts.value = []
+    } else {
+      products.value = allProducts
+      featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6)
+    }
+    computeSlideChunks()
+    return products.value
+  } catch (err) {
+    console.error('[fetchProducts]', err)
+    products.value = []
+    featuredProducts.value = []
+    computeSlideChunks()
+    return []
   }
+}
 
-  products.value = allProducts;
-  featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
-  computeSlideChunks();
-};
+// ----------------- Testimonials & Instagram (same as before) ---
+const avatarSVG =
+  '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>'
 
-const {seoData} = useSeo('homepage', initialSeo);
-seoDATA.value = await seoData;
-await fetchProducts();
-
-console.log('SEO DARA', seoDATA.value);
-
-
-const avatarSVG = '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>';
 const testimonials = ref([
   { name: 'Alice Johnson', feedback: 'NaturaBloom products have transformed my skincare routine!', avatar: avatarSVG },
   { name: 'Mark Thompson', feedback: 'I love the organic ingredients and sustainable packaging.', avatar: avatarSVG },
   { name: 'Sophie Lee', feedback: 'Fast shipping and excellent customer service.', avatar: avatarSVG }
-]);
+])
 
 const instagramPosts = ref([
   { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Our latest product launch!' },
   { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Behind the scenes at NaturaBloom.' },
   { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Customer favorites this month.' },
   { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Sustainable packaging in action.' }
-]);
+])
 
+// ----------------- Helpers -----------------
 const subscribeNewsletter = () => {
   if (email.value) {
-    $q.notify({ type: 'positive', message: 'Subscribed successfully!' });
-    email.value = '';
+    $q.notify({ type: 'positive', message: 'Subscribed successfully!' })
+    email.value = ''
   } else {
-    $q.notify({ type: 'negative', message: 'Please enter a valid email.' });
+    $q.notify({ type: 'negative', message: 'Please enter a valid email.' })
   }
-};
-const addToCart = (product) => {
-  cart.add(product.id, 1);
-};
-
-const getSlugFromPermalink = (permalink) =>
-  permalink.split('/').filter(Boolean).pop();
-
-// --- Fallback helper ---
-function revealFallback() {
-  document.querySelectorAll('.pre-animate').forEach(el => {
-    el.classList.remove('pre-animate');
-  });
 }
 
-// Define function first (top-level)
+const addToCart = (product) => {
+  cart.add(product.id, 1)
+}
+
+const getSlugFromPermalink = (permalink) =>
+  permalink.split('/').filter(Boolean).pop()
+
+function revealFallback() {
+  document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
+}
+
+// ----------------- Scroll (same pattern) -----------------
 const scrollToProducts = () => {
-  if (process.env.CLIENT && productSection.value) {
-    import("gsap").then(({ gsap }) => {
-      import("gsap/ScrollToPlugin").then(({ ScrollToPlugin }) => {
-        gsap.registerPlugin(ScrollToPlugin);
-        gsap.to(window, {
-          duration: 1,
-          scrollTo: {
-            y: productSection.value,
-            offsetY: 80
-          },
-          ease: 'power2.out'
-        });
-      });
-    });
-  }
-};
-
-
-onMounted(async () => {
-  //console.log(API_BASE);
-
-  if (!products.value.length) {
-    await fetchProducts();
-  }
-  if (seoData.value.title === initialSeo.title && seoData.value.description === initialSeo.description) {
-    useSeo('homepage', initialSeo)
-  }
-
-  if (process.env.CLIENT) {
-    const {gsap} = await import("gsap");
-
-
-    const {ScrollToPlugin} = await import("gsap/ScrollToPlugin");
-    const {ScrollTrigger} = await import("gsap/ScrollTrigger");
-
-    gsap.registerPlugin(ScrollToPlugin);
-    gsap.registerPlugin(ScrollTrigger);
-
-    setTimeout(function () {
-      // Ensure elements are visible to GSAP (autoAlpha will animate them)
-      document.querySelectorAll('.hero-content.pre-animate').forEach(el => {
-        el.classList.remove('pre-animate');
+  if (typeof window !== 'undefined' && productSection.value) {
+    import('gsap').then(({ gsap }) => {
+      import('gsap/ScrollToPlugin').then(({ ScrollToPlugin }) => {
+        gsap.registerPlugin(ScrollToPlugin)
+        gsap.to(window, { duration: 1, scrollTo: { y: productSection.value, offsetY: 80 }, ease: 'power2.out' })
       })
-    }, 500);
-    /*await useSeo('homepage', initialSeo)
-    fetchProducts()*/
+    })
+  }
+}
+defineExpose({ scrollToProducts })
 
+// ----------------- Mounted: client-only finishes/fetches as needed ---
+onMounted(async () => {
+  // If we didn't have products from prefetch, fetch them on client
+  if (!products.value.length) {
+    await fetchProducts()
+  }
+
+  // ensure SEO is up-to-date on client
+  // If prefetch didn't populate SEO (client nav), fetch it now
+  if ((!seoData.value.title || !seoData.value.description)) {
+    await fetchSeoData('homepage')
+  }
+
+  if (typeof window !== 'undefined') {
+    const { gsap } = await import('gsap')
+    const { ScrollToPlugin } = await import('gsap/ScrollToPlugin')
+    const { ScrollTrigger } = await import('gsap/ScrollTrigger')
+    gsap.registerPlugin(ScrollToPlugin, ScrollTrigger)
+
+    setTimeout(() => {
+      document.querySelectorAll('.hero-content.pre-animate').forEach(el => el.classList.remove('pre-animate'))
+    }, 500)
 
     await nextTick()
 
     try {
-      // Ensure elements are visible to GSAP (autoAlpha will animate them)
-      document.querySelectorAll('.pre-animate').forEach(el => {
-        el.classList.remove('pre-animate');
-      })
+      document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
 
-      // Hero animation
-      /*gsap.from('.hero-content', {
-      y: 30,
-      autoAlpha: 0,
-      duration: 0.8,
-      ease: 'power2.out'
-    })*/
-
-      // Below-the-fold with ScrollTrigger
       const sections = [
-        {selector: '.testimonials-section', y: 40},
-        {selector: '.sustainability-section', x: -40},
-        {selector: '.newsletter-section', y: 40},
-        {selector: '.instagram-section', y: 40},
-        {selector: '.about-section', y: 40}
+        { selector: '.testimonials-section', y: 40 },
+        { selector: '.sustainability-section', x: -40 },
+        { selector: '.newsletter-section', y: 40 },
+        { selector: '.instagram-section', y: 40 },
+        { selector: '.about-section', y: 40 }
       ]
 
-      sections.forEach(({selector, x, y}) => {
+      sections.forEach(({ selector, x, y }) => {
         gsap.from(selector, {
           autoAlpha: 0,
           x: x || 0,
           y: y || 0,
           duration: 0.8,
           ease: 'power2.out',
-          scrollTrigger: {
-            trigger: selector,
-            start: 'top 80%',
-            once: true
-          }
+          scrollTrigger: { trigger: selector, start: 'top 80%', once: true }
         })
       })
 
-      // CTA button
       if (ctaBtn.value?.$el) {
         gsap.from(ctaBtn.value.$el, {
           autoAlpha: 0,
           y: 20,
           duration: 0.8,
           ease: 'power2.out',
-          scrollTrigger: {
-            trigger: '.cta-section',
-            start: 'top 80%',
-            once: true
-          }
+          scrollTrigger: { trigger: '.cta-section', start: 'top 80%', once: true }
         })
       }
     } catch (err) {
@@ -359,10 +405,12 @@ onMounted(async () => {
   }
 })
 
+// ----------------- Responsive -----------------
 watch(() => $q.screen.name, () => {
-  computeSlideChunks();
-});
+  computeSlideChunks()
+})
 </script>
+
 
 <style scoped>
 .hero-section {

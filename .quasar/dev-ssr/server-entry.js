@@ -33,6 +33,16 @@ import createQuasarApp from './app.js'
 import quasarUserOptions from './quasar-user-options.js'
 
 
+import App from 'app/src/App.vue'
+const appPrefetch = typeof App.preFetch === 'function'
+  ? App.preFetch
+  : (
+    // Class components return the component options (and the preFetch hook) inside __c property
+    App.__c !== void 0 && typeof App.__c.preFetch === 'function'
+      ? App.__c.preFetch
+      : false
+    )
+
 
 const publicPath = `/`
 
@@ -140,10 +150,49 @@ export default ssrContext => {
       }
 
       
+      let hasRedirected = false
+      const redirect = (url, httpStatusCode) => {
+        hasRedirected = true
+        reject({ url: getRedirectUrl(url, router), code: httpStatusCode })
+      }
+
+      // filter and convert all components to their preFetch methods
+      matchedComponents = matchedComponents
+        .filter(m => (
+          typeof m.preFetch === 'function'
+          // Class components return the component options (and the preFetch hook) inside __c property
+          || (m.__c !== void 0 && typeof m.__c.preFetch === 'function')
+        ))
+        .map(m => m.__c !== void 0 ? m.__c.preFetch : m.preFetch)
+
+      if (appPrefetch !== false) {
+        matchedComponents.unshift(appPrefetch)
+      }
+
+      // Call preFetch hooks on components matched by the route.
+      // A preFetch hook dispatches a store action and returns a Promise,
+      // which is resolved when the action is complete and store state has been
+      // updated.
+      matchedComponents
+      .reduce(
+        (promise, preFetchFn) => promise.then(() => hasRedirected === false && preFetchFn({
+          
+          ssrContext,
+          currentRoute: router.currentRoute.value,
+          redirect,
+          urlPath: ssrContext.req.url,
+          publicPath
+        })),
+        Promise.resolve()
+      )
+      .then(() => {
+        if (hasRedirected === true) return
 
         
 
         resolve(app)
+      })
+      .catch(reject)
 
       
     }).catch(reject)

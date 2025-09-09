@@ -44,6 +44,8 @@ import 'app/src-pwa/register-service-worker'
 
 
 
+import { addPreFetchHooks } from './client-prefetch.js'
+
 
 
 console.info('[Quasar] Running SSR + PWA.')
@@ -117,6 +119,8 @@ async function start ({
     
       if (ssrIsRunningOnClientPWA === true) {
         
+        addPreFetchHooks({ router, ssrIsRunningOnClientPWA })
+        
         app.mount('#q-app')
       }
       else {
@@ -124,6 +128,8 @@ async function start ({
     // wait until router has resolved all async before hooks
     // and async components...
     router.isReady().then(() => {
+      
+      addPreFetchHooks({ router, publicPath })
       
       app.mount('#q-app')
     })
