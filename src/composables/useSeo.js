@@ -5,16 +5,8 @@ import { useMeta } from 'quasar'
 
 export function useSeo(pathOverride = null, initialSeo = { title: '', description: '' }) {
   const route = useRoute()
-  const seoData = ref(initialSeo)
-
-  useMeta(() => ({
-    title: seoData.value.title,
-    meta: {
-      description: { name: 'description', content: seoData.value.description },
-      'og:title': { property: 'og:title', content: seoData.value.title },
-      'og:description': { property: 'og:description', content: seoData.value.description }
-    }
-  }))
+  const seoData = ref(initialSeo) // hardcoded defaults shown immediately
+  // reactive meta including Open Graph tags
 
   async function fetchSeoData(path) {
     try {
@@ -24,21 +16,33 @@ export function useSeo(pathOverride = null, initialSeo = { title: '', descriptio
       const json = await res.json()
       if (json.title) seoData.value.title = json.title
       if (json.description) seoData.value.description = json.description
+      //console.log('[SEO] Fetched:', json.title)
     } catch (err) {
       console.error('[SEO Fetch Error]:', err)
+      // seoData.value remains default if API fails
+    } finally {
+      useMeta(() => ({
+        title: seoData.value.title,
+        meta: {
+          description: {name: 'description', content: seoData.value.description},
+          'og:title': {property: 'og:title', content: seoData.value.title},
+          'og:description': {property: 'og:description', content: seoData.value.description}
+        }
+      }))
     }
   }
 
-  // Expose a SSR-friendly function
-  async function fetchForSSR(path) {
-    await fetchSeoData(path)
+  // initial fetch
+  async function waitForSEOFetch() {
+    await fetchSeoData(pathOverride || route.fullPath)
   }
 
-  // Keep watching route changes for client-side navigation
+  waitForSEOFetch()
+  // watch route changes
   watch(
     () => route.fullPath,
     (newPath) => fetchSeoData(pathOverride || newPath)
   )
 
-  return { seoData, fetchSeoData, fetchForSSR }
+  return { waitForSEOFetch }
 }

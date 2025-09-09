@@ -163,6 +163,7 @@ import cart from 'src/stores/cart';
 import gsap from 'gsap';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useSeo } from 'src/composables/useSeo'
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
@@ -207,6 +208,8 @@ const fetchProducts = async () => {
 };
 
 await fetchProducts();
+const {ready} = useSeo('homepage', {title: '123', description: '123'})
+await ready;
 
 const avatarSVG = '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>';
 const testimonials = ref([
@@ -335,17 +338,6 @@ onMounted(async () => {
 watch(() => $q.screen.name, () => {
   computeSlideChunks();
 });
-</script>
-<script>
-import { useSeo } from 'src/composables/useSeo'
-const initialSeo = {
-  title: 'Home page',
-  description: 'Home page description'
-}
-export async function preFetch() {
-  const { fetchForSSR } = useSeo('homepage', initialSeo)
-  await fetchForSSR('homepage')
-}
 </script>
 
 <style scoped>
