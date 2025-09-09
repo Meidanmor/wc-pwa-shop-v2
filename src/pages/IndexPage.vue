@@ -155,16 +155,13 @@
   </q-page>
 </template>
 
-<script setup async>
-import { ref, onMounted, nextTick, watch } from 'vue';
+<script setup>
+import { ref, onMounted, nextTick, watch, onServerPrefetch } from 'vue';
 import { useQuasar } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
-import gsap from 'gsap';
-import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useSeo } from 'src/composables/useSeo'
-
+useSeo('homepage', { title: 'Loading...', description: '...' })
 const API_BASE = import.meta.env.VITE_API_BASE;
 
 const $q = useQuasar();
@@ -193,22 +190,21 @@ const computeSlideChunks = () => {
 
 const fetchProducts = async () => {
   const allProducts = await api.getProducts();
-
   if (!allProducts) {
-    console.warn('[fetchProducts] api.getProducts returned null or undefined');
     products.value = [];
     featuredProducts.value = [];
-    computeSlideChunks();
-    return;
+  } else {
+    products.value = allProducts;
+    featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
   }
-
-  products.value = allProducts;
-  featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
   computeSlideChunks();
+  return products.value;
 };
 
-await fetchProducts();
-useSeo('homepage', {title: '123', description: '123'})
+// SSR blocking — Vue will wait for this promise
+onServerPrefetch(() => fetchProducts());
+
+// --- Set SEO independently ---
 
 const avatarSVG = '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>';
 const testimonials = ref([
@@ -239,17 +235,6 @@ const addToCart = (product) => {
 const getSlugFromPermalink = (permalink) =>
   permalink.split('/').filter(Boolean).pop();
 
-const scrollToProducts = () => {
-  gsap.to(window, {
-    duration: 1,
-    scrollTo: {
-      y: productSection.value,
-      offsetY: 80
-    },
-    ease: 'power2.out'
-  });
-};
-
 // --- Fallback helper ---
 function revealFallback() {
   document.querySelectorAll('.pre-animate').forEach(el => {
@@ -257,12 +242,48 @@ function revealFallback() {
   });
 }
 
+// Define function first (top-level)
+const scrollToProducts = () => {
+  if (process.env.CLIENT && productSection.value) {
+    import("gsap").then(({ gsap }) => {
+      import("gsap/ScrollToPlugin").then(({ ScrollToPlugin }) => {
+        gsap.registerPlugin(ScrollToPlugin);
+        gsap.to(window, {
+          duration: 1,
+          scrollTo: {
+            y: productSection.value,
+            offsetY: 80
+          },
+          ease: 'power2.out'
+        });
+      });
+    });
+  }
+};
+
+// Expose at the top-level
+defineExpose({ scrollToProducts });
+
 onMounted(async () => {
   //console.log(API_BASE);
 
+  if (!products.value.length) {
+    await fetchProducts();
+  }
+
   if (process.env.CLIENT) {
+    const {gsap} = await import("gsap");
+
+
+    const {ScrollToPlugin} = await import("gsap/ScrollToPlugin");
+    const {ScrollTrigger} = await import("gsap/ScrollTrigger");
+
     gsap.registerPlugin(ScrollToPlugin);
     gsap.registerPlugin(ScrollTrigger);
+
+
+    // expose to template
+    defineExpose({ scrollToProducts });
 
     setTimeout(function () {
       // Ensure elements are visible to GSAP (autoAlpha will animate them)
@@ -272,65 +293,66 @@ onMounted(async () => {
     }, 500);
     /*await useSeo('homepage', initialSeo)
     fetchProducts()*/
-  }
 
-  await nextTick()
 
-  try {
-    // Ensure elements are visible to GSAP (autoAlpha will animate them)
-    document.querySelectorAll('.pre-animate').forEach(el => {
-      el.classList.remove('pre-animate');
-    })
+    await nextTick()
 
-    // Hero animation
-    /*gsap.from('.hero-content', {
+    try {
+      // Ensure elements are visible to GSAP (autoAlpha will animate them)
+      document.querySelectorAll('.pre-animate').forEach(el => {
+        el.classList.remove('pre-animate');
+      })
+
+      // Hero animation
+      /*gsap.from('.hero-content', {
       y: 30,
       autoAlpha: 0,
       duration: 0.8,
       ease: 'power2.out'
     })*/
 
-    // Below-the-fold with ScrollTrigger
-    const sections = [
-      { selector: '.testimonials-section', y: 40 },
-      { selector: '.sustainability-section', x: -40 },
-      { selector: '.newsletter-section', y: 40 },
-      { selector: '.instagram-section', y: 40 },
-      { selector: '.about-section', y: 40 }
-    ]
+      // Below-the-fold with ScrollTrigger
+      const sections = [
+        {selector: '.testimonials-section', y: 40},
+        {selector: '.sustainability-section', x: -40},
+        {selector: '.newsletter-section', y: 40},
+        {selector: '.instagram-section', y: 40},
+        {selector: '.about-section', y: 40}
+      ]
 
-    sections.forEach(({ selector, x, y }) => {
-      gsap.from(selector, {
-        autoAlpha: 0,
-        x: x || 0,
-        y: y || 0,
-        duration: 0.8,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: selector,
-          start: 'top 80%',
-          once: true
-        }
+      sections.forEach(({selector, x, y}) => {
+        gsap.from(selector, {
+          autoAlpha: 0,
+          x: x || 0,
+          y: y || 0,
+          duration: 0.8,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: selector,
+            start: 'top 80%',
+            once: true
+          }
+        })
       })
-    })
 
-    // CTA button
-    if (ctaBtn.value?.$el) {
-      gsap.from(ctaBtn.value.$el, {
-        autoAlpha: 0,
-        y: 20,
-        duration: 0.8,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: '.cta-section',
-          start: 'top 80%',
-          once: true
-        }
-      })
+      // CTA button
+      if (ctaBtn.value?.$el) {
+        gsap.from(ctaBtn.value.$el, {
+          autoAlpha: 0,
+          y: 20,
+          duration: 0.8,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: '.cta-section',
+            start: 'top 80%',
+            once: true
+          }
+        })
+      }
+    } catch (err) {
+      console.error('GSAP failed, using fallback:', err)
+      revealFallback()
     }
-  } catch (err) {
-    console.error('GSAP failed, using fallback:', err)
-    revealFallback()
   }
 })
 

@@ -1,5 +1,4 @@
-// src/composables/useSeo.js
-import { ref, watch, onServerPrefetch } from 'vue'
+import { ref, onServerPrefetch, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMeta } from 'quasar'
 
@@ -17,22 +16,16 @@ export function useSeo(pathOverride = null, initialSeo = { title: '', descriptio
       if (json.description) seoData.value.description = json.description
     } catch (err) {
       console.error('[SEO Fetch Error]:', err)
+      // fallback to initialSeo
+      seoData.value = { ...initialSeo }
     }
   }
 
-  // Register SSR blocking fetch
+  // --- SSR blocking
   onServerPrefetch(async () => {
     await fetchSeoData(pathOverride || route.fullPath)
   })
 
-  // Keep watching route changes for client-side navigation
-  watch(
-    () => route.fullPath,
-    (newPath) => fetchSeoData(pathOverride || newPath),
-    { immediate: true }
-  )
-
-  // 🔑 Use a plain function (reactive getter), not computed
   useMeta(() => ({
     title: seoData.value.title,
     meta: {
@@ -41,6 +34,12 @@ export function useSeo(pathOverride = null, initialSeo = { title: '', descriptio
       'og:description': { property: 'og:description', content: seoData.value.description }
     }
   }))
+
+  watch(
+    () => route.fullPath,
+    (newPath) => fetchSeoData(pathOverride || newPath),
+    { immediate: true }
+  )
 
   return { seoData, fetchSeoData }
 }
