@@ -156,7 +156,7 @@
 </template>
 
 <script setup async>
-import { ref, onMounted, nextTick, watch, onServerPrefetch } from 'vue';
+import { ref, onMounted, nextTick, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
@@ -181,6 +181,19 @@ const initialSeo = {
   description: 'Home page description'
 }
 
+const getChunks = (array, size) => {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+};
+
+const computeSlideChunks = () => {
+  const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3;
+  slideChunks.value = getChunks(featuredProducts.value, chunkSize);
+};
+
 const fetchProducts = async () => {
   const allProducts = await api.getProducts();
 
@@ -197,32 +210,11 @@ const fetchProducts = async () => {
   computeSlideChunks();
 };
 
-// This will run on the server **before rendering**
-onServerPrefetch(fetchProducts)
+const { ready } = useSeo('homepage', initialSeo)
+// ✅ Wait for SEO data to be fetched before rendering (SSR-friendly)
+await ready
 
-
-if (process.env.SERVER) {
-  //await fetchSeoData()
-  await useSeo('homepage', initialSeo)
-  await fetchProducts()
-}
-/*useMeta(() => ({
-  title: seoData.value.title,
-  meta: {
-    description: {
-      name: 'description',
-      content: seoData.value.description
-    },
-    'og:title': {
-      property: 'og:title',
-      content: seoData.value.title
-    },
-    'og:description': {
-      property: 'og:description',
-      content: seoData.value.description
-    }
-  }
-}))*/
+await fetchProducts();
 
 const avatarSVG = '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>';
 const testimonials = ref([
@@ -246,20 +238,6 @@ const subscribeNewsletter = () => {
     $q.notify({ type: 'negative', message: 'Please enter a valid email.' });
   }
 };
-
-const getChunks = (array, size) => {
-  const chunks = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
-};
-
-const computeSlideChunks = () => {
-  const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3;
-  slideChunks.value = getChunks(featuredProducts.value, chunkSize);
-};
-
 const addToCart = (product) => {
   cart.add(product.id, 1);
 };
@@ -298,8 +276,8 @@ onMounted(async () => {
         el.classList.remove('pre-animate');
       })
     }, 500);
-    await useSeo('homepage', initialSeo)
-    fetchProducts()
+    /*await useSeo('homepage', initialSeo)
+    fetchProducts()*/
   }
 
   await nextTick()

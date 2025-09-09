@@ -3,10 +3,10 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMeta } from 'quasar'
 
-export function useSeo(pathOverride = null, initialSeo = { title: '', description: '' }) {
+export async function useSeo(pathOverride = null, initialSeo = { title: '', description: '' }) {
   const route = useRoute()
-  const seoData = ref(initialSeo) // hardcoded defaults shown immediately
-  // reactive meta including Open Graph tags
+  const seoData = ref(initialSeo)
+
   useMeta(() => ({
     title: seoData.value.title,
     meta: {
@@ -24,21 +24,19 @@ export function useSeo(pathOverride = null, initialSeo = { title: '', descriptio
       const json = await res.json()
       if (json.title) seoData.value.title = json.title
       if (json.description) seoData.value.description = json.description
-      //console.log('[SEO] Fetched:', json.title)
     } catch (err) {
       console.error('[SEO Fetch Error]:', err)
-      // seoData.value remains default if API fails
     }
   }
 
-  // initial fetch
-  fetchSeoData(pathOverride || route.fullPath)
+  // fetch once immediately (and return promise so caller can await)
+  const initialPromise = fetchSeoData(pathOverride || route.fullPath)
 
-  // watch route changes
+  // keep watching after mount
   watch(
     () => route.fullPath,
     (newPath) => fetchSeoData(pathOverride || newPath)
   )
 
-  return { seoData, fetchSeoData }
+  return { seoData, fetchSeoData, ready: initialPromise }
 }
