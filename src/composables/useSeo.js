@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMeta } from 'quasar'
 
-export async function useSeo(pathOverride = null, initialSeo = { title: '', description: '' }) {
+export function useSeo(pathOverride = null, initialSeo = { title: '', description: '' }) {
   const route = useRoute()
   const seoData = ref(initialSeo)
 
@@ -29,14 +29,16 @@ export async function useSeo(pathOverride = null, initialSeo = { title: '', desc
     }
   }
 
-  // fetch once immediately (and return promise so caller can await)
-  const initialPromise = fetchSeoData(pathOverride || route.fullPath)
+  // Expose a SSR-friendly function
+  async function fetchForSSR(path) {
+    await fetchSeoData(path)
+  }
 
-  // keep watching after mount
+  // Keep watching route changes for client-side navigation
   watch(
     () => route.fullPath,
     (newPath) => fetchSeoData(pathOverride || newPath)
   )
 
-  return { seoData, fetchSeoData, ready: initialPromise }
+  return { seoData, fetchSeoData, fetchForSSR }
 }

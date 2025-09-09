@@ -163,7 +163,6 @@ import cart from 'src/stores/cart';
 import gsap from 'gsap';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useSeo } from 'src/composables/useSeo'
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
@@ -176,10 +175,6 @@ const ctaBtn = ref(null);
 const slideChunks = ref(false);
 const slide = ref(0);
 const email = ref('');
-const initialSeo = {
-  title: 'Home page',
-  description: 'Home page description'
-}
 
 const getChunks = (array, size) => {
   const chunks = [];
@@ -210,10 +205,6 @@ const fetchProducts = async () => {
   featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
   computeSlideChunks();
 };
-
-const { ready } = useSeo('homepage', initialSeo)
-// ✅ Wait for SEO data to be fetched before rendering (SSR-friendly)
-await ready
 
 await fetchProducts();
 
@@ -344,6 +335,17 @@ onMounted(async () => {
 watch(() => $q.screen.name, () => {
   computeSlideChunks();
 });
+</script>
+<script>
+import { useSeo } from 'src/composables/useSeo'
+const initialSeo = {
+  title: 'Home page',
+  description: 'Home page description'
+}
+export async function preFetch() {
+  const { fetchForSSR } = useSeo('homepage', initialSeo)
+  await fetchForSSR('homepage')
+}
 </script>
 
 <style scoped>
