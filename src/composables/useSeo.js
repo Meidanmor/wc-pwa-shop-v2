@@ -35,8 +35,5 @@ export function useSeo(pathOverride = null, initialSeo = { title: '', descriptio
     { immediate: true }
   )
 
-  // Optional: call once on mounted
-  onMounted(() => fetchSeo(pathOverride || route.fullPath))
-
   return { seoData, fetchSeo }
 }
