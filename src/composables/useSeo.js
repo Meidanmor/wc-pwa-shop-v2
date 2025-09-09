@@ -1,12 +1,11 @@
 // src/composables/useSeo.js
-import { ref, watch } from 'vue'
+import { ref, watch, onServerPrefetch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMeta } from 'quasar'
 
 export function useSeo(pathOverride = null, initialSeo = { title: '', description: '' }) {
   const route = useRoute()
-  const seoData = ref(initialSeo) // hardcoded defaults shown immediately
-  // reactive meta including Open Graph tags
+  const seoData = ref({ ...initialSeo })
 
   async function fetchSeoData(path) {
     try {
@@ -16,33 +15,32 @@ export function useSeo(pathOverride = null, initialSeo = { title: '', descriptio
       const json = await res.json()
       if (json.title) seoData.value.title = json.title
       if (json.description) seoData.value.description = json.description
-      //console.log('[SEO] Fetched:', json.title)
     } catch (err) {
       console.error('[SEO Fetch Error]:', err)
-      // seoData.value remains default if API fails
-    } finally {
-      useMeta(() => ({
-        title: seoData.value.title,
-        meta: {
-          description: {name: 'description', content: seoData.value.description},
-          'og:title': {property: 'og:title', content: seoData.value.title},
-          'og:description': {property: 'og:description', content: seoData.value.description}
-        }
-      }))
     }
   }
 
-  // initial fetch
-  async function waitForSEOFetch() {
+  // Register SSR blocking fetch
+  onServerPrefetch(async () => {
     await fetchSeoData(pathOverride || route.fullPath)
-  }
+  })
 
-  waitForSEOFetch()
-  // watch route changes
+  // Keep watching route changes for client-side navigation
   watch(
     () => route.fullPath,
-    (newPath) => fetchSeoData(pathOverride || newPath)
+    (newPath) => fetchSeoData(pathOverride || newPath),
+    { immediate: true }
   )
 
-  return { waitForSEOFetch }
+  // 🔑 Use a plain function (reactive getter), not computed
+  useMeta(() => ({
+    title: seoData.value.title,
+    meta: {
+      description: { name: 'description', content: seoData.value.description },
+      'og:title': { property: 'og:title', content: seoData.value.title },
+      'og:description': { property: 'og:description', content: seoData.value.description }
+    }
+  }))
+
+  return { seoData, fetchSeoData }
 }
