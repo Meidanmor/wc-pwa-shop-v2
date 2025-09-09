@@ -155,13 +155,13 @@
   </q-page>
 </template>
 
-<script setup>
-import { ref, onMounted, nextTick, watch, onServerPrefetch } from 'vue';
+<script setup async>
+import { ref, onMounted, nextTick, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import api from 'src/boot/woocommerce';
 import cart from 'src/stores/cart';
 import { useSeo } from 'src/composables/useSeo'
-useSeo('homepage', { title: 'Loading...', description: '...' })
+
 const API_BASE = import.meta.env.VITE_API_BASE;
 
 const $q = useQuasar();
@@ -173,7 +173,8 @@ const ctaBtn = ref(null);
 const slideChunks = ref(false);
 const slide = ref(0);
 const email = ref('');
-
+const initialSeo = {title: 'Loading...', description: '...'};
+const seoDATA = ref('');
 const getChunks = (array, size) => {
   const chunks = [];
   for (let i = 0; i < array.length; i += size) {
@@ -190,21 +191,26 @@ const computeSlideChunks = () => {
 
 const fetchProducts = async () => {
   const allProducts = await api.getProducts();
+
   if (!allProducts) {
+    console.warn('[fetchProducts] api.getProducts returned null or undefined');
     products.value = [];
     featuredProducts.value = [];
-  } else {
-    products.value = allProducts;
-    featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
+    computeSlideChunks();
+    return;
   }
+
+  products.value = allProducts;
+  featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6);
   computeSlideChunks();
-  return products.value;
 };
 
-// SSR blocking — Vue will wait for this promise
-onServerPrefetch(() => fetchProducts());
+const {seoData} = useSeo('homepage', initialSeo);
+seoDATA.value = await seoData;
+await fetchProducts();
 
-// --- Set SEO independently ---
+console.log('SEO DARA', seoDATA.value);
+
 
 const avatarSVG = '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>';
 const testimonials = ref([
@@ -261,14 +267,15 @@ const scrollToProducts = () => {
   }
 };
 
-// Expose at the top-level
-defineExpose({ scrollToProducts });
 
 onMounted(async () => {
   //console.log(API_BASE);
 
   if (!products.value.length) {
     await fetchProducts();
+  }
+  if (seoData.value.title === initialSeo.title && seoData.value.description === initialSeo.description) {
+    useSeo('homepage', initialSeo)
   }
 
   if (process.env.CLIENT) {
@@ -280,10 +287,6 @@ onMounted(async () => {
 
     gsap.registerPlugin(ScrollToPlugin);
     gsap.registerPlugin(ScrollTrigger);
-
-
-    // expose to template
-    defineExpose({ scrollToProducts });
 
     setTimeout(function () {
       // Ensure elements are visible to GSAP (autoAlpha will animate them)

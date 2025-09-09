@@ -1,4 +1,4 @@
-import { ref, onServerPrefetch, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMeta } from 'quasar'
 
@@ -6,26 +6,7 @@ export function useSeo(pathOverride = null, initialSeo = { title: '', descriptio
   const route = useRoute()
   const seoData = ref({ ...initialSeo })
 
-  async function fetchSeoData(path) {
-    try {
-      const res = await fetch(
-        `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`
-      )
-      const json = await res.json()
-      if (json.title) seoData.value.title = json.title
-      if (json.description) seoData.value.description = json.description
-    } catch (err) {
-      console.error('[SEO Fetch Error]:', err)
-      // fallback to initialSeo
-      seoData.value = { ...initialSeo }
-    }
-  }
-
-  // --- SSR blocking
-  onServerPrefetch(async () => {
-    await fetchSeoData(pathOverride || route.fullPath)
-  })
-
+  // 1. Set meta synchronously (SSR-safe)
   useMeta(() => ({
     title: seoData.value.title,
     meta: {
@@ -35,11 +16,27 @@ export function useSeo(pathOverride = null, initialSeo = { title: '', descriptio
     }
   }))
 
+  // 2. Fetch SEO asynchronously (server & client)
+  async function fetchSeo(path) {
+    try {
+      const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`)
+      const json = await res.json()
+      seoData.value.title = json.title || initialSeo.title
+      seoData.value.description = json.description || initialSeo.description
+    } catch (err) {
+      console.error('[SEO Fetch Error]:', err)
+    }
+  }
+
+  // Client-side navigation updates
   watch(
     () => route.fullPath,
-    (newPath) => fetchSeoData(pathOverride || newPath),
+    (newPath) => fetchSeo(pathOverride || newPath),
     { immediate: true }
   )
 
-  return { seoData, fetchSeoData }
+  // Optional: call once on mounted
+  onMounted(() => fetchSeo(pathOverride || route.fullPath))
+
+  return { seoData, fetchSeo }
 }
