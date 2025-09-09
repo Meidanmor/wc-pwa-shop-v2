@@ -190,9 +190,10 @@ const getChunks = (array, size) => {
 };
 
 const computeSlideChunks = () => {
-  const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3;
-  slideChunks.value = getChunks(featuredProducts.value, chunkSize);
-};
+  // Use mobile default for SSR/hydration safety
+  const chunkSize = process.env.SERVER ? 1 : $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
+  slideChunks.value = getChunks(featuredProducts.value, chunkSize)
+}
 
 const fetchProducts = async () => {
   const allProducts = await api.getProducts();
