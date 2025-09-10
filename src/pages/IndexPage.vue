@@ -381,12 +381,10 @@ onMounted(async () => {
     const { ScrollTrigger } = await import('gsap/ScrollTrigger')
     gsap.registerPlugin(ScrollToPlugin, ScrollTrigger)
 
-    setTimeout(() => {
-      document.querySelectorAll('.hero-content.pre-animate').forEach(el => el.classList.remove('pre-animate'))
-    }, 500)
+    document.querySelectorAll('.hero-content.pre-animate').forEach(el => el.classList.remove('pre-animate'))
 
     await nextTick()
-
+    
     try {
       document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
 
