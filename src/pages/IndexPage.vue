@@ -10,106 +10,109 @@
       </div>
     </div>
 
-    <!-- Featured Products Slider -->
-    <section ref="productSection" class="featured-products q-my-xl">
-      <div class="container">
-        <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
-        <q-carousel
-            @touchstart.stop
-            @mousedown.stop
-            v-if="!productsLoading && slideChunks && slideChunks.length > 0"
-            v-model="slide"
-            animated
-            infinite
-            autoplay
-            navigation
-            swipeable
-            arrows
-            height="550px"
-            control-color="primary"
-            class="rounded-borders"
-        >
-          <q-carousel-slide
-            v-for="(slideGroup, index) in slideChunks"
-            :key="index"
-            :name="index"
-          >
-            <div class="row justify-center">
-              <div
-                v-for="fp in slideGroup"
-                :key="fp.id"
-                class="col-12 col-sm-6 col-md-4"
-              >
-                <q-card class="my-card full-height">
-                  <q-img
-                    width="100%"
-                    height="300px"
-                    :src="fp.images[0]?.src || `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`"
-                    :alt="fp.name"
-                  />
-                  <q-card-section>
-                    <div class="text-h6">{{ fp.name }}</div>
-                    <div class="text-subtitle2" v-html="fp.price_html" />
-                  </q-card-section>
-                  <q-card-actions>
-                    <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
-                    <q-btn
-                      label="View"
-                      color="secondary"
-                      :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
-                      flat
-                    />
-                  </q-card-actions>
-                </q-card>
-              </div>
-            </div>
-          </q-carousel-slide>
-        </q-carousel>
-        <q-banner v-else-if="!productsLoading && slideChunks && slideChunks.length === 0" class="bg-grey-2 text-center q-pa-md">No featured products found.</q-banner>
-        <div v-else class="q-pa-md flex items-center justify-center">
-          <q-spinner color="primary" size="6em" />
-        </div>
-      </div>
-    </section>
+  <!-- Featured Products Slider -->
+<section ref="productSection" class="featured-products q-my-xl">
+  <div class="container">
+    <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
 
-    <!-- CTA Section -->
-    <section class="cta-section pre-animate">
-      <div class="container">
-        <div class="cta-overlay">
-          <div class="cta-content">
-            <h2 class="text-h4 text-white q-mb-md">Discover Our Full Collection</h2>
-            <q-btn
-              ref="ctaBtn"
-              label="Browse All Products"
-              color="primary"
-              size="lg"
-              to="/products"
-            />
-          </div>
-        </div>
-      </div>
-    </section>
-    <!-- Testimonials Section -->
-    <section class="testimonials-section container pre-animate q-my-xl">
-      <h2 class="text-h3 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
-      <div class="row q-col-gutter-md">
-        <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
-          <q-card class="q-pa-md">
-            <q-avatar size="56px" class="q-mb-sm">
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="40" cy="40" r="40" fill="#E8F5E9"/>
-                <circle cx="40" cy="30" r="12" fill="#81C784"/>
-                <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/>
-              </svg>
-            </q-avatar>
-            <div class="text-subtitle1 q-mb-sm">{{ testimonial.name }}</div>
-            <q-icon name="format_quote" size="sm" class="text-grey-5" />
-            <p class="text-body2">{{ testimonial.feedback }}</p>
+    <!-- SSR/hydration-safe STATIC GRID when server had products -->
+    <div v-if="!isHydrated && hadPrefetchedProducts">
+      <div class="row justify-center">
+        <div
+          v-for="fp in featuredProducts"
+          :key="'static-' + fp.id"
+          class="col-12 col-sm-6 col-md-4 q-mb-md"
+        >
+          <q-card class="my-card full-height">
+            <q-img
+                :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
+                width="100%"
+                height="300px"
+                :src="fp.images?.[0]?.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='"
+                :alt="fp.name"
+            />            <q-card-section>
+              <div class="text-h6">{{ fp.name }}</div>
+              <div class="text-subtitle2" v-html="fp.price_html" />
+            </q-card-section>
+            <q-card-actions>
+              <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
+              <q-btn
+                label="View"
+                color="secondary"
+                :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
+                flat
+              />
+            </q-card-actions>
           </q-card>
         </div>
       </div>
-    </section>
+    </div>
 
+    <!-- Carousel after hydration (interactive) -->
+    <q-carousel
+        :key="carouselKey"
+      v-else-if="slidesReady && slideChunks.length > 0"
+      @touchstart.stop
+      @mousedown.stop
+      v-model="slide"
+      animated
+      infinite
+      autoplay
+      navigation
+      swipeable
+      arrows
+      height="550px"
+      control-color="primary"
+      class="rounded-borders"
+    >
+      <q-carousel-slide
+        v-for="(slideGroup, index) in slideChunks"
+        :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p=>p.id).join('-')}`"
+        :name="index"
+      >
+        <div class="row justify-center">
+          <div
+            v-for="fp in slideGroup"
+            :key="fp.id"
+            class="col-12 col-sm-6 col-md-4"
+          >
+            <q-card class="my-card full-height">
+              <q-img
+                  :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
+                  width="100%"
+                  height="300px"
+                  :src="fp.images?.[0]?.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='"
+                  :alt="fp.name"
+              />              <q-card-section>
+                <div class="text-h6">{{ fp.name }}</div>
+                <div class="text-subtitle2" v-html="fp.price_html" />
+              </q-card-section>
+              <q-card-actions>
+                <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
+                <q-btn
+                  label="View"
+                  color="secondary"
+                  :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
+                  flat
+                />
+              </q-card-actions>
+            </q-card>
+          </div>
+        </div>
+      </q-carousel-slide>
+    </q-carousel>
+
+    <!-- 'No products' banner only when there was NO SSR prefetched data -->
+    <q-banner v-else-if="slidesReady && !hadPrefetchedProducts && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
+      No featured products found.
+    </q-banner>
+
+    <!-- loading spinner fallback -->
+    <div v-else class="q-pa-md flex items-center justify-center">
+      <q-spinner color="primary" size="6em" />
+    </div>
+  </div>
+</section>
     <!-- Sustainability Section -->
     <section class="sustainability-section container pre-animate q-my-xl">
       <div class="row items-center">
@@ -164,154 +167,248 @@ import cart from 'src/stores/cart'
 import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
 
 // --- defineOptions preFetch (hoisted) ---
-// Only uses imported functions and literals. NO local variables!
 defineOptions({
-  // preFetch runs during SSR and on client navigation (Quasar's prefetch feature)
-  async preFetch (ctx) {
-    // fetch SEO for this page
+  async preFetch(ctx) {
+    // Fetch SEO
     const seo = await fetchSeoForPath('homepage')
 
-    // fetch products for SSR too (so page can render with products)
+    // Fetch products
     let products = []
     try {
       products = await api.getProducts()
+      //console.log('[PRODUCTS]', products);
     } catch (err) {
-      products = []
       console.error('[preFetch] products error', err)
+      products = []
     }
 
-    // If we have SSR context, store per-request values there (safe)
-    if (ctx && ctx.ssrContext) {
+    // SSR context
+    if (ctx?.ssrContext) {
       ctx.ssrContext.__PRE_FETCH_SEO__ = ctx.ssrContext.__PRE_FETCH_SEO__ || {}
       ctx.ssrContext.__PRE_FETCH_SEO__['homepage'] = seo
 
       ctx.ssrContext.__PRE_FETCH_PRODUCTS__ = ctx.ssrContext.__PRE_FETCH_PRODUCTS__ || {}
       ctx.ssrContext.__PRE_FETCH_PRODUCTS__['homepage'] = products
-    } else {
-      // Client navigation fallback: store on window so setup can read it
-      if (typeof window !== 'undefined') {
-        window.__PRE_FETCH_SEO__ = window.__PRE_FETCH_SEO__ || {}
-        window.__PRE_FETCH_SEO__['homepage'] = seo
+    } else if (typeof window !== 'undefined') {
+      // Client navigation fallback
+      window.__PRE_FETCH_SEO__ = window.__PRE_FETCH_SEO__ || {}
+      window.__PRE_FETCH_SEO__['homepage'] = seo
 
-        window.__PRE_FETCH_PRODUCTS__ = window.__PRE_FETCH_PRODUCTS__ || {}
-        window.__PRE_FETCH_PRODUCTS__['homepage'] = products
-      }
+      window.__PRE_FETCH_PRODUCTS__ = window.__PRE_FETCH_PRODUCTS__ || {}
+      window.__PRE_FETCH_PRODUCTS__['homepage'] = products
     }
   }
 })
 
-// ----------------- page setup starts here -----------------
+// ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
 const $q = useQuasar()
 
-// Try to read pre-fetched data (server or client nav)
+// --- SSR prefetch read ---
 let initialSeo = { title: '', description: '' }
 let fallbackSeo = { title: 'Loading...', description: '...' }
 let preProducts = []
 
 if (import.meta.env.SSR) {
-  // server side: use SSR context
   try {
     const ssr = useSSRContext()
     initialSeo = ssr.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
     preProducts = ssr.__PRE_FETCH_PRODUCTS__?.['homepage'] || []
+    // Log server-side values (visible in server logs)
+    //console.log('[SSR] preProducts:', Array.isArray(preProducts) ? `len=${preProducts.length}` : preProducts)
   } catch (err) {
-    // fallback (shouldn't normally happen)
-    console.log(err)
     preProducts = []
   }
-} else {
-  // client: maybe we arrived via client navigation (preFetch stored on window)
-  if (typeof window !== 'undefined') {
-    initialSeo = (window.__PRE_FETCH_SEO__ && window.__PRE_FETCH_SEO__['homepage']) || initialSeo
-    preProducts = (window.__PRE_FETCH_PRODUCTS__ && window.__PRE_FETCH_PRODUCTS__['homepage']) || []
+} else if (typeof window !== 'undefined') {
+  initialSeo = window.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
+  preProducts = window.__PRE_FETCH_PRODUCTS__?.['homepage'] || []
+  //console.log('[Client read window.__PRE_FETCH_PRODUCTS__] preProducts length:', preProducts?.length)
+}
 
-    // IMPORTANT fallback:
-    // If we don't have prefetch data on the client (full page load), read the already-rendered head
-    // so we don't overwrite server-provided meta during hydration.
-    /*if ((!initialSeo || !initialSeo.title) && typeof document !== 'undefined') {
-      const domTitle = document.title && document.title.trim()
-      const descMeta = document.querySelector('meta[name="description"]')
-      const domDesc = descMeta ? (descMeta.getAttribute('content') || '').trim() : ''
-      if (domTitle) initialSeo.title = domTitle
-      if (domDesc) initialSeo.description = domDesc
-    }*/
+// --- determine hadPrefetchedProducts robustly and build initial reactive state ---
+// preProducts may be set from SSR or from window transfer above
+let hadPrefetchedProducts = !!(preProducts && preProducts.length)
+
+// Build initialProducts that we'll use to initialize reactive refs.
+// Prefer preProducts (SSR), then window.__PRE_FETCH_PRODUCTS__ (client-transfer),
+// then DOM-scrape fallback (if server rendered HTML exists but window var is absent).
+let initialProducts = preProducts && preProducts.length ? preProducts : []
+
+if ((!initialProducts || !initialProducts.length) && typeof window !== 'undefined') {
+  // try client-transfer object (when using client navigation)
+  if (window.__PRE_FETCH_PRODUCTS__ && window.__PRE_FETCH_PRODUCTS__.length) {
+    initialProducts = window.__PRE_FETCH_PRODUCTS__
+    hadPrefetchedProducts = true
   }
 }
 
-// ----------------- SEO: pass initialSeo to composable (registers useMeta synchronously) ---
+// DOM fallback: if server rendered HTML exists but neither preProducts nor window var is present,
+// scrape the server-rendered cards and build a minimal product object so Vue doesn't remove them on hydration.
+if ((!initialProducts || !initialProducts.length) && typeof document !== 'undefined') {
+  try {
+    const cardEls = Array.from(document.querySelectorAll('.featured-products .my-card'))
+    if (cardEls.length) {
+      hadPrefetchedProducts = true
+      initialProducts = cardEls.map((cardEl, idx) => {
+        // name
+        const nameEl = cardEl.querySelector('.text-h6')
+        const name = nameEl ? nameEl.textContent.trim() : `product-${idx}`
+
+        // price_html (we keep innerHTML so v-html works)
+        const priceEl = cardEl.querySelector('.text-subtitle2')
+        const price_html = priceEl ? priceEl.innerHTML : ''
+
+        // Try to extract <img src> first (q-img might render an <img>)
+        let img = ''
+        const imgEl = cardEl.querySelector('img')
+        if (imgEl) {
+          img = imgEl.getAttribute('src') || ''
+        }
+
+        // If not found, try background-image style on any element inside the card
+        if (!img) {
+          const elWithBg = Array.from(cardEl.querySelectorAll('*')).find(el => {
+            const s = el.getAttribute && el.getAttribute('style')
+            return s && s.includes('background-image')
+          })
+          if (elWithBg) {
+            const style = elWithBg.getAttribute('style') || ''
+            const m = style.match(/background-image\s*:\s*url\((['"]?)(.*?)\1\)/i)
+            if (m && m[2]) img = m[2]
+          }
+        }
+
+        // permalink: try to find anchor with /product/ in href
+        const linkEl = cardEl.querySelector('a[href*="/product/"]')
+        const permalink = linkEl ? linkEl.getAttribute('href') : ''
+
+        // make an id so v-for keys are stable (use negative to avoid colliding with real ids)
+        const id = -(idx + 1)
+
+        return {
+          id,
+          name,
+          price_html,
+          images: img ? [{ src: img }] : [],
+          permalink
+        }
+      })
+    }
+  } catch (e) {
+    // silently continue; we'll fall back to empty arrays
+    console.warn('[init] DOM fallback failed', e)
+  }
+}
+
+// DEBUG logs - keep while we confirm behavior
+if (typeof window !== 'undefined') {
+  //console.log('[init] hadPrefetchedProducts:', hadPrefetchedProducts, 'initialProducts len:', initialProducts?.length)
+} else {
+  //console.log('[SSR] hadPrefetchedProducts (server):', hadPrefetchedProducts, 'preProducts len:', preProducts?.length)
+}
+
+// ----------------- SEO -----------------
 const { seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
 // ----------------- Products -----------------
-const products = ref(preProducts || [])
-const featuredProducts = ref((preProducts && preProducts.filter(p => p.id).slice(0, 6)) || [])
+// preserve server data; ensure arrays (avoid undefined)
+const products = ref(initialProducts || [])
+const featuredProducts = ref((initialProducts?.filter(p => p.id).slice(0, 6)) || [])
+const slideChunks = ref([])
+const slide = ref(0)
+const slidesReady = ref(false)
+const productsLoading = ref(!(preProducts && preProducts.length)) // true if no SSR products
+const isHydrated = ref(false)
+const carouselKey = ref(0)
 const productSection = ref(null)
 const ctaBtn = ref(null)
-const slideChunks = ref([]) // <- initialize as empty array, not false
-const slide = ref(0)
 const email = ref('')
-const productsLoading = ref(!preProducts?.length)
 
+// Helper: chunk array
 const getChunks = (array, size) => {
+  if (!Array.isArray(array) || !array.length) return []
   const chunks = []
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size))
-  }
+  for (let i = 0; i < array.length; i += size) chunks.push(array.slice(i, i + size))
   return chunks
 }
 
-const computeSlideChunks = () => {
-  if (!featuredProducts.value.length) {
+// computeSlideChunks: SSR -> chunkSize=1, after hydration choose by $q.screen
+const computeSlideChunks = async (opts = {}) => {
+  // opts.forceRemount: if true, will briefly set slidesReady=false to force full remount
+  const forceRemount = !!opts.forceRemount
+
+  // If empty featured list, set empty slides and mark ready
+  if (!featuredProducts.value || !featuredProducts.value.length) {
     slideChunks.value = []
+    slide.value = 0
+    slidesReady.value = true
+    //console.log('[computeSlideChunks] no featuredProducts -> slideChunks empty')
     return
   }
-  const chunkSize = import.meta.env.SSR
-    ? 1
-    : $q.screen.lt.sm
-    ? 1
-    : $q.screen.lt.md
-    ? 2
-    : 3
+
+  const chunkSize = !isHydrated.value
+      ? 1
+      : $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
+
+  //console.log('[computeSlideChunks] chunkSize:', chunkSize, 'featuredProducts len:', featuredProducts.value.length)
+
+  // optionally force a brief unmount so carousel re-initializes cleanly
+  if (forceRemount) {
+    slidesReady.value = false
+    await nextTick()
+  }
+
+  // compute and assign
   slideChunks.value = getChunks(featuredProducts.value, chunkSize)
+
+  // safety: if current slide index out of range -> reset
+  if (slide.value >= slideChunks.value.length) {
+    slide.value = 0
+  }
+
+// bump key to force carousel full remount if we're forcing remount
+  if (forceRemount) {
+    carouselKey.value += 1
+  }
+
+
+  slidesReady.value = true
+
+  //console.log('[computeSlideChunks] slideChunks count:', slideChunks.value.length, 'ids per slide:',
+      slideChunks.value.map(s => s.map(p => p.id).join(',')))
 }
 
-// --- run immediately if SSR prefetch provided products
-// compute chunks for SSR safely
-const computeSlideChunksSSR = (featured) => {
-  const chunkSize = import.meta.env.SSR ? 1 : $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
-  slideChunks.value = getChunks(featured, chunkSize)
-}
-if (preProducts?.length) {
-  featuredProducts.value = preProducts.filter(p => p.id).slice(0, 6)
-  computeSlideChunksSSR(featuredProducts.value) // SSR-safe
-  productsLoading.value = false
-}
+// Initial SSR-safe compute (no remount)
+computeSlideChunks()
 
+// Fetch products client-side if needed (keeps all behavior)
 const fetchProducts = async () => {
   productsLoading.value = true
   try {
     const allProducts = await api.getProducts()
-    if (!allProducts) {
-      products.value = []
-      featuredProducts.value = []
-    } else {
+    //console.log('[fetchProducts] allProducts length:', Array.isArray(allProducts) ? allProducts.length : allProducts)
+    if (allProducts && Array.isArray(allProducts)) {
       products.value = allProducts
       featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6)
+    } else {
+      products.value = []
+      featuredProducts.value = []
     }
-    computeSlideChunks()
+    // Force remount when new products arrive to ensure carousel rebuilds
+    await computeSlideChunks({ forceRemount: true })
     return products.value
   } catch (err) {
     console.error('[fetchProducts]', err)
     products.value = []
     featuredProducts.value = []
-    computeSlideChunks()
+    await computeSlideChunks({ forceRemount: true })
     return []
   } finally {
     productsLoading.value = false
   }
 }
 
-// ----------------- Testimonials & Instagram (same as before) ---
+// ----------------- Testimonials & Instagram -----------------
 const avatarSVG =
   '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>'
 
@@ -349,7 +446,7 @@ function revealFallback() {
   document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
 }
 
-// ----------------- Scroll (same pattern) -----------------
+// ----------------- Scroll -----------------
 const scrollToProducts = () => {
   if (typeof window !== 'undefined' && productSection.value) {
     import('gsap').then(({ gsap }) => {
@@ -362,29 +459,50 @@ const scrollToProducts = () => {
 }
 defineExpose({ scrollToProducts })
 
-// ----------------- Mounted: client-only finishes/fetches as needed ---
+// ----------------- Mounted -----------------
 onMounted(async () => {
-  // If we didn't have products from prefetch, fetch them on client
-  if (!products.value.length) {
+  // reveal hero immediately
+  document.querySelectorAll('.hero-content.pre-animate').forEach(el => el.classList.remove('pre-animate'))
+
+  // mark hydration
+  isHydrated.value = true
+
+  // If our initial products were created by the DOM-scrape fallback (we used negative ids),
+  // fetch the real products from the API now so images and full data get populated.
+  const hasPlaceholderIds = Array.isArray(products.value) && products.value.some(p => Number(p.id) < 0)
+  if (hasPlaceholderIds) {
+    // set loading if you want a spinner; optional
+    productsLoading.value = true
+    await fetchProducts() // this will replace products & featuredProducts and computeSlideChunks
+    productsLoading.value = false
+    // force remount after real data arrives
+    await computeSlideChunks({ forceRemount: true })
+  } else {
+    // normal hydration path: recompute chunks for current screen size
+    await computeSlideChunks({ forceRemount: true })
+  }
+
+  //console.log('[Hydration] featuredProducts len:', featuredProducts.value.length, 'slideChunks len:', slideChunks.value.length)
+
+  // If we somehow had no products from SSR, fetch them on client
+  if (!products.value || !products.value.length) {
     await fetchProducts()
   }
 
-  // ensure SEO is up-to-date on client
-  // If prefetch didn't populate SEO (client nav), fetch it now
-  if ((!seoData.value.title || !seoData.value.description)) {
+  // Ensure SEO is up-to-date on client
+  if (!seoData.value.title || !seoData.value.description) {
     await fetchSeoData('homepage')
   }
 
+  // GSAP animations (client-only)
   if (typeof window !== 'undefined') {
     const { gsap } = await import('gsap')
     const { ScrollToPlugin } = await import('gsap/ScrollToPlugin')
     const { ScrollTrigger } = await import('gsap/ScrollTrigger')
     gsap.registerPlugin(ScrollToPlugin, ScrollTrigger)
 
-    document.querySelectorAll('.hero-content.pre-animate').forEach(el => el.classList.remove('pre-animate'))
-
     await nextTick()
-    
+
     try {
       document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
 
@@ -424,11 +542,11 @@ onMounted(async () => {
 })
 
 // ----------------- Responsive -----------------
-watch(() => $q.screen.name, () => {
-  computeSlideChunks()
+watch(() => $q.screen.name, async () => {
+  // recompute and force remount to make sure carousel updates correctly on resize
+  await computeSlideChunks({ forceRemount: true })
 })
 </script>
-
 
 <style scoped>
 .hero-section {
