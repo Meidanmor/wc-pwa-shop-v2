@@ -10,109 +10,149 @@
       </div>
     </div>
 
-  <!-- Featured Products Slider -->
-<section ref="productSection" class="featured-products q-my-xl">
-  <div class="container">
-    <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
+    <!-- Featured Products Slider -->
+    <section ref="productSection" class="featured-products q-my-xl">
+      <div class="container">
+        <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
 
-    <!-- SSR/hydration-safe STATIC GRID when server had products -->
-    <div v-if="!isHydrated && hadPrefetchedProducts">
-      <div class="row justify-center">
-        <div
-          v-for="fp in featuredProducts"
-          :key="'static-' + fp.id"
-          class="col-12 col-sm-6 col-md-4 q-mb-md"
-        >
-          <q-card class="my-card full-height">
-            <q-img
-                :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
-                width="100%"
-                height="300px"
-                :src="fp.images?.[0]?.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='"
-                :alt="fp.name"
-            />            <q-card-section>
-              <div class="text-h6">{{ fp.name }}</div>
-              <div class="text-subtitle2" v-html="fp.price_html" />
-            </q-card-section>
-            <q-card-actions>
-              <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
-              <q-btn
-                label="View"
-                color="secondary"
-                :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
-                flat
-              />
-            </q-card-actions>
-          </q-card>
-        </div>
-      </div>
-    </div>
-
-    <!-- Carousel after hydration (interactive) -->
-    <q-carousel
-        :key="carouselKey"
-      v-else-if="slidesReady && slideChunks.length > 0"
-      @touchstart.stop
-      @mousedown.stop
-      v-model="slide"
-      animated
-      infinite
-      autoplay
-      navigation
-      swipeable
-      arrows
-      height="550px"
-      control-color="primary"
-      class="rounded-borders"
-    >
-      <q-carousel-slide
-        v-for="(slideGroup, index) in slideChunks"
-        :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p=>p.id).join('-')}`"
-        :name="index"
-      >
-        <div class="row justify-center">
-          <div
-            v-for="fp in slideGroup"
-            :key="fp.id"
-            class="col-12 col-sm-6 col-md-4"
-          >
-            <q-card class="my-card full-height">
-              <q-img
-                  :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
-                  width="100%"
-                  height="300px"
-                  :src="fp.images?.[0]?.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='"
-                  :alt="fp.name"
-              />              <q-card-section>
+        <!-- SSR/hydration-safe STATIC GRID when server had products -->
+        <div v-if="!isHydrated && hadPrefetchedProducts">
+          <div class="row justify-center">
+            <div
+                v-for="fp in featuredProducts"
+                :key="'static-' + fp.id"
+                class="col-12 col-sm-6 col-md-4 q-mb-md"
+            >
+              <q-card class="my-card full-height">
+                <q-img
+                    :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
+                    width="100%"
+                    height="300px"
+                    :src="fp.images?.[0]?.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='"
+                    :alt="fp.name"
+                />            <q-card-section>
                 <div class="text-h6">{{ fp.name }}</div>
                 <div class="text-subtitle2" v-html="fp.price_html" />
               </q-card-section>
-              <q-card-actions>
-                <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
-                <q-btn
-                  label="View"
-                  color="secondary"
-                  :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
-                  flat
-                />
-              </q-card-actions>
-            </q-card>
+                <q-card-actions>
+                  <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
+                  <q-btn
+                      label="View"
+                      color="secondary"
+                      :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
+                      flat
+                  />
+                </q-card-actions>
+              </q-card>
+            </div>
           </div>
         </div>
-      </q-carousel-slide>
-    </q-carousel>
 
-    <!-- 'No products' banner only when there was NO SSR prefetched data -->
-    <q-banner v-else-if="slidesReady && !hadPrefetchedProducts && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
-      No featured products found.
-    </q-banner>
+        <!-- Carousel after hydration (interactive) -->
+        <q-carousel
+            :key="carouselKey"
+            v-else-if="slidesReady && slideChunks.length > 0"
+            @touchstart.stop
+            @mousedown.stop
+            v-model="slide"
+            animated
+            infinite
+            autoplay
+            navigation
+            swipeable
+            arrows
+            height="550px"
+            control-color="primary"
+            class="rounded-borders"
+        >
+          <q-carousel-slide
+              v-for="(slideGroup, index) in slideChunks"
+              :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p=>p.id).join('-')}`"
+              :name="index"
+          >
+            <div class="row justify-center">
+              <div
+                  v-for="fp in slideGroup"
+                  :key="fp.id"
+                  class="col-12 col-sm-6 col-md-4"
+              >
+                <q-card class="my-card full-height">
+                  <q-img
+                      :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
+                      width="100%"
+                      height="300px"
+                      :src="fp.images?.[0]?.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='"
+                      :alt="fp.name"
+                  />              <q-card-section>
+                  <div class="text-h6">{{ fp.name }}</div>
+                  <div class="text-subtitle2" v-html="fp.price_html" />
+                </q-card-section>
+                  <q-card-actions>
+                    <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
+                    <q-btn
+                        label="View"
+                        color="secondary"
+                        :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
+                        flat
+                    />
+                  </q-card-actions>
+                </q-card>
+              </div>
+            </div>
+          </q-carousel-slide>
+        </q-carousel>
 
-    <!-- loading spinner fallback -->
-    <div v-else class="q-pa-md flex items-center justify-center">
-      <q-spinner color="primary" size="6em" />
-    </div>
-  </div>
-</section>
+        <!-- 'No products' banner only when there was NO SSR prefetched data -->
+        <q-banner v-else-if="slidesReady && !hadPrefetchedProducts && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
+          No featured products found.
+        </q-banner>
+
+        <!-- loading spinner fallback -->
+        <div v-else class="q-pa-md flex items-center justify-center">
+          <q-spinner color="primary" size="6em" />
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section pre-animate">
+      <div class="container">
+        <div class="cta-overlay">
+          <div class="cta-content">
+            <h2 class="text-h4 text-white q-mb-md">Discover Our Full Collection</h2>
+            <q-btn
+              ref="ctaBtn"
+              label="Browse All Products"
+              color="primary"
+              size="lg"
+              to="/products"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-section container pre-animate q-my-xl">
+      <h2 class="text-h3 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
+      <div class="row q-col-gutter-md">
+        <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
+          <q-card class="q-pa-md">
+            <q-avatar size="56px" class="q-mb-sm">
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="40" cy="40" r="40" fill="#E8F5E9"/>
+                <circle cx="40" cy="30" r="12" fill="#81C784"/>
+                <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/>
+              </svg>
+            </q-avatar>
+            <div class="text-subtitle1 q-mb-sm">{{ testimonial.name }}</div>
+            <q-icon name="format_quote" size="sm" class="text-grey-5" />
+            <p class="text-body2">{{ testimonial.feedback }}</p>
+          </q-card>
+        </div>
+      </div>
+    </section>
+
     <!-- Sustainability Section -->
     <section class="sustainability-section container pre-animate q-my-xl">
       <div class="row items-center">
@@ -217,6 +257,7 @@ if (import.meta.env.SSR) {
     // Log server-side values (visible in server logs)
     //console.log('[SSR] preProducts:', Array.isArray(preProducts) ? `len=${preProducts.length}` : preProducts)
   } catch (err) {
+    console.error(err);
     preProducts = []
   }
 } else if (typeof window !== 'undefined') {
