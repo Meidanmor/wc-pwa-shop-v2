@@ -374,8 +374,8 @@ const computeSlideChunks = async (opts = {}) => {
 
   slidesReady.value = true
 
-  //console.log('[computeSlideChunks] slideChunks count:', slideChunks.value.length, 'ids per slide:',
-      slideChunks.value.map(s => s.map(p => p.id).join(',')))
+  /*console.log('[computeSlideChunks] slideChunks count:', slideChunks.value.length, 'ids per slide:',
+      slideChunks.value.map(s => s.map(p => p.id).join(',')))*/
 }
 
 // Initial SSR-safe compute (no remount)
