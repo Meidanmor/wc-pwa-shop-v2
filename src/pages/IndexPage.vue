@@ -527,9 +527,9 @@ onMounted(async () => {
   //console.log('[Hydration] featuredProducts len:', featuredProducts.value.length, 'slideChunks len:', slideChunks.value.length)
 
   // If we somehow had no products from SSR, fetch them on client
-  if (!products.value || !products.value.length) {
+  /*if (!products.value || !products.value.length) {
     await fetchProducts()
-  }
+  }*/
 
   // Ensure SEO is up-to-date on client
   /*if (!seoData.value.title || !seoData.value.description) {
