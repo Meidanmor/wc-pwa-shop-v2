@@ -157,7 +157,7 @@
     <section class="sustainability-section container pre-animate q-my-xl">
       <div class="row items-center">
         <div class="col-12 col-md-6">
-          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png" alt="Sustainability" class="full-width" />
+          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png" loading="lazy" alt="Sustainability" class="full-width" />
         </div>
         <div class="col-12 col-md-6">
           <h2 class="text-h4 text-weight-light q-mb-md">Our Commitment to Sustainability</h2>
@@ -181,7 +181,7 @@
       <h2 class="text-h3 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
       <div class="row q-col-gutter-md">
         <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
-          <q-img :src="post.image" :alt="post.caption" class="rounded-borders" />
+          <q-img :src="post.image" :alt="post.caption" class="rounded-borders" img-props='{"loading":"lazy"}'/>
         </div>
       </div>
     </section>
