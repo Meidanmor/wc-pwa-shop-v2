@@ -531,9 +531,9 @@ onMounted(async () => {
   }
 
   // Ensure SEO is up-to-date on client
-  if (!seoData.value.title || !seoData.value.description) {
+  /*if (!seoData.value.title || !seoData.value.description) {
     await fetchSeoData('homepage')
-  }
+  }*/
 
   // GSAP animations (client-only)
   if (typeof window !== 'undefined') {
