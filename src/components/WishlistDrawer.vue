@@ -29,6 +29,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import cart from 'src/stores/cart.js'
 
 const wishlist = computed(() => cart.state.wishlist_items)
