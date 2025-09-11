@@ -29,49 +29,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
 import cart from 'src/stores/cart.js'
-const wishlist = ref([])
-const loading = ref(true)
+
+const wishlist = computed(() => cart.state.wishlist_items)
+const loading = computed(() => cart.state.loading.wishlist);
 
 async function addToCart(p){
 cart.add(p.id, 1);
-}
-async function fetchWishlist() {
-await cart.fetchWishlistItems();
-
-if(cart.state.wishlist_items) {
-  wishlist.value = cart.state.wishlist_items;
-}
-
-loading.value = false;
-
 }
 
 async function removeFromWishlist(id) {
   try {
     await cart.toggleWishlistItem(id)
-    wishlist.value = wishlist.value.filter(p => p.id !== id)
     console.log(wishlist.value);
   } catch (err) {
     console.error('Error removing from wishlist:', err)
   }
 }
-
-onMounted(() => {
-fetchWishlist()
-}
-)
-
-watch(
-  () => cart.state.wishlist_items,
-  (newWishlist, oldWishlist) => {
-  if(newWishlist && oldWishlist){
-  if(newWishlist.length != oldWishlist.length){
-    fetchWishlist();
-    }
-    }
-  }
-)
 
 </script>

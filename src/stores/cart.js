@@ -491,47 +491,34 @@ async function placeOrder(payload) {
 ----------------------------- */
 async function fetchWishlistItems() {
   if (!process.env.CLIENT) return;
-
   if (state.offline) {
     loadOfflineWL();
     return;
   }
 
-  // Before we fetch: replay offline actions if any
+  state.loading.wishlist = true;
   try {
     const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
       method: 'GET',
       credentials: 'include',
     });
-
     const wishlistItems = await res.json();
+
+    // Replay offline items first
     console.log('[cart.js] Replaying offline WL items...');
     await WLreplayOfflineItems(wishlistItems);
+
+    // Update state only once
+    state.wishlist_items = wishlistItems.wishlist;
 
   } catch (err) {
     state.error = err.message;
     console.log(err);
+    loadOfflineWL();
   } finally {
-    try {
-      const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      const wishlistItems = await res.json();
-      state.wishlist_items = wishlistItems.wishlist;
-    } catch (err) {
-      state.error = err.message;
-      console.log(err);
-      loadOfflineWL();
-    } finally {
-      state.loading.wishlist = false;
-    }
+    state.loading.wishlist = false;
+    persistWLOffline();
   }
-
-  persistWLOffline(); // Save cleaned local state
-
-
 }
 
 
