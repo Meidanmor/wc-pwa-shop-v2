@@ -349,7 +349,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ----------------- SEO -----------------
-const { seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
+//const { seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
 // ----------------- Products -----------------
 // preserve server data; ensure arrays (avoid undefined)
