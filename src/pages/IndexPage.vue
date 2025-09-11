@@ -204,7 +204,7 @@ import { useSSRContext } from 'vue'
 import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
-import { /*useSeo,*/ fetchSeoForPath } from 'src/composables/useSeo'
+import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
 
 // --- defineOptions preFetch (hoisted) ---
 defineOptions({
@@ -245,14 +245,14 @@ const API_BASE = import.meta.env.VITE_API_BASE
 const $q = useQuasar()
 
 // --- SSR prefetch read ---
-//let initialSeo = { title: '', description: '' }
-//let fallbackSeo = { title: 'Loading...', description: '...' }
+let initialSeo = { title: '', description: '' }
+let fallbackSeo = { title: 'Loading...', description: '...' }
 let preProducts = []
 
 if (import.meta.env.SSR) {
   try {
     const ssr = useSSRContext()
-    //initialSeo = ssr.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
+    initialSeo = ssr.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
     preProducts = ssr.__PRE_FETCH_PRODUCTS__?.['homepage'] || []
     // Log server-side values (visible in server logs)
     //console.log('[SSR] preProducts:', Array.isArray(preProducts) ? `len=${preProducts.length}` : preProducts)
@@ -261,7 +261,7 @@ if (import.meta.env.SSR) {
     preProducts = []
   }
 } else if (typeof window !== 'undefined') {
-  //initialSeo = window.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
+  initialSeo = window.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
   preProducts = window.__PRE_FETCH_PRODUCTS__?.['homepage'] || []
   //console.log('[Client read window.__PRE_FETCH_PRODUCTS__] preProducts length:', preProducts?.length)
 }
@@ -350,6 +350,7 @@ if (typeof window !== 'undefined') {
 
 // ----------------- SEO -----------------
 //const { seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
+useSeo('homepage', initialSeo, fallbackSeo)
 
 // ----------------- Products -----------------
 // preserve server data; ensure arrays (avoid undefined)
