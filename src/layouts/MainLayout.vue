@@ -27,7 +27,7 @@
         </q-btn>
 
         <q-btn flat icon="shopping_cart" @click="toggleCart">
-          <q-badge v-if="cartCount > 0" floating color="red">{{ cartCount }}</q-badge>
+          <q-badge v-if="cart.state.items_count > 0" floating color="red">{{ cart.state.items_count }}</q-badge>
         </q-btn>
         </div>
       </q-toolbar>
@@ -109,9 +109,10 @@
       :width="300"
       :touch-area-width="250"
     >
-      <q-scroll-area class="fit q-pa-sm" v-if="cartCount > 0">
+      <q-scroll-area class="fit q-pa-sm" v-if="cart.hasItems.value">
+<div>isArray: {{ cart.hasItems }}</div>
         <h4> Cart </h4>
-        <div v-for="item in cartItems" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
+        <div v-for="item in cart.state.items" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
           <img v-if="item.images" :src="item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
           <div class="q-ml-sm column">
             <div>{{ item.name }}</div>
@@ -177,7 +178,6 @@ import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
 import AiAssistant from "src/components/AiAssistant.vue";
 
-
 const isSuperAdmin = computed(() => cart.state.user?.is_super_admin === true)
 
 const $q = useQuasar()
@@ -187,10 +187,6 @@ const wishlistDrawerOpen = ref(false)
 const cartDrawer = ref(false)
 const toggleCart = () => (cartDrawer.value = !cartDrawer.value)
 const toggleWishlistDrawer = () => (wishlistDrawerOpen.value = !wishlistDrawerOpen.value)
-
-// Use computed getters to reactively track cart state
-const cartItems = computed(() => cart.state.items)
-const cartCount = computed(() => cart.state.items_count)
 
 // Wrap cart methods so template can call directly
 const increase = (id) => cart.increase(id, $q)
@@ -223,6 +219,7 @@ watch(() => cart.state.drawerOpen, val => {
   if(val === true) {
     cartDrawer.value = val;
     cart.state.drawerOpen = false;
+    cart.fetchCart()
   }
 })
 
