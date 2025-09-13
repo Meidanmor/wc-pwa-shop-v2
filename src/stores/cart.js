@@ -72,6 +72,7 @@ async function getCachedProduct(productId) {
     const data = await response.json()
     return Array.isArray(data) ? data.find(p => p.id === productId) || null : null
   } catch (err) {
+    console.error(err);
     return null
   }
 }
