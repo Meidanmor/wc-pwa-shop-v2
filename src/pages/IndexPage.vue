@@ -209,14 +209,16 @@ import { useSSRContext } from 'vue'
 import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
-import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
+import { useSeo/*, fetchSeoForPath*/ } from 'src/composables/useSeo'
+
+let initialSeo = { title: '', description: '' }
+let fallbackSeo = { title: 'Loading...', description: '...' }
 
 // --- defineOptions preFetch (hoisted) ---
 defineOptions({
   async preFetch(ctx) {
     // Fetch SEO
-    useSeo('homepage', initialSeo, fallbackSeo)
-    const seo = await fetchSeoForPath('homepage')
+    const seo = await useSeo('homepage', initialSeo, fallbackSeo)
 
     // Fetch products
     let products = []
@@ -247,8 +249,6 @@ defineOptions({
 })
 
 // --- PRODUCTS: read/hydrate from global store (boot already performed SSR fetch) ---
-let initialSeo = { title: '', description: '' }
-let fallbackSeo = { title: 'Loading...', description: '...' }
 let preProducts = []
 
 if (import.meta.env.SSR) {
