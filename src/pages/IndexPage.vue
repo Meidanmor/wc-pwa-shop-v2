@@ -209,16 +209,17 @@ import { useSSRContext } from 'vue'
 import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
-import { useSeo/*, fetchSeoForPath*/ } from 'src/composables/useSeo'
+import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
+
+let initialSeo = { title: '', description: '' }
+let fallbackSeo = { title: 'Loading...', description: '...' }
 
 // --- defineOptions preFetch (hoisted) ---
 defineOptions({
   async preFetch(ctx) {
     // Fetch SEO
-    let initialSeo = { title: '', description: '' }
-    let fallbackSeo = { title: 'Loading...', description: '...' }
 
-    const seo = await useSeo('homepage', initialSeo, fallbackSeo)
+    const seo = await fetchSeoForPath('homepage')
 
     // Fetch products
     let products = []
@@ -250,7 +251,6 @@ defineOptions({
 
 // --- PRODUCTS: read/hydrate from global store (boot already performed SSR fetch) ---
 let preProducts = []
-
 if (import.meta.env.SSR) {
   try {
     const ssr = useSSRContext()
@@ -268,6 +268,7 @@ if (import.meta.env.SSR) {
   //console.log('[Client read window.__PRE_FETCH_PRODUCTS__] preProducts length:', preProducts?.length)
 }
 
+useSeo('homepage', initialSeo, fallbackSeo)
 // --- determine hadPrefetchedProducts robustly and build initial reactive state ---
 // preProducts may be set from SSR or from window transfer above
 let hadPrefetchedProducts = !!(preProducts && preProducts.length)
