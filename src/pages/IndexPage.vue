@@ -204,7 +204,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch, computed } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { useSSRContext } from 'vue'
 import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
