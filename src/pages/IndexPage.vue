@@ -218,6 +218,9 @@ let fallbackSeo = { title: 'Loading...', description: '...' }
 defineOptions({
   async preFetch(ctx) {
     // Fetch SEO
+    let initialSeo = { title: '', description: '' }
+    let fallbackSeo = { title: 'Loading...', description: '...' }
+
     const seo = await useSeo('homepage', initialSeo, fallbackSeo)
 
     // Fetch products
