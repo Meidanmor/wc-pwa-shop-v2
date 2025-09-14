@@ -211,9 +211,6 @@ import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useSeo/*, fetchSeoForPath*/ } from 'src/composables/useSeo'
 
-let initialSeo = { title: '', description: '' }
-let fallbackSeo = { title: 'Loading...', description: '...' }
-
 // --- defineOptions preFetch (hoisted) ---
 defineOptions({
   async preFetch(ctx) {
