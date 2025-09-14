@@ -10,109 +10,114 @@
       </div>
     </div>
 
-    <!-- Featured Products Slider -->
-    <section ref="productSection" class="featured-products q-my-xl">
-      <div class="container">
-        <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
+<!-- Featured Products Slider -->
+<section ref="productSection" class="featured-products q-my-xl">
+  <div class="container">
+    <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
 
-        <!-- SSR/hydration-safe STATIC GRID when server had products -->
-        <div v-if="!isHydrated && hadPrefetchedProducts">
-          <div class="row justify-center">
-            <div
-                v-for="fp in featuredProducts"
-                :key="'static-' + fp.id"
-                class="col-12 col-sm-6 col-md-4 q-mb-md"
-            >
-              <q-card class="my-card full-height">
-                <q-img
-                    :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
-                    width="100%"
-                    height="300px"
-                    :src="fp.images?.[0]?.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='"
-                    :alt="fp.name"
-                />            <q-card-section>
+    <!-- SSR-safe static grid: rendered on server and during client initial render -->
+    <div v-if="!isHydrated && hadPrefetchedProducts">
+      <div class="row justify-center">
+        <div
+          v-for="fp in featuredProducts"
+          :key="'static-' + fp.id"
+          class="col-12 col-sm-6 col-md-4 q-mb-md"
+        >
+          <q-card class="my-card full-height">
+            <q-img
+              :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
+              width="100%"
+              class="ssr-img"
+              height="300px"
+              :src="fp.images?.[0]?.src"
+              :alt="fp.name"
+            />
+            <q-card-section>
+              <div hidden class="img-url">{{fp.images?.[0]?.src}}</div>
+              <div hidden class="p-id">{{fp.id}}</div>
+              <div class="text-h6">{{ fp.name }}</div>
+              <div class="text-subtitle2" v-html="fp.price_html" />
+            </q-card-section>
+            <q-card-actions>
+              <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
+              <q-btn
+                label="View"
+                color="secondary"
+                :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
+                flat
+              />
+            </q-card-actions>
+          </q-card>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive carousel AFTER hydration -->
+    <q-carousel
+      v-else-if="isHydrated && slideChunks.length > 0"
+      :key="carouselKey"
+      @touchstart.stop
+      @mousedown.stop
+      v-model="slide"
+      animated
+      infinite
+      navigation
+      swipeable
+      arrows
+      height="550px"
+      control-color="primary"
+      class="rounded-borders"
+    >
+      <q-carousel-slide
+        v-for="(slideGroup, index) in slideChunks"
+        :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p => p.id).join('-')}`"
+        :name="index"
+      >
+        <div class="row justify-center">
+          <div
+            v-for="fp in slideGroup"
+            :key="fp.id"
+            class="col-12 col-sm-6 col-md-4"
+          >
+            <q-card class="my-card full-height">
+              <q-img
+                :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
+                width="100%"
+                height="300px"
+                :src="fp.images?.[0]?.src"
+                :alt="fp.name"
+              />
+              <q-card-section>
                 <div class="text-h6">{{ fp.name }}</div>
                 <div class="text-subtitle2" v-html="fp.price_html" />
               </q-card-section>
-                <q-card-actions>
-                  <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
-                  <q-btn
-                      label="View"
-                      color="secondary"
-                      :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
-                      flat
-                  />
-                </q-card-actions>
-              </q-card>
-            </div>
+              <q-card-actions>
+                <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
+                <q-btn
+                  label="View"
+                  color="secondary"
+                  :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
+                  flat
+                />
+              </q-card-actions>
+            </q-card>
           </div>
         </div>
+      </q-carousel-slide>
+    </q-carousel>
 
-        <!-- Carousel after hydration (interactive) -->
-        <q-carousel
-            :key="carouselKey"
-            v-else-if="slidesReady && slideChunks.length > 0"
-            @touchstart.stop
-            @mousedown.stop
-            v-model="slide"
-            animated
-            infinite
-            autoplay
-            navigation
-            swipeable
-            arrows
-            height="550px"
-            control-color="primary"
-            class="rounded-borders"
-        >
-          <q-carousel-slide
-              v-for="(slideGroup, index) in slideChunks"
-              :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p=>p.id).join('-')}`"
-              :name="index"
-          >
-            <div class="row justify-center">
-              <div
-                  v-for="fp in slideGroup"
-                  :key="fp.id"
-                  class="col-12 col-sm-6 col-md-4"
-              >
-                <q-card class="my-card full-height">
-                  <q-img
-                      :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
-                      width="100%"
-                      height="300px"
-                      :src="fp.images?.[0]?.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='"
-                      :alt="fp.name"
-                  />              <q-card-section>
-                  <div class="text-h6">{{ fp.name }}</div>
-                  <div class="text-subtitle2" v-html="fp.price_html" />
-                </q-card-section>
-                  <q-card-actions>
-                    <q-btn label="Add to Cart" color="primary" @click="addToCart(fp)" />
-                    <q-btn
-                        label="View"
-                        color="secondary"
-                        :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
-                        flat
-                    />
-                  </q-card-actions>
-                </q-card>
-              </div>
-            </div>
-          </q-carousel-slide>
-        </q-carousel>
+    <!-- 'No products' banner only when there was NO SSR prefetched data -->
+    <q-banner v-else-if="slidesReady && !hadPrefetchedProducts && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
+      No featured products found.
+    </q-banner>
 
-        <!-- 'No products' banner only when there was NO SSR prefetched data -->
-        <q-banner v-else-if="slidesReady && !hadPrefetchedProducts && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
-          No featured products found.
-        </q-banner>
+    <!-- loading spinner fallback -->
+    <div v-else class="q-pa-md flex items-center justify-center">
+      <q-spinner color="primary" size="6em" />
+    </div>
+  </div>
+</section>
 
-        <!-- loading spinner fallback -->
-        <div v-else class="q-pa-md flex items-center justify-center">
-          <q-spinner color="primary" size="6em" />
-        </div>
-      </div>
-    </section>
 
     <!-- CTA Section -->
     <section class="cta-section pre-animate">
@@ -157,7 +162,7 @@
     <section class="sustainability-section container pre-animate q-my-xl">
       <div class="row items-center">
         <div class="col-12 col-md-6">
-          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png" loading="lazy" alt="Sustainability" class="full-width" />
+          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png" alt="Sustainability" class="full-width" />
         </div>
         <div class="col-12 col-md-6">
           <h2 class="text-h4 text-weight-light q-mb-md">Our Commitment to Sustainability</h2>
@@ -181,7 +186,7 @@
       <h2 class="text-h3 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
       <div class="row q-col-gutter-md">
         <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
-          <q-img :src="post.image" :alt="post.caption" class="rounded-borders" img-props='{"loading":"lazy"}'/>
+          <q-img :src="post.image" :alt="post.caption" class="rounded-borders" />
         </div>
       </div>
     </section>
@@ -199,7 +204,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { useSSRContext } from 'vue'
 import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
@@ -240,11 +245,7 @@ defineOptions({
   }
 })
 
-// ----------------- Setup -----------------
-const API_BASE = import.meta.env.VITE_API_BASE
-const $q = useQuasar()
-
-// --- SSR prefetch read ---
+// --- PRODUCTS: read/hydrate from global store (boot already performed SSR fetch) ---
 let initialSeo = { title: '', description: '' }
 let fallbackSeo = { title: 'Loading...', description: '...' }
 let preProducts = []
@@ -301,9 +302,10 @@ if ((!initialProducts || !initialProducts.length) && typeof document !== 'undefi
 
         // Try to extract <img src> first (q-img might render an <img>)
         let img = ''
-        const imgEl = cardEl.querySelector('img')
+        const imgEl = cardEl.querySelector('.img-url')
+        console.log(imgEl);
         if (imgEl) {
-          img = imgEl.getAttribute('src') || ''
+          img = imgEl.textContent.trim() || '';
         }
 
         // If not found, try background-image style on any element inside the card
@@ -324,7 +326,8 @@ if ((!initialProducts || !initialProducts.length) && typeof document !== 'undefi
         const permalink = linkEl ? linkEl.getAttribute('href') : ''
 
         // make an id so v-for keys are stable (use negative to avoid colliding with real ids)
-        const id = -(idx + 1)
+        const productID = cardEl.querySelector('.p-id')
+        const id = productID ? productID.textContent.trim() : -(idx + 1);
 
         return {
           id,
@@ -339,27 +342,39 @@ if ((!initialProducts || !initialProducts.length) && typeof document !== 'undefi
     // silently continue; we'll fall back to empty arrays
     console.warn('[init] DOM fallback failed', e)
   }
+  console.log(initialProducts);
 }
 
-// DEBUG logs - keep while we confirm behavior
-if (typeof window !== 'undefined') {
-  //console.log('[init] hadPrefetchedProducts:', hadPrefetchedProducts, 'initialProducts len:', initialProducts?.length)
-} else {
-  //console.log('[SSR] hadPrefetchedProducts (server):', hadPrefetchedProducts, 'preProducts len:', preProducts?.length)
-}
+const products = ref(initialProducts || [])
+const featuredProducts = ref((initialProducts?.filter(p => p.id).slice(0, 6)) || [])
+const productsLoading = ref(!(preProducts && preProducts.length)) // true if no SSR products
 
-// ----------------- SEO -----------------
-//const { seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
-useSeo('homepage', initialSeo, fallbackSeo)
+// ----------------- Setup -----------------
+const API_BASE = import.meta.env.VITE_API_BASE
+const $q = useQuasar()
+
+const { seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
 // ----------------- Products -----------------
 // preserve server data; ensure arrays (avoid undefined)
-const products = ref(initialProducts || [])
-const featuredProducts = ref((initialProducts?.filter(p => p.id).slice(0, 6)) || [])
+/*const products = ref(initialProducts || [])
+const featuredProducts = ref((initialProducts?.filter(p => p.id).slice(0, 6)) || [])*/
+
+// --- utility: chunk products into slides ---
+/*function slideChunks(list) {
+  const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
+  const chunks = []
+  for (let i = 0; i < list.length; i += chunkSize) {
+    chunks.push(list.slice(i, i + chunkSize))
+  }
+  return chunks
+}*/
 const slideChunks = ref([])
+
+
+
 const slide = ref(0)
 const slidesReady = ref(false)
-const productsLoading = ref(!(preProducts && preProducts.length)) // true if no SSR products
 const isHydrated = ref(false)
 const carouselKey = ref(0)
 const productSection = ref(null)
@@ -423,7 +438,7 @@ const computeSlideChunks = async (opts = {}) => {
 // Initial SSR-safe compute (no remount)
 computeSlideChunks()
 
-// Fetch products client-side if needed (keeps all behavior)
+// ----------------- Fetch products client-side if needed -----------------
 const fetchProducts = async () => {
   productsLoading.value = true
   try {
@@ -532,9 +547,9 @@ onMounted(async () => {
   }*/
 
   // Ensure SEO is up-to-date on client
-  /*if (!seoData.value.title || !seoData.value.description) {
+  if (!seoData.value.title || !seoData.value.description) {
     await fetchSeoData('homepage')
-  }*/
+  }
 
   // GSAP animations (client-only)
   if (typeof window !== 'undefined') {
