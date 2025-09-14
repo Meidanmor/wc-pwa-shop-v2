@@ -1,6 +1,7 @@
 // src/stores/cart.js
 import { reactive, computed } from 'vue'
 import { fetchWithToken } from 'src/composables/useApiFetch.js'
+import productsStore from 'src/stores/products'
 
 /* -------------------------
    Constants & state (same shape as before)
@@ -60,22 +61,54 @@ function getMaxAllowed(item) {
 }
 
 async function getCachedProduct(productId) {
-  if (typeof window === 'undefined' || !('caches' in window)) return null
+  // 1) Prefer in-memory global products store (fast, SSR hydrated if available)
   try {
-    const cache = await caches.open('woocommerce-api')
-    const keys = await cache.keys()
-    // find any cached request that looks like a products list
-    const match = keys.find(req => req.url.includes('/products') || req.url.includes('/v1/products'))
-    if (!match) return null
-    const response = await cache.match(match)
-    if (!response) return null
-    const data = await response.json()
-    return Array.isArray(data) ? data.find(p => p.id === productId) || null : null
+    const fromStore = productsStore.getById(Number(productId))
+    if (fromStore) return fromStore
   } catch (err) {
-    console.error(err);
-    return null
+    console.error(err)
+    // swallow
   }
+
+  // 2) Try SW cache (the same cache / key used by products store)
+  // NOTE: ensure these keys match products store SW cache keys
+  try {
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      const cache = await caches.open('products-cache') // same name product store uses
+      // the products store writes a synthetic key like '/api/products' (see earlier products.js)
+      const matchKey = '/api/products'
+      const res = await cache.match(matchKey)
+      if (res && res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          const found = data.find(p => Number(p.id) === Number(productId))
+          if (found) return found
+        }
+      }
+    }
+  } catch (err) {
+    // ignore read/cache errors
+    console.warn('[cart] getCachedProduct cache read failed', err)
+  }
+
+  // 3) As a last resort: ask the products store to fetch the listing if needed,
+  //    (productsStore.fetchProductsIfNeeded will reuse SSR/cache and only hit network when needed)
+  try {
+    // Only fetch when online to avoid blocking while offline:
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      await productsStore.fetchProductsIfNeeded()
+      const fromAfterFetch = productsStore.getById(Number(productId))
+      if (fromAfterFetch) return fromAfterFetch
+    }
+  } catch (err) {
+    console.warn('[cart]', err)
+    // swallow
+  }
+
+  // Nothing found
+  return null
 }
+
 
 function normalizeVariation(variation) {
   // Always return sorted array of { attribute, value }

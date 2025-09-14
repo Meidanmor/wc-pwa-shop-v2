@@ -29,6 +29,7 @@ export default defineConfig((/* ctx */) => {
     boot: [
         { path: 'push', client: true } ,
         { path: 'woocommerce', client: true } ,
+        { path: 'products' } ,
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
@@ -178,7 +179,7 @@ export default defineConfig((/* ctx */) => {
       workbox: {
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/nuxt\/.meidanm\.com\/wp-json\/wc\/store\/v1\/products?per_page=100/,
+            urlPattern: /^https:\/\/nuxt\.meidanm\.com\/wp-json\/wc\/store\/v1\/products(\?.*)?$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'products-cache',
