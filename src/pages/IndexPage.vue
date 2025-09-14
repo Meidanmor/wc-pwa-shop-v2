@@ -215,6 +215,7 @@ import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
 defineOptions({
   async preFetch(ctx) {
     // Fetch SEO
+    useSeo('homepage', initialSeo, fallbackSeo)
     const seo = await fetchSeoForPath('homepage')
 
     // Fetch products
@@ -352,8 +353,6 @@ const productsLoading = ref(!(preProducts && preProducts.length)) // true if no 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
 const $q = useQuasar()
-
-const { seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
 // ----------------- Products -----------------
 // preserve server data; ensure arrays (avoid undefined)
@@ -547,9 +546,9 @@ onMounted(async () => {
   }*/
 
   // Ensure SEO is up-to-date on client
-  if (!seoData.value.title || !seoData.value.description) {
+  /*if (!seoData.value.title || !seoData.value.description) {
     await fetchSeoData('homepage')
-  }
+  }*/
 
   // GSAP animations (client-only)
   if (typeof window !== 'undefined') {
