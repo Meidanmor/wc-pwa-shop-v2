@@ -291,7 +291,7 @@ if (import.meta.env.SSR) {
 
 
 
-useSeo('homepage', initialSeo, fallbackSeo)
+const {seoData,fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 // --- determine hadPrefetchedProducts robustly and build initial reactive state ---
 // preProducts may be set from SSR or from window transfer above
 let hadPrefetchedProducts = !!(preProducts && preProducts.length)
