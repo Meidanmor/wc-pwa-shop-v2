@@ -283,11 +283,11 @@ if (import.meta.env.SSR) {
     console.error(err);
     //preProducts = []
   }
-} /*else if (typeof window !== 'undefined') {
+} else if (typeof window !== 'undefined') {
   initialSeo = window.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
-  preProducts = window.__PRE_FETCH_PRODUCTS__?.['homepage'] || []
+  //preProducts = window.__PRE_FETCH_PRODUCTS__?.['homepage'] || []
   //console.log('[Client read window.__PRE_FETCH_PRODUCTS__] preProducts length:', preProducts?.length)
-}*/
+}
 
 
 
