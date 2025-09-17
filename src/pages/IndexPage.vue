@@ -27,12 +27,10 @@
   swipeable
   height="550px"
   class="rounded-borders"
-
 >
   <!-- Slide 1 -->
   <q-carousel-slide name="0">
-    <div class="row justify-center items-stretch q-col-gutter-md" style="height:100%;">
-      <div v-for="i in 3" :key="'s1-'+i" class="col-12 col-sm-6 col-md-4">
+      <div v-for="i in 6" :key="'s1-'+i" class="col-12 col-sm-6 col-md-4 row justify-center items-stretch q-col-gutter-md">
         <q-card style="height:100%;">
           <q-skeleton height="300px" square />
           <q-card-section>
@@ -45,27 +43,8 @@
           </q-card-actions>
         </q-card>
       </div>
-    </div>
   </q-carousel-slide>
 
-  <!-- Slide 2 -->
-  <q-carousel-slide name="1">
-    <div class="row justify-center items-stretch q-col-gutter-md" style="height:100%;">
-      <div v-for="i in 3" :key="'s2-'+i" class="col-12 col-sm-6 col-md-4">
-        <q-card>
-          <q-skeleton height="200px" square />
-          <q-card-section>
-            <q-skeleton type="text" width="70%" />
-            <q-skeleton type="text" width="40%" />
-          </q-card-section>
-          <q-card-actions align="right">
-            <q-skeleton type="QBtn" />
-            <q-skeleton type="QBtn" />
-          </q-card-actions>
-        </q-card>
-      </div>
-    </div>
-  </q-carousel-slide>
 </q-carousel>
 
 
@@ -121,6 +100,39 @@
           </div>
         </div>
       </q-carousel-slide>
+
+      <!-- Custom navigation dots -->
+      <template v-slot:navigation-icon="{ active, onClick, index }">
+        <q-btn
+            :flat="!active"
+            :color="active ? 'primary' : 'grey'"
+            :aria-label="`Go to slide ${index + 1}`"
+            size="sm"
+            round
+            dense
+            @click="onClick"
+        />
+      </template>
+
+      <!-- Custom prev/next arrows -->
+      <template v-slot:control-prev="{ goToPrev }">
+        <q-btn
+            icon="chevron_left"
+            aria-label="Previous slide"
+            flat round dense
+            @click="goToPrev"
+        />
+      </template>
+
+      <template v-slot:control-next="{ goToNext }">
+        <q-btn
+            icon="chevron_right"
+            aria-label="Next slide"
+            flat round dense
+            @click="goToNext"
+        />
+      </template>
+
     </q-carousel>
 
     <!-- 'No products' banner only when there was NO SSR prefetched data -->
@@ -236,132 +248,32 @@ const skeletonSlide = ref('0')
 defineOptions({
   async preFetch(ctx) {
     // Fetch SEO
-  console.log('[preFetch] running; typeof window =', typeof window)
-  console.log('[preFetch] ctx.ssrContext present?', !!ctx?.ssrContext)
-
     const seo = await fetchSeoForPath('homepage');
-    /*console.time('products fetched');
-    const products = await api.getProducts(6).catch(err => { console.error('[preFetch] products error', err); return [] });
-    console.timeEnd('products fetched')*/
-
-    /*const [seo, products] = await Promise.all([
-      fetchSeoForPath('homepage'),
-      api.getProducts(6).catch(err => { console.error('[preFetch] products error', err); return [] })
-    ]);*/
-
-  // store minimal POJOs to avoid reactive proxies:
-  /*const minimal = (Array.isArray(products) ? products : []).map(p => ({
-    id: p?.id ?? null,
-    name: p?.name ?? '',
-    price_html: p?.price_html ?? '',
-    images: p?.images ? p.images : [],
-    permalink: p?.permalink ?? ''
-  }))*/
-
     // SSR context
     if (ctx?.ssrContext) {
       ctx.ssrContext.__PRE_FETCH_SEO__ = ctx.ssrContext.__PRE_FETCH_SEO__ || {}
       ctx.ssrContext.__PRE_FETCH_SEO__['homepage'] = seo
 
-      /*ctx.ssrContext.__PRE_FETCH_PRODUCTS__ = ctx.ssrContext.__PRE_FETCH_PRODUCTS__ || {}
-      ctx.ssrContext.__PRE_FETCH_PRODUCTS__['homepage'] = products*/
-
     }
   }
 })
 
-// --- PRODUCTS: read/hydrate from global store (boot already performed SSR fetch) ---
 let preProducts = []
 if (import.meta.env.SSR) {
   try {
     const ssr = useSSRContext()
     initialSeo = ssr.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
-    //preProducts = ssr.__PRE_FETCH_PRODUCTS__?.['homepage'] || []
-    // Log server-side values (visible in server logs)
-    //console.log('[SSR] preProducts:', Array.isArray(preProducts) ? `len=${preProducts.length}` : preProducts)
   } catch (err) {
     console.error(err);
-    //preProducts = []
   }
-} else if (typeof window !== 'undefined') {
-  initialSeo = window.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
-  //preProducts = window.__PRE_FETCH_PRODUCTS__?.['homepage'] || []
-  //console.log('[Client read window.__PRE_FETCH_PRODUCTS__] preProducts length:', preProducts?.length)
 }
 
 
-
 const {seoData,fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
-// --- determine hadPrefetchedProducts robustly and build initial reactive state ---
-// preProducts may be set from SSR or from window transfer above
+
 let hadPrefetchedProducts = !!(preProducts && preProducts.length)
 let initialProducts = [];
-// Build initialProducts that we'll use to initialize reactive refs.
-// Prefer preProducts (SSR), then window.__PRE_FETCH_PRODUCTS__ (client-transfer),
-// then DOM-scrape fallback (if server rendered HTML exists but window var is absent).
 
-// DOM fallback: if server rendered HTML exists but neither preProducts nor window var is present,
-// scrape the server-rendered cards and build a minimal product object so Vue doesn't remove them on hydration.
-/*if ((!initialProducts || !initialProducts.length) && typeof document !== 'undefined') {
-  console.log(initialProducts);
-  try {
-    console.log('using card fqllback');
-    const cardEls = Array.from(document.querySelectorAll('.featured-products .my-card'))
-    if (cardEls.length) {
-      hadPrefetchedProducts = true
-      initialProducts = cardEls.map((cardEl, idx) => {
-        // name
-        const nameEl = cardEl.querySelector('.text-h6')
-        const name = nameEl ? nameEl.textContent.trim() : `product-${idx}`
-
-        // price_html (we keep innerHTML so v-html works)
-        const priceEl = cardEl.querySelector('.text-subtitle2')
-        const price_html = priceEl ? priceEl.innerHTML : ''
-
-        // Try to extract <img src> first (q-img might render an <img>)
-        let img = ''
-        const imgEl = cardEl.querySelector('.img-url')
-        console.log(imgEl);
-        if (imgEl) {
-          img = imgEl.textContent.trim() || '';
-        }
-
-        // If not found, try background-image style on any element inside the card
-        if (!img) {
-          const elWithBg = Array.from(cardEl.querySelectorAll('*')).find(el => {
-            const s = el.getAttribute && el.getAttribute('style')
-            return s && s.includes('background-image')
-          })
-          if (elWithBg) {
-            const style = elWithBg.getAttribute('style') || ''
-            const m = style.match(/background-image\s*:\s*url\((['"]?)(.*?)\1\)/i)
-            if (m && m[2]) img = m[2]
-          }
-        }
-
-        // permalink: try to find anchor with /product/ in href
-        const linkEl = cardEl.querySelector('a[href*="/product/"]')
-        const permalink = linkEl ? linkEl.getAttribute('href') : ''
-
-        // make an id so v-for keys are stable (use negative to avoid colliding with real ids)
-        const productID = cardEl.querySelector('.p-id')
-        const id = productID ? productID.textContent.trim() : -(idx + 1);
-
-        return {
-          id,
-          name,
-          price_html,
-          images: img ? [{ src: img }] : [],
-          permalink
-        }
-      })
-    }
-  } catch (e) {
-    // silently continue; we'll fall back to empty arrays
-    console.warn('[init] DOM fallback failed', e)
-  }
-  console.log(initialProducts);
-}*/
 
 const products = ref(initialProducts || [])
 const featuredProducts = ref((initialProducts?.filter(p => p.id).slice(0, 6)) || [])
@@ -371,24 +283,7 @@ const productsLoading = ref(!(preProducts && preProducts.length)) // true if no 
 const API_BASE = import.meta.env.VITE_API_BASE
 const $q = useQuasar()
 
-// ----------------- Products -----------------
-// preserve server data; ensure arrays (avoid undefined)
-/*const products = ref(initialProducts || [])
-const featuredProducts = ref((initialProducts?.filter(p => p.id).slice(0, 6)) || [])*/
-
-// --- utility: chunk products into slides ---
-/*function slideChunks(list) {
-  const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
-  const chunks = []
-  for (let i = 0; i < list.length; i += chunkSize) {
-    chunks.push(list.slice(i, i + chunkSize))
-  }
-  return chunks
-}*/
 const slideChunks = ref([])
-
-
-
 const slide = ref(0)
 const slidesReady = ref(false)
 const isHydrated = ref(false)
@@ -430,25 +325,17 @@ const computeSlideChunks = async (opts = {}) => {
     slidesReady.value = false
     await nextTick()
   }
-
   // compute and assign
   slideChunks.value = getChunks(featuredProducts.value, chunkSize)
-
   // safety: if current slide index out of range -> reset
   if (slide.value >= slideChunks.value.length) {
     slide.value = 0
   }
-
 // bump key to force carousel full remount if we're forcing remount
   if (forceRemount) {
     carouselKey.value += 1
   }
-
-
   slidesReady.value = true
-
-  /*console.log('[computeSlideChunks] slideChunks count:', slideChunks.value.length, 'ids per slide:',
-      slideChunks.value.map(s => s.map(p => p.id).join(',')))*/
 }
 
 // Initial SSR-safe compute (no remount)
@@ -531,30 +418,12 @@ const scrollToProducts = () => {
   }
 }
 defineExpose({ scrollToProducts })
-if (process.env.DEV) console.time('SSR hydration')
 
 // ----------------- Mounted -----------------
 onMounted(async () => {
-  console.timeEnd('SSR hydration')
   // reveal hero immediately
   document.querySelectorAll('.hero-content.pre-animate').forEach(el => el.classList.remove('pre-animate'))
 
-  // If our initial products were created by the DOM-scrape fallback (we used negative ids),
-  // fetch the real products from the API now so images and full data get populated.
-  const hasPlaceholderIds = Array.isArray(products.value) && products.value.some(p => Number(p.id) < 0)
-  if (hasPlaceholderIds) {
-    // set loading if you want a spinner; optional
-    //productsLoading.value = true
-    await fetchProducts() // this will replace products & featuredProducts and computeSlideChunks
-    productsLoading.value = false
-    // force remount after real data arrives
-    await computeSlideChunks({ forceRemount: true })
-  } else {
-    // normal hydration path: recompute chunks for current screen size
-    await computeSlideChunks({ forceRemount: true })
-  }
-
-  //console.log('[Hydration] featuredProducts len:', featuredProducts.value.length, 'slideChunks len:', slideChunks.value.length)
 
   // If we somehow had no products from SSR, fetch them on client
   if (!products.value || !products.value.length) {

@@ -19,7 +19,7 @@
       <q-bar class="bg-primary text-white">
         <div class="text-subtitle2">AI Assistant</div>
         <q-space />
-        <q-btn dense flat icon="close" @click="visible = false;fab1 = false" />
+        <q-btn dense flat icon="close" aria-label="Close chat" @click="visible = false;fab1 = false" />
       </q-bar>
 
 <q-scroll-area class="chat-scroll-area" ref="scrollRef" style="height: 250px;">
