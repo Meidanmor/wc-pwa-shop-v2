@@ -28,15 +28,27 @@
   height="550px"
   class="rounded-borders"
 >
-  <q-carousel-slide v-for="i in 2" :name="i">
+<q-carousel
+  v-if="!isHydrated || slideChunks.length === 0"
+  v-model="skeletonSlide"
+  animated
+  arrows
+  navigation
+  infinite
+  swipeable
+  height="550px"
+  class="rounded-borders"
+>
+  <!-- Generate 2 skeleton slides -->
+  <q-carousel-slide v-for="slideIndex in 2" :key="'skeleton-slide-' + slideIndex" :name="slideIndex">
     <q-row class="q-col-gutter-md justify-center">
+      <!-- 3 skeleton cards per slide -->
       <q-col
-        v-for="i in 3"
-        :key="'s1-'+i"
+        v-for="cardIndex in 3"
+        :key="'skeleton-card-' + slideIndex + '-' + cardIndex"
         cols="12" sm="6" md="4"
-        class="flex justify-center"
       >
-        <q-card style="height:100%;">
+        <q-card class="full-height">
           <q-skeleton height="300px" square />
           <q-card-section>
             <q-skeleton type="text" width="70%" />
