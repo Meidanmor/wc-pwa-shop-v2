@@ -15,7 +15,7 @@
           </q-toolbar-title>
 
           <!-- Mobile Menu Toggle -->
-          <q-btn flat dense icon="menu" v-if="$q.screen.lt.md" @click="mobileMenuDrawer = true" />
+          <q-btn flat dense icon="menu" aria-label="Open menu" v-if="$q.screen.lt.md" @click="mobileMenuDrawer = true" />
 
        </div>
         <router-link to="/" class="flex items-center q-mr-auto order-first">

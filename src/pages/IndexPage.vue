@@ -28,10 +28,10 @@
   height="550px"
   class="rounded-borders"
 >
-  <q-carousel-slide name="0">
+  <q-carousel-slide v-for="i in 2" :name="i">
     <q-row class="q-col-gutter-md justify-center">
       <q-col
-        v-for="i in 6"
+        v-for="i in 3"
         :key="'s1-'+i"
         cols="12" sm="6" md="4"
         class="flex justify-center"
@@ -64,7 +64,7 @@
       infinite
       navigation
       swipeable
-      arrows
+      :arrows="false"
       height="550px"
       control-color="primary"
       class="rounded-borders"
@@ -106,41 +106,47 @@
         </div>
       </q-carousel-slide>
 
-      <!-- Custom navigation dots -->
-      <template v-slot:navigation-icon="{ active, onClick, index }">
-<q-btn
-  :flat="false"
-  :color="active ? 'primary' : 'grey-6'"
-  :unelevated="!active"
-  :aria-label="`Go to slide ${index + 1}`"
-  size="sm"
-  round
-  dense
-  @click="onClick"
-/>
-      </template>
+  <!-- custom dots: use the slot signature Quasar provides and pass-through btnProps
+       (btnProps preserves the look; we add aria-label) -->
+  <template #navigation-icon="{ active, btnProps, onClick, index }">
+    <q-btn
+      v-bind="btnProps"
+      :flat="!active"
+      :color="active ? 'primary' : btnProps.color || 'grey-5'"
+      size="sm"
+      round
+      dense
+      :aria-label="`Go to slide ${index + 1}`"
+      @click="onClick"
+    />
+  </template>
 
-<!-- Custom prev arrow -->
-<template v-slot:control-prev="{ goToPrev }">
-  <q-btn
-    icon="chevron_left"
-    aria-label="Previous slide"
-    flat round dense
-    class="absolute-left q-carousel__control q-carousel__arrow"
-    @click="goToPrev"
-  />
-</template>
+  <!-- custom prev/next arrows via control slot.
+       We place q-carousel-control children (same approach shown in docs)
+       and use our own handlers that update the v-model (slide). -->
+  <template #control>
+    <q-carousel-control position="center-left" :offset="[12, 0]">
+      <q-btn
+        icon="chevron_left"
+        flat
+        round
+        dense
+        aria-label="Previous slide"
+        @click="goPrev"
+      />
+    </q-carousel-control>
 
-<!-- Custom next arrow -->
-<template v-slot:control-next="{ goToNext }">
-  <q-btn
-    icon="chevron_right"
-    aria-label="Next slide"
-    flat round dense
-    class="absolute-right q-carousel__control q-carousel__arrow"
-    @click="goToNext"
-  />
-</template>
+    <q-carousel-control position="center-right" :offset="[12, 0]">
+      <q-btn
+        icon="chevron_right"
+        flat
+        round
+        dense
+        aria-label="Next slide"
+        @click="goNext"
+      />
+    </q-carousel-control>
+  </template>
 
     </q-carousel>
 
@@ -428,6 +434,21 @@ const scrollToProducts = () => {
 }
 defineExpose({ scrollToProducts })
 
+// make sure slide is a number (you already have: const slide = ref(0))
+const slideCount = () => slideChunks.value?.length || 0
+
+const goPrev = () => {
+  const n = slideCount()
+  if (!n) return
+  // works if slide is number or string, convert to Number
+  slide.value = (Number(slide.value) - 1 + n) % n
+}
+
+const goNext = () => {
+  const n = slideCount()
+  if (!n) return
+  slide.value = (Number(slide.value) + 1) % n
+}
 // ----------------- Mounted -----------------
 onMounted(async () => {
   // reveal hero immediately
