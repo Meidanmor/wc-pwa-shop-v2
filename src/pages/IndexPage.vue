@@ -28,28 +28,35 @@
   height="550px"
   class="rounded-borders"
 >
-  <!-- Generate 2 skeleton slides -->
-  <q-carousel-slide v-for="slideIndex in 2" :key="'skeleton-slide-' + slideIndex" :name="slideIndex">
-    <q-row class="q-col-gutter-md justify-center">
-      <!-- 3 skeleton cards per slide -->
-      <q-col
-        v-for="cardIndex in 3"
-        :key="'skeleton-card-' + slideIndex + '-' + cardIndex"
-        cols="12" sm="6" md="4"
-      >
-        <q-card class="full-height">
-          <q-skeleton height="300px" square />
-          <q-card-section>
-            <q-skeleton type="text" width="70%" />
-            <q-skeleton type="text" width="40%" />
-          </q-card-section>
-          <q-card-actions align="right">
-            <q-skeleton type="QBtn" />
-            <q-skeleton type="QBtn" />
-          </q-card-actions>
-        </q-card>
-      </q-col>
-    </q-row>
+  <!-- 2 skeleton slides, names: 0 and 1 (numbers) -->
+  <q-carousel-slide
+    v-for="slideIndex in 2"
+    :key="'skeleton-slide-' + (slideIndex - 1)"
+    :name="slideIndex - 1"
+  >
+    <!-- wrapper that fills the slide height -->
+    <div style="height:100%;">
+      <q-row class="q-col-gutter-md justify-center" style="height:100%;">
+        <q-col
+          v-for="cardIndex in 3"
+          :key="'skeleton-card-' + (slideIndex - 1) + '-' + cardIndex"
+          cols="12" sm="6" md="4"
+          class="flex"
+        >
+          <q-card class="full-height">
+            <q-skeleton height="300px" square />
+            <q-card-section>
+              <q-skeleton type="text" width="70%" />
+              <q-skeleton type="text" width="40%" />
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-skeleton type="QBtn" />
+              <q-skeleton type="QBtn" />
+            </q-card-actions>
+          </q-card>
+        </q-col>
+      </q-row>
+    </div>
   </q-carousel-slide>
 </q-carousel>
 
@@ -65,7 +72,7 @@
       infinite
       navigation
       swipeable
-      :arrows="false"
+      arrows
       height="550px"
       control-color="primary"
       class="rounded-borders"
@@ -107,13 +114,12 @@
         </div>
       </q-carousel-slide>
 
-  <!-- custom dots: use the slot signature Quasar provides and pass-through btnProps
-       (btnProps preserves the look; we add aria-label) -->
+  <!-- Keep the look: bind btnProps, add aria-label, keep visual style -->
   <template #navigation-icon="{ active, btnProps, onClick, index }">
     <q-btn
       v-bind="btnProps"
-      :flat="!active"
-      :color="active ? 'primary' : btnProps.color || 'grey-5'"
+      :flat="false"
+      :color="active ? 'primary' : (btnProps.color || 'grey-5')"
       size="sm"
       round
       dense
@@ -122,29 +128,27 @@
     />
   </template>
 
-  <!-- custom prev/next arrows via control slot.
-       We place q-carousel-control children (same approach shown in docs)
-       and use our own handlers that update the v-model (slide). -->
+  <!-- Custom arrows using q-carousel-control (positions match default) -->
   <template #control>
     <q-carousel-control position="center-left" :offset="[12, 0]">
       <q-btn
         icon="chevron_left"
+        aria-label="Previous slide"
         flat
         round
         dense
-        aria-label="Previous slide"
-        @click="goPrev"
+        @click="slide = (Number(slide) - 1 + slideChunks.length) % slideChunks.length"
       />
     </q-carousel-control>
 
     <q-carousel-control position="center-right" :offset="[12, 0]">
       <q-btn
         icon="chevron_right"
+        aria-label="Next slide"
         flat
         round
         dense
-        aria-label="Next slide"
-        @click="goNext"
+        @click="slide = (Number(slide) + 1) % slideChunks.length"
       />
     </q-carousel-control>
   </template>

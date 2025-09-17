@@ -8,6 +8,7 @@
       class="fixed-bottom-left q-mb-md q-ml-md z-max"
       color="primary"
       @click="visible = !visible"
+      aria-label="Open chat"
     />
 
     <!-- Chat Box -->
