@@ -28,17 +28,6 @@
   height="550px"
   class="rounded-borders"
 >
-<q-carousel
-  v-if="!isHydrated || slideChunks.length === 0"
-  v-model="skeletonSlide"
-  animated
-  arrows
-  navigation
-  infinite
-  swipeable
-  height="550px"
-  class="rounded-borders"
->
   <!-- Generate 2 skeleton slides -->
   <q-carousel-slide v-for="slideIndex in 2" :key="'skeleton-slide-' + slideIndex" :name="slideIndex">
     <q-row class="q-col-gutter-md justify-center">
