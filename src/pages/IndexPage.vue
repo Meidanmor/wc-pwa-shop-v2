@@ -18,7 +18,7 @@
         <!-- Skeleton carousel for SSR -->
 <!-- Skeleton carousel: shows while NOT hydrated -->
 <q-carousel
-    v-if="!isHydrated || slideChunks.length === 0"
+  v-if="!isHydrated || slideChunks.length === 0"
   v-model="skeletonSlide"
   animated
   arrows
@@ -28,9 +28,14 @@
   height="550px"
   class="rounded-borders"
 >
-  <!-- Slide 1 -->
   <q-carousel-slide name="0">
-      <div v-for="i in 6" :key="'s1-'+i" class="col-12 col-sm-6 col-md-4 row justify-center items-stretch q-col-gutter-md">
+    <q-row class="q-col-gutter-md justify-center">
+      <q-col
+        v-for="i in 6"
+        :key="'s1-'+i"
+        cols="12" sm="6" md="4"
+        class="flex justify-center"
+      >
         <q-card style="height:100%;">
           <q-skeleton height="300px" square />
           <q-card-section>
@@ -42,9 +47,9 @@
             <q-skeleton type="QBtn" />
           </q-card-actions>
         </q-card>
-      </div>
+      </q-col>
+    </q-row>
   </q-carousel-slide>
-
 </q-carousel>
 
 
@@ -103,35 +108,39 @@
 
       <!-- Custom navigation dots -->
       <template v-slot:navigation-icon="{ active, onClick, index }">
-        <q-btn
-            :flat="!active"
-            :color="active ? 'primary' : 'grey'"
-            :aria-label="`Go to slide ${index + 1}`"
-            size="sm"
-            round
-            dense
-            @click="onClick"
-        />
+<q-btn
+  :flat="false"
+  :color="active ? 'primary' : 'grey-6'"
+  :unelevated="!active"
+  :aria-label="`Go to slide ${index + 1}`"
+  size="sm"
+  round
+  dense
+  @click="onClick"
+/>
       </template>
 
-      <!-- Custom prev/next arrows -->
-      <template v-slot:control-prev="{ goToPrev }">
-        <q-btn
-            icon="chevron_left"
-            aria-label="Previous slide"
-            flat round dense
-            @click="goToPrev"
-        />
-      </template>
+<!-- Custom prev arrow -->
+<template v-slot:control-prev="{ goToPrev }">
+  <q-btn
+    icon="chevron_left"
+    aria-label="Previous slide"
+    flat round dense
+    class="absolute-left q-carousel__control q-carousel__arrow"
+    @click="goToPrev"
+  />
+</template>
 
-      <template v-slot:control-next="{ goToNext }">
-        <q-btn
-            icon="chevron_right"
-            aria-label="Next slide"
-            flat round dense
-            @click="goToNext"
-        />
-      </template>
+<!-- Custom next arrow -->
+<template v-slot:control-next="{ goToNext }">
+  <q-btn
+    icon="chevron_right"
+    aria-label="Next slide"
+    flat round dense
+    class="absolute-right q-carousel__control q-carousel__arrow"
+    @click="goToNext"
+  />
+</template>
 
     </q-carousel>
 
