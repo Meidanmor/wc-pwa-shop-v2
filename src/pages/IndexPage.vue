@@ -439,21 +439,6 @@ const scrollToProducts = () => {
 }
 defineExpose({ scrollToProducts })
 
-// make sure slide is a number (you already have: const slide = ref(0))
-const slideCount = () => slideChunks.value?.length || 0
-
-const goPrev = () => {
-  const n = slideCount()
-  if (!n) return
-  // works if slide is number or string, convert to Number
-  slide.value = (Number(slide.value) - 1 + n) % n
-}
-
-const goNext = () => {
-  const n = slideCount()
-  if (!n) return
-  slide.value = (Number(slide.value) + 1) % n
-}
 // ----------------- Mounted -----------------
 onMounted(async () => {
   // reveal hero immediately
