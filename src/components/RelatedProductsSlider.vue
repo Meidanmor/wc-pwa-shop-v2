@@ -54,21 +54,21 @@
       arrows
       control-color="primary"
       navigation
-      height="430px"
+      height="auto"
       class="bg-transparent"
     >
       <q-carousel-slide
         v-for="(group, index) in productGroups"
         :key="index"
         :name="index"
-        class="row items-start justify-start"
+        class="row"
       >
         <div
           v-for="product in group"
           :key="product.id"
           class="col-xs-6 col-sm-3"
         >
-          <q-card class="q-pa-sm">
+          <q-card class="q-pa-sm full-height flex column">
           <router-link :to="`/product/${product.slug}`" class="no-decoration">
             <q-img
               :src="product.images?.[0]?.thumbnail"
@@ -83,7 +83,7 @@
               </div>
             </q-card-section>
             </router-link>
-            <q-card-actions>
+            <q-card-actions class="q-mt-auto">
               <q-btn
                 v-if="product.is_in_stock"
                 color="primary"

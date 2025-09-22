@@ -1,7 +1,7 @@
 import { register } from 'register-service-worker'
-import { useRouter } from 'vue-router';
+//import { useRouter } from 'vue-router';
 
-const router = useRouter();
+//const router = useRouter();
 
 // The ready(), registered(), cached(), updatefound() and updated()
 // events passes a ServiceWorkerRegistration instance in their arguments.
@@ -20,14 +20,14 @@ register(process.env.SERVICE_WORKER_FILE, {
 
   registered ( registration ) {
     console.log('Service worker has been registered.', registration)
-    if ('serviceWorker' in navigator) {
+    /*if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', event => {
         if (event.data?.action === 'navigate' && event.data.url) {
           console.log('[Client] Navigating to:', event.data.url);
           router.push(event.data.url);
         }
       });
-    }
+    }*/
   },
 
   cached (/* registration */) {

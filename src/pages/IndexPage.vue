@@ -20,44 +20,48 @@
 <q-carousel
   v-if="!isHydrated || slideChunks.length === 0"
   v-model="skeletonSlide"
+  :key="skeletonSlideKey"
+  @touchstart.stop
+  @mousedown.stop
   animated
   arrows
   navigation
   infinite
   swipeable
   height="550px"
+  control-color="primary"
   class="rounded-borders"
 >
   <!-- 2 skeleton slides, names: 0 and 1 (numbers) -->
-  <q-carousel-slide
-    v-for="slideIndex in 2"
-    :key="'skeleton-slide-' + (slideIndex - 1)"
-    :name="slideIndex - 1"
-  >
-    <!-- wrapper that fills the slide height -->
-    <div style="height:100%;">
-      <q-row class="q-col-gutter-md justify-center" style="height:100%;">
-        <q-col
-          v-for="cardIndex in 3"
-          :key="'skeleton-card-' + (slideIndex - 1) + '-' + cardIndex"
-          cols="12" sm="6" md="4"
-          class="flex"
-        >
-          <q-card class="full-height">
-            <q-skeleton height="300px" square />
-            <q-card-section>
-              <q-skeleton type="text" width="70%" />
-              <q-skeleton type="text" width="40%" />
-            </q-card-section>
-            <q-card-actions align="right">
-              <q-skeleton type="QBtn" />
-              <q-skeleton type="QBtn" />
-            </q-card-actions>
-          </q-card>
-        </q-col>
-      </q-row>
+<q-carousel-slide
+  v-for="(slideIndex, idx) in 2"
+  :key="'skeleton-slide-' + idx"
+  :name="idx"
+  style="z-index: 0;position: relative"
+>
+
+  <div class="row justify-center">
+
+    <div
+      v-for="cardIndex in 3"
+      :key="'skeleton-card-' + idx + '-' + cardIndex"
+      class="col-12 col-sm-6 col-md-4"
+    >
+      <q-card class="full-height column">
+        <q-skeleton height="300px" square />
+        <q-card-section>
+          <q-skeleton type="text" width="70%" />
+          <q-skeleton type="text" width="40%" />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-skeleton type="QBtn" />
+          <q-skeleton type="QBtn" />
+        </q-card-actions>
+      </q-card>
     </div>
-  </q-carousel-slide>
+  </div>
+</q-carousel-slide>
+
 </q-carousel>
 
 
@@ -73,7 +77,7 @@
       navigation
       swipeable
       arrows
-      height="550px"
+      height="100%"
       control-color="primary"
       class="rounded-borders"
     >
@@ -130,7 +134,7 @@
 
   <!-- Custom arrows using q-carousel-control (positions match default) -->
   <template #control>
-    <q-carousel-control position="center-left" :offset="[12, 0]">
+    <q-carousel-control position="left" :offset="[12, 0]">
       <q-btn
         icon="chevron_left"
         aria-label="Previous slide"
@@ -141,7 +145,7 @@
       />
     </q-carousel-control>
 
-    <q-carousel-control position="center-right" :offset="[12, 0]">
+    <q-carousel-control position="right" :offset="[12, 0]">
       <q-btn
         icon="chevron_right"
         aria-label="Next slide"
@@ -262,7 +266,6 @@ import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
 
 let initialSeo = { title: '', description: '' }
 let fallbackSeo = { title: 'Loading...', description: '...' }
-const skeletonSlide = ref('0')
 
 // --- defineOptions preFetch (hoisted) ---
 defineOptions({
@@ -312,6 +315,10 @@ const productSection = ref(null)
 const ctaBtn = ref(null)
 const email = ref('')
 
+const skeletonSlide = ref(0)
+const skeletonSlideKey = ref(0)
+
+
 // Helper: chunk array
 const getChunks = (array, size) => {
   if (!Array.isArray(array) || !array.length) return []
@@ -334,9 +341,7 @@ const computeSlideChunks = async (opts = {}) => {
     return
   }
 
-  const chunkSize = !isHydrated.value
-      ? 1
-      : $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
+  const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
 
   //console.log('[computeSlideChunks] chunkSize:', chunkSize, 'featuredProducts len:', featuredProducts.value.length)
 
@@ -454,14 +459,17 @@ onMounted(async () => {
 
   // Ensure SEO is up-to-date on client
   if (!seoData.value.title || !seoData.value.description) {
-    await fetchSeoData('homepage')
+    fetchSeoData('homepage')
   }
+
+  // mark hydration
+  isHydrated.value = true
 
   // GSAP animations (client-only)
   if (typeof window !== 'undefined') {
-    const { gsap } = await import('gsap')
-    const { ScrollToPlugin } = await import('gsap/ScrollToPlugin')
-    const { ScrollTrigger } = await import('gsap/ScrollTrigger')
+    const {gsap} = await import('gsap')
+    const {ScrollToPlugin} = await import('gsap/ScrollToPlugin')
+    const {ScrollTrigger} = await import('gsap/ScrollTrigger')
     gsap.registerPlugin(ScrollToPlugin, ScrollTrigger)
 
     await nextTick()
@@ -470,21 +478,21 @@ onMounted(async () => {
       document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
 
       const sections = [
-        { selector: '.testimonials-section', y: 40 },
-        { selector: '.sustainability-section', x: -40 },
-        { selector: '.newsletter-section', y: 40 },
-        { selector: '.instagram-section', y: 40 },
-        { selector: '.about-section', y: 40 }
+        {selector: '.testimonials-section', y: 40},
+        {selector: '.sustainability-section', x: -40},
+        {selector: '.newsletter-section', y: 40},
+        {selector: '.instagram-section', y: 40},
+        {selector: '.about-section', y: 40}
       ]
 
-      sections.forEach(({ selector, x, y }) => {
+      sections.forEach(({selector, x, y}) => {
         gsap.from(selector, {
           autoAlpha: 0,
           x: x || 0,
           y: y || 0,
           duration: 0.8,
           ease: 'power2.out',
-          scrollTrigger: { trigger: selector, start: 'top 80%', once: true }
+          scrollTrigger: {trigger: selector, start: 'top 80%', once: true}
         })
       })
 
@@ -494,7 +502,7 @@ onMounted(async () => {
           y: 20,
           duration: 0.8,
           ease: 'power2.out',
-          scrollTrigger: { trigger: '.cta-section', start: 'top 80%', once: true }
+          scrollTrigger: {trigger: '.cta-section', start: 'top 80%', once: true}
         })
       }
     } catch (err) {
@@ -502,9 +510,8 @@ onMounted(async () => {
       revealFallback()
     }
   }
+
 })
-  // mark hydration
-  isHydrated.value = true
 
 // ----------------- Responsive -----------------
 watch(() => $q.screen.name, async () => {

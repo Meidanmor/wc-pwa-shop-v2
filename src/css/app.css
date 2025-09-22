@@ -98,3 +98,7 @@ body section {
   max-height: 400px;
   overflow-y: auto;
 }
+
+.q-carousel {
+    padding-bottom: 45px;
+}

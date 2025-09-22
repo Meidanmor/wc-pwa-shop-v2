@@ -49,11 +49,11 @@ export async function subscribeToPushNotifications() {
 }
 
 if (process.env.CLIENT) {
-  if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
+  /*if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
     subscribeToPushNotifications();
   } else {
     console.warn('Push notifications are not supported in this browser.');
-  }
+  }*/
   // 🚦 Listen for push navigation from the service worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {

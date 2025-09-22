@@ -26,9 +26,11 @@
           <q-badge v-if="cart.state.wishlist_items && Object.keys(cart.state.wishlist_items).length > 0" floating color="red">{{ Object.keys(cart.state.wishlist_items).length }}</q-badge>
         </q-btn>
 
+            <q-no-ssr>
         <q-btn flat icon="shopping_cart" aria-label="View cart" @click="toggleCart">
           <q-badge v-if="cart.state.items_count > 0" floating color="red">{{ cart.state.items_count }}</q-badge>
         </q-btn>
+              </q-no-ssr>
         </div>
       </q-toolbar>
      </div>
@@ -88,6 +90,16 @@
             </q-item>
           </q-list>
         </div>
+        <q-banner
+          v-if="supported && permission !== 'granted' && permission !== 'denied'"
+          class="bg-primary text-white q-ma-md rounded-borders shadow-2"
+          inline-actions
+      >
+        <div class="text-subtitle1">Enable push notifications?</div>
+        <template v-slot:action>
+          <q-btn dense color="white" text-color="primary" label="Enable" @click="handleSubscribe" />
+        </template>
+      </q-banner>
       </q-scroll-area>
     </q-drawer>
 
@@ -109,6 +121,9 @@
       :width="300"
       :touch-area-width="250"
     >
+
+
+      <q-no-ssr>
       <q-scroll-area class="fit q-pa-sm" v-if="cart.hasItems.value">
 <div>isArray: {{ cart.hasItems }}</div>
         <h4> Cart </h4>
@@ -154,7 +169,7 @@
 
 
       </div>
-
+        </q-no-ssr>
     </q-drawer>
     <ai-assistant></ai-assistant>
 
@@ -168,15 +183,20 @@
         </template>
       </Suspense>
     </q-page-container>
+
   </q-layout>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
 import AiAssistant from "src/components/AiAssistant.vue";
+import { subscribeToPushNotifications } from 'src/boot/push'
+
+const permission = ref('default')
+const supported = ref(false)
 
 const isSuperAdmin = computed(() => cart.state.user?.is_super_admin === true)
 
@@ -214,6 +234,18 @@ function onPan(evt) {
     // Do NOT call evt.preventDefault() unless you want to block child interactions
   }
 }
+
+async function handleSubscribe () {
+  await subscribeToPushNotifications()
+  permission.value = Notification.permission
+}
+
+onMounted(() => {
+  if ('Notification' in window) {
+    supported.value = true
+    permission.value = Notification.permission
+  }
+})
 
 watch(() => cart.state.drawerOpen, val => {
   if(val === true) {
