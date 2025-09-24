@@ -99,6 +99,24 @@ body section {
   overflow-y: auto;
 }
 
+.rotate-fade-enter-active,
+.rotate-fade-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.rotate-fade-enter-from,
+.rotate-fade-leave-to {
+  transform: rotate(-90deg);
+  opacity: 0;
+}
+
+.rotate-fade-enter-to,
+.rotate-fade-leave-from {
+  transform: rotate(0deg);
+  opacity: 1;
+}
+/********/
+
 .q-carousel {
     padding-bottom: 45px;
 }

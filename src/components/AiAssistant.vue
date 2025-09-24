@@ -1,16 +1,17 @@
 <template>
   <div>
     <!-- Floating Action Button -->
-    <q-fab
-      v-model="fab1"
-      @update:model-value="fab1"
-      icon="chat"
-      class="fixed-bottom-left q-mb-md q-ml-md z-max"
-      color="primary"
-      @click="visible = !visible"
-      aria-label="Open chat"
-    />
-
+<q-btn
+  fab
+  class="fixed-bottom-left q-mb-md q-ml-md z-max"
+  color="primary"
+  :aria-label="visible ? 'Close chat' : 'Open chat'"
+  @click="visible = !visible"
+>
+  <transition name="rotate-fade">
+    <q-icon class="absolute" :key="visible" :name="visible ? 'close' : 'chat'" />
+  </transition>
+</q-btn>
     <!-- Chat Box -->
     <q-card
       v-if="visible"
