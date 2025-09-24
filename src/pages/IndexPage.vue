@@ -15,55 +15,71 @@
   <div class="container">
     <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
 
-        <!-- Skeleton carousel for SSR -->
-<!-- Skeleton carousel: shows while NOT hydrated -->
-<q-carousel
-  v-if="!isHydrated || slideChunks.length === 0"
-  v-model="skeletonSlide"
-  :key="skeletonSlideKey"
-  @touchstart.stop
-  @mousedown.stop
-  animated
-  arrows
-  navigation
-  infinite
-  swipeable
-  height="550px"
-  control-color="primary"
-  class="rounded-borders"
->
-  <!-- 2 skeleton slides, names: 0 and 1 (numbers) -->
-<q-carousel-slide
-  v-for="(slideIndex, idx) in 2"
-  :key="'skeleton-slide-' + idx"
-  :name="idx"
-  style="z-index: 0;position: relative"
->
+        <!-- SKELETON LOADER -->
+    <div v-if="!isHydrated || slideChunks.length === 0" class="q-pa-md flex justify-center">
+      <div class="row justify-center full-width">
 
-  <div class="row justify-center">
+        <!-- Mobile: 1 skeleton -->
+        <div
+            v-if="$q.screen.lt.sm"
+            class="col-12 col-sm-6 col-md-4"
+        >
+          <q-card class="full-height column">
+            <q-skeleton height="300px" square />
+            <q-card-section>
+              <q-skeleton type="text" width="70%" />
+              <q-skeleton type="text" width="40%" />
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-skeleton type="QBtn" />
+              <q-skeleton type="QBtn" />
+            </q-card-actions>
+          </q-card>
+        </div>
 
-    <div
-      v-for="cardIndex in 3"
-      :key="'skeleton-card-' + idx + '-' + cardIndex"
-      class="col-12 col-sm-6 col-md-4"
-    >
-      <q-card class="full-height column">
-        <q-skeleton height="300px" square />
-        <q-card-section>
-          <q-skeleton type="text" width="70%" />
-          <q-skeleton type="text" width="40%" />
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-skeleton type="QBtn" />
-          <q-skeleton type="QBtn" />
-        </q-card-actions>
-      </q-card>
+        <!-- Tablet: 2 skeletons -->
+        <div
+            v-else-if="$q.screen.lt.md"
+            v-for="n in 2"
+            :key="'skeleton-tablet-' + n"
+            class="col-12 col-sm-6 col-md-4"
+        >
+          <q-card class="full-height column">
+            <q-skeleton height="300px" square />
+            <q-card-section>
+              <q-skeleton type="text" width="70%" />
+              <q-skeleton type="text" width="40%" />
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-skeleton type="QBtn" />
+              <q-skeleton type="QBtn" />
+            </q-card-actions>
+          </q-card>
+        </div>
+
+        <!-- Desktop: 3 skeletons -->
+        <div
+            v-else
+            v-for="n in 3"
+            :key="'skeleton-desktop-' + n"
+            class="col-12 col-sm-6 col-md-4"
+        >
+          <q-card class="full-height column">
+            <q-skeleton height="300px" square />
+            <q-card-section>
+              <q-skeleton type="text" width="70%" />
+              <q-skeleton type="text" width="40%" />
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-skeleton type="QBtn" />
+              <q-skeleton type="QBtn" />
+            </q-card-actions>
+          </q-card>
+        </div>
+        <!-------->
+
+      </div>
     </div>
-  </div>
-</q-carousel-slide>
-
-</q-carousel>
-
 
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
@@ -315,8 +331,6 @@ const productSection = ref(null)
 const ctaBtn = ref(null)
 const email = ref('')
 
-const skeletonSlide = ref(0)
-const skeletonSlideKey = ref(0)
 
 
 // Helper: chunk array
