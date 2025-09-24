@@ -92,7 +92,7 @@
       infinite
       navigation
       swipeable
-      arrows
+      :arrows="false"
       height="100%"
       control-color="primary"
       class="rounded-borders"
@@ -150,24 +150,26 @@
 
   <!-- Custom arrows using q-carousel-control (positions match default) -->
   <template #control>
-    <q-carousel-control position="left" :offset="[12, 0]">
+    <q-carousel-control position="left" class="flex items-center">
       <q-btn
         icon="chevron_left"
         aria-label="Previous slide"
         flat
         round
         dense
+        color="primary"
         @click="slide = (Number(slide) - 1 + slideChunks.length) % slideChunks.length"
       />
     </q-carousel-control>
 
-    <q-carousel-control position="right" :offset="[12, 0]">
+    <q-carousel-control position="right" class="flex items-center">
       <q-btn
         icon="chevron_right"
         aria-label="Next slide"
         flat
         round
         dense
+        color="primary"
         @click="slide = (Number(slide) + 1) % slideChunks.length"
       />
     </q-carousel-control>
