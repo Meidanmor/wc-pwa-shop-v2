@@ -17,14 +17,20 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     : (process.env.VUE_ROUTER_MODE === 'history' ? createWebHistory : createWebHashHistory)
 
   const Router = createRouter({
-    scrollBehavior: (to, from, savedPosition) => {
+    scrollBehavior:(to, from, savedPosition) => {
+      // If there's a saved position (like back/forward button), restore it
       if (savedPosition) {
         return savedPosition
-      } else {
-        return { left: 0, top: 0, behavior: 'instant' } // or 'smooth'
       }
-      },
 
+      // If this is the first load (from.name is null/undefined), don't force scroll
+      if (!from.name) {
+        return false
+      }
+
+      // For regular navigations, scroll to top
+      return {left: 0, top: 0, behavior: 'smooth'}
+    },
     routes,
 
     // Leave this as is and make changes in quasar.conf.js instead!
