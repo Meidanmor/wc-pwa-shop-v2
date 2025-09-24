@@ -113,7 +113,13 @@
                 :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
                 width="100%"
                 height="300px"
-                :src="fp.images?.[0]?.src"
+                :src="getResizedImage(fp.images?.[0]?.src, 'medium')"
+                :srcset="`
+                     ${getResizedImage(fp.images?.[0]?.src, 'medium')} 300w,
+                     ${getResizedImage(fp.images?.[0]?.src, 'large')} 800w,
+                     ${getResizedImage(fp.images?.[0]?.src, 'full')} 1200w
+                     `"
+                sizes="(max-width: 600px) 300px, (max-width: 1200px) 800px, 1200px"
                 :alt="fp.name"
               />
               <q-card-section>
@@ -281,6 +287,21 @@ import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
+
+/* Images helper */
+function getResizedImage(url, size) {
+  const extIndex = url.lastIndexOf('.');
+  const base = url.substring(0, extIndex);
+  const ext = url.substring(extIndex);
+
+  switch(size) {
+    case 'medium': return `${base}-300x200${ext}`;
+    case 'large':  return `${base}-800x533${ext}`;
+    case 'full':   return url; // original full size
+    default:       return url;
+  }
+}
+/********/
 
 let initialSeo = { title: '', description: '' }
 let fallbackSeo = { title: 'Loading...', description: '...' }
