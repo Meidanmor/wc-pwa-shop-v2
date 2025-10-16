@@ -52,19 +52,14 @@
         >
           <q-card class="my-card full-height">
             <q-img
-              v-if="product.images.length"
-              :src="product.images[0].src"
-              :alt="product.name"
-              height="300px"
-              width="auto"
-              class="rounded-borders"
-            />
-            <q-img
-              v-else
-              src="https://via.placeholder.com/400x300?text=No+Image"
-              alt="No image available"
-              ratio="4/3"
-              class="rounded-borders"
+            :img-src="product.images[0]?.src"
+            :src="product.images[0]?.src"
+            :srcset="product.images[0]?.srcset"
+            :sizes="product.images[0]?.sizes"
+            :alt="product.name"
+            height="300px"
+            width="auto"
+            class="rounded-borders"
             />
             <q-card-section>
               <div class="text-h6">{{ product.name }}</div>

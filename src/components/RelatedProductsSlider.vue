@@ -17,6 +17,8 @@
          >
           <q-img
             :src="product.images?.[0]?.thumbnail"
+            :srcset="product.images[0]?.srcset"
+            :sizes="product.images[0]?.sizes"
             :alt="product.name"
             class="q-mb-sm"
             style="height: 200px; object-fit: contain;"
@@ -71,7 +73,10 @@
           <q-card class="q-pa-sm full-height flex column">
           <router-link :to="`/product/${product.slug}`" class="no-decoration">
             <q-img
-              :src="product.images?.[0]?.thumbnail"
+              :img-src="product.images[0]?.src"
+              :src="product.images[0]?.src"
+              :srcset="product.images[0]?.srcset"
+              :sizes="product.images[0]?.sizes"
               :alt="product.name"
               class="q-mb-sm"
               style="height: 200px; object-fit: contain;"
@@ -104,6 +109,27 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import cart from 'src/stores/cart'
 import { fetchAllProducts } from 'src/boot/woocommerce'
+
+function getResizedImage(url, size) {
+  if(url) {
+    const extIndex = url.lastIndexOf('.');
+    const base = url.substring(0, extIndex);
+    const ext = url.substring(extIndex);
+
+    switch (size) {
+      case 'medium':
+        return `${base}-300x300${ext}`;
+      case 'large':
+        return `${base}-600x600${ext}`;
+      case 'full':
+        return url; // original full size
+      default:
+        return url;
+    }
+  } else {
+    return 'https://nuxt.meidanm.com/wp-content/uploads/woocommerce-placeholder.png';
+  }
+}
 
 const props = defineProps({
   productId: Number,

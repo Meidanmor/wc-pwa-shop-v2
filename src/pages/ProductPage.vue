@@ -25,6 +25,9 @@
               :ratio="1"
               fit="contain"
               :img-src="img.src"
+              :src="img.src"
+              :srcset="img.srcset"
+              :sizes="img.sizes"
               @click="openLightbox(index)"
               style="cursor: zoom-in"
             />
@@ -32,7 +35,10 @@
         </div>
         <div v-else>
           <q-img
+            :img-src="product.images[0]?.src"
             :src="product.images[0]?.src"
+            :srcset="product.images[0]?.srcset"
+            :sizes="product.images[0]?.sizes"
             spinner-color="primary"
             fit="contain"
             style="cursor: zoom-in"
@@ -200,6 +206,26 @@ import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar } from 'quasar'
 import { useSeo } from 'src/composables/useSeo'
 
+function getResizedImage(url, size) {
+  if(url) {
+    const extIndex = url.lastIndexOf('.');
+    const base = url.substring(0, extIndex);
+    const ext = url.substring(extIndex);
+
+    switch (size) {
+      case 'medium':
+        return `${base}-300x300${ext}`;
+      case 'large':
+        return `${base}-600x600${ext}`;
+      case 'full':
+        return url; // original full size
+      default:
+        return url;
+    }
+  } else {
+    return 'https://nuxt.meidanm.com/wp-content/uploads/woocommerce-placeholder.png';
+  }
+}
 
 const $q = useQuasar()
 const route = useRoute()
