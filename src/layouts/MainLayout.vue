@@ -125,7 +125,6 @@
 
       <q-no-ssr>
       <q-scroll-area class="fit q-pa-sm" v-if="cart.hasItems.value">
-<div>isArray: {{ cart.hasItems }}</div>
         <h4> Cart </h4>
         <div v-for="item in cart.state.items" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
           <img v-if="item.images" :src="item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />

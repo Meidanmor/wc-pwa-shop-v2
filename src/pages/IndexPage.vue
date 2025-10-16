@@ -1,5 +1,5 @@
 <template>
-  <q-page class="q-pa-md">
+  <div class="q-pa-md">
 
     <!-- Hero Section -->
     <div class="hero-section q-mb-xl">
@@ -273,7 +273,7 @@
     </section>
 
 
-  </q-page>
+  </div>
 </template>
 
 <script setup>

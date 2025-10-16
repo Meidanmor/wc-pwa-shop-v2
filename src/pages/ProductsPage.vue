@@ -1,14 +1,22 @@
 <template>
-  <q-page class="q-pa-md">
+  <div class="q-pa-md">
     <div class="container">
-  <h2>Products</h2>
+      <h2>Products</h2>
 
       <!-- Search and Filter -->
       <div class="row q-col-gutter-md q-mb-md">
-        <div class="col-xs-12 col-md-6">
-          <q-input filled v-model="search" label="Search products..." debounce="300" />
+        <div class="col-xs-12 col-md-6" v-if="!isClient">
+          <q-skeleton type="rect" class="q-mb-md"/>
         </div>
-        <div class="col-xs-12 col-md-6">
+        <div class="col-xs-12 col-md-6" v-else>
+            <q-input filled v-model="search" label="Search products..." debounce="300" />
+        </div>
+
+        <div class="col-xs-12 col-md-6"  v-if="!isClient">
+          <q-skeleton type="rect" class="q-mb-md"/>
+        </div>
+
+        <div class="col-xs-12 col-md-6" v-else>
           <q-select
             filled
             v-model="selectedCategory"
@@ -19,24 +27,29 @@
             clearable
           />
         </div>
+
       </div>
 
-<q-card
-  class="q-pa-md q-mb-md"
->
-  <div class="text-subtitle1 q-mb-sm">Filter by Price</div>
-  <q-range
-    v-model="priceRange"
-    :min="priceMin"
-    :max="priceMax"
-    label-always
-    label
-    dense
-    color="primary"
-    @change="paginatedProducts"
-  />
-</q-card>
+      <div class="q-pa-md q-mb-md" v-if="!isClient">
+        <q-skeleton type="rect" class="q-mb-md"/>
+      </div>
 
+        <q-card
+            class="q-pa-md q-mb-md"
+            v-else
+        >
+          <div class="text-subtitle1 q-mb-sm">Filter by Price</div>
+          <q-range
+              v-model="priceRange"
+              :min="priceMin"
+              :max="priceMax"
+              label-always
+              label
+              dense
+              color="primary"
+              @change="paginatedProducts"
+          />
+        </q-card>
 
       <!-- Total Products -->
       <div v-if="filteredProducts && filteredProducts.length" class="text-subtitle1 q-mb-sm">
@@ -79,19 +92,19 @@
       </div>
 
       <!-- Pagination -->
-      <div class="q-mt-lg flex flex-center">
+      <div v-if="totalPages > 1" class="q-mt-lg flex flex-center">
         <q-pagination
-          v-model="currentPage"
-          :max="totalPages"
-          max-pages="6"
-          boundary-numbers
-          direction-links
-          color="primary"
+            v-model="currentPage"
+            :max="totalPages || 1"
+            max-pages="6"
+            boundary-numbers
+            direction-links
+            color="primary"
         />
       </div>
 
     </div>
-  </q-page>
+  </div>
 </template>
 
 <script setup async>
@@ -153,7 +166,8 @@ const fetchProducts = async () => {
 const fetchCategories = async () => {
   categories.value = await api.getCategories()
 }
-const isServer = process.env.SERVER
+const isServer = import.meta.env.SSR
+const isClient = ref(false)
 
 if (isServer) {
   await fetchSeoData()
@@ -239,11 +253,12 @@ watch(priceRange, (val) => {
 
 // Lifecycle
 onMounted(async() => {
-      if (process.env.CLIENT) {
-        await fetchSeoData()
-        await fetchProducts()
-        await fetchCategories()
-      }
+  if (process.env.CLIENT) {
+    await fetchSeoData()
+    await fetchProducts()
+    await fetchCategories()
+    isClient.value = true;
+  }
 })
 </script>
 
