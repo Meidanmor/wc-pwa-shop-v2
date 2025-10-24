@@ -749,7 +749,7 @@ function loadOfflineWL() {
   try { const raw = localStorage.getItem('offline_wl'); if (raw) state.wishlist_items = JSON.parse(raw) } catch (err) { console.warn('[cart] loadOfflineWL failed', err) }
 }
 
-async function WLreplayOfflineItems(fetchedWL = { wishlist: [] }) {
+/*async function WLreplayOfflineItems(fetchedWL = { wishlist: [] }) {
   const offlineItems = state.wishlist_items || []
   const offlineIDs = Array.isArray(offlineItems) ? offlineItems.map(i => i?.id).filter(Boolean) : []
   const serverIDs = (fetchedWL?.wishlist || []).map(i => i?.id).filter(Boolean)
@@ -768,7 +768,7 @@ async function WLreplayOfflineItems(fetchedWL = { wishlist: [] }) {
       }
     }
   }
-}
+}*/
 
 async function fetchWishlistItems() {
   if (typeof window === 'undefined') return
@@ -839,7 +839,7 @@ async function toggleWishlistItem(productId, $q = null) {
                 .replace(/\/$/, '')          // remove trailing "/"
                 .replace(/^\//, '')         // remove leading "/"
           } catch (err) {
-            console.warn('Invalid permalink URL', cachedProduct.permalink)
+            console.warn('Invalid permalink URL', cachedProduct.permalink, err)
           }
         }
         const newItem = cachedProduct ? { id: cachedProduct.id,
@@ -909,7 +909,7 @@ async function toggleWishlistItem(productId, $q = null) {
 
 }
 
-async function mergeLocalWishlistWithServer(userToken = null) {
+/*async function mergeLocalWishlistWithServer(userToken = null) {
   try {
     const localRaw = localStorage.getItem('offline_wl')
     const localItems = localRaw ? JSON.parse(localRaw) : []
@@ -954,7 +954,7 @@ async function mergeLocalWishlistWithServer(userToken = null) {
   } catch (err) {
     console.warn('[mergeLocalWishlistWithServer] failed', err)
   }
-}
+}*/
 
 /* -------------------------
    Init
