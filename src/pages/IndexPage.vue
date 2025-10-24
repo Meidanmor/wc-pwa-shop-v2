@@ -1,12 +1,12 @@
 <template>
-  <div class="q-pa-md">
+  <div>
 
     <!-- Hero Section -->
     <div class="hero-section q-mb-xl">
       <div class="hero-content container">
         <h1 class="text-h1 q-mb-sm">NaturaBloom</h1>
         <p class="text-h6 text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
-        <q-btn label="Browse Products" color="primary" class="q-mt-md" @click="scrollToProducts" />
+        <q-btn label="Browse Products" color="primary" class="q-mt-sm" @click="scrollToProducts" />
       </div>
     </div>
 
@@ -194,7 +194,7 @@
 
 
     <!-- CTA Section -->
-    <section class="cta-section pre-animate">
+    <section class="cta-section pre-animate q-pa-md">
       <div class="container">
         <div class="cta-overlay">
           <div class="cta-content">
@@ -212,7 +212,7 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section class="testimonials-section container pre-animate q-my-xl">
+    <section class="testimonials-section container pre-animate q-pa-md q-my-xl">
       <h2 class="text-h3 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
@@ -233,7 +233,7 @@
     </section>
 
     <!-- Sustainability Section -->
-    <section class="sustainability-section container pre-animate q-my-xl">
+    <section class="sustainability-section container pre-animate q-pa-md q-my-xl">
       <div class="row items-center">
         <div class="col-12 col-md-6">
           <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png" alt="Sustainability" class="full-width" />
@@ -266,9 +266,9 @@
     </section>
 
     <!-- Enhanced About Section -->
-    <section class="about-section pre-animate container q-my-xl">
-      <h2 class="text-h3 text-weight-light text-center q-mb-md">About NaturaBloom</h2>
-      <p class="text-body1 text-center">
+    <section class="about-section pre-animate container q-pa-md q-my-xl">
+      <h2 class="text-h3 text-weight-light q-mb-md">About NaturaBloom</h2>
+      <p class="text-body1">
         NaturaBloom blends modern technology with nature's purity, offering organic, cruelty-free, and environmentally friendly products.
       </p>
     </section>
@@ -542,20 +542,26 @@ watch(() => $q.screen.name, async () => {
 <style scoped>
 .hero-section {
   background: rgb(243, 236, 226);
-  border-radius: 20px;
-  padding: 60px 20px;
-  text-align: center;
+  padding: 150px 20px;
   position: relative;
   overflow: hidden;
 }
 
 .hero-content {
   max-width: 600px;
-  margin: 0 auto;
+  margin: 0 auto 0 0;
 }
 
 .hero-content h1 {
   overflow-wrap: anywhere;
+  text-indent: -4px;
+  font-weight: 600;
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.hero-content .text-h6 {
+  max-width: 400px;
 }
 
 .featured-products-section {
@@ -568,7 +574,7 @@ watch(() => $q.screen.name, async () => {
   border-radius: 20px;
   height: 400px;
   margin-bottom: 40px;
-  padding: 0;
+  /*padding: 0;*/
 }
 .cta-section .container {
   height: 100%;
@@ -603,6 +609,7 @@ watch(() => $q.screen.name, async () => {
   justify-content: center;
   border-radius: 20px;
   padding: 40px 20px;
+  overflow: hidden;
 }
 .cta-overlay:after {
     content: '';
@@ -641,7 +648,6 @@ watch(() => $q.screen.name, async () => {
 }
 
 .about-section {
-  text-align: center;
   max-width: 700px;
 }
 .testimonials-section q-card {
@@ -686,9 +692,14 @@ watch(() => $q.screen.name, async () => {
   opacity: 0;
   visibility: hidden;
 }
-@media(max-width: 767px){
+@media(max-width: 767px) {
   h1 {
     font-size: 40px;
   }
+
+  .hero-section {
+    padding: 70px 20px;
+  }
+
 }
 </style>
