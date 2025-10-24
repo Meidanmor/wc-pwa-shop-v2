@@ -102,7 +102,7 @@
         :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p => p.id).join('-')}`"
         :name="index"
       >
-        <div class="row justify-center">
+        <div class="row justify-between">
           <div
             v-for="fp in slideGroup"
             :key="fp.id"
@@ -547,11 +547,6 @@ watch(() => $q.screen.name, async () => {
   overflow: hidden;
 }
 
-.hero-content {
-  max-width: 600px;
-  margin: 0 auto 0 0;
-}
-
 .hero-content h1 {
   overflow-wrap: anywhere;
   text-indent: -4px;
@@ -683,6 +678,9 @@ watch(() => $q.screen.name, async () => {
 }
 .hero-content {
   transition: 0.3s ease;
+  max-width: 1210px;
+  width: 100%;
+  margin: 0 auto;
 }
 .hero-content.pre-animate {
   transform: translateY(40px);
@@ -692,6 +690,7 @@ watch(() => $q.screen.name, async () => {
   opacity: 0;
   visibility: hidden;
 }
+
 @media(max-width: 767px) {
   h1 {
     font-size: 40px;
@@ -701,5 +700,15 @@ watch(() => $q.screen.name, async () => {
     padding: 70px 20px;
   }
 
+}
+@media(min-width: 600px) {
+  .row.justify-between .col-md-4 {
+    width: calc(100% / 2 - 10px);
+  }
+}
+@media(min-width: 1024px) {
+  .row.justify-between .col-md-4 {
+    width: calc(100% / 3 - 10px);
+  }
 }
 </style>
