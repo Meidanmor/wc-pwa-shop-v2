@@ -3,6 +3,15 @@ body{
   color: var(--q-secondary);
   /*scroll-behavior: smooth;*/
 }
+
+.screen-reader-text {
+    position: absolute;
+    visibility: hidden;
+    top: -999999px;
+    left: -999999px;
+    pointer-events: none;
+}
+
 .no-decoration {
   text-decoration: none;
 }
