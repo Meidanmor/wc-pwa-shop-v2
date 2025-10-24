@@ -79,7 +79,8 @@
               <div class="text-subtitle2" v-html="product.price_html" />
             </q-card-section>
             <q-card-actions>
-              <q-btn label="Add to Cart" color="primary" @click="addToCart(product)" />
+              <q-btn v-if="product.is_in_stock" label="Add to Cart" color="primary" @click="addToCart(product)" />
+              <div v-else>Out of stock</div>
               <q-btn
                 label="View"
                 color="secondary"

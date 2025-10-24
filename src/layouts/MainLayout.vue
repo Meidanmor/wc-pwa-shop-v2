@@ -143,7 +143,7 @@
               <q-btn dense round icon="remove" @click="decrease(item.key)" :disable="item.quantity === 1" />
               <span class="q-mx-sm">{{ item.quantity }}</span>
               <q-btn dense round icon="add" @click="increase(item.id)" />
-              <q-btn dense flat icon="close" @click="remove(item.key)" class="q-ml-sm" />
+              <q-btn dense flat icon="close" @click="remove(item.key, item.remote_key)" class="q-ml-sm" />
             </div>
           </div>
         </div>
@@ -210,7 +210,7 @@ const toggleWishlistDrawer = () => (wishlistDrawerOpen.value = !wishlistDrawerOp
 // Wrap cart methods so template can call directly
 const increase = (id) => cart.increase(id, $q)
 const decrease = (id) => cart.decrease(id, $q)
-const remove = (id) => cart.remove(id, $q)
+const remove = (itemKey=null, itemAPIkey=null) => cart.remove(itemKey,itemAPIkey, $q)
 
 function onPan(evt) {
   if (evt.isFinal) {

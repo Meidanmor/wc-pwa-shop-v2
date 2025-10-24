@@ -412,7 +412,8 @@ async function updateCartState(data) {
   persistLocalCart()*/
 }
 
-async function fetchCart() {
+async function fetchCart(force = false) {
+  console.log('cart is being fetched')
   // We still fetch the api cart to know server quantities/keys for syncing,
   // but we do not let it replace the local cart.
   if (state.offline) {
@@ -433,7 +434,11 @@ async function fetchCart() {
     state.cart_array = data
     rebuildMergedView()
     // try to push local changes (background)
-    mergeLocalIntoApi().catch(err => console.warn('[cart] mergeLocalIntoApi failed', err))
+    if(force){
+     await mergeLocalIntoApi().catch(err => console.warn('[cart] mergeLocalIntoApi failed', err))
+    } else {
+      mergeLocalIntoApi().catch(err => console.warn('[cart] mergeLocalIntoApi failed', err))
+    }
   } catch (err) {
     state.error = err.message
     loadLocalCart()
@@ -613,7 +618,7 @@ async function decrease(cartItemKey, /*$q = null*/) {
   return
 }
 
-async function remove(cartItemKey, $q = null) {
+async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
   state.loading.cart = true
   state.error = null
 
@@ -625,11 +630,11 @@ async function remove(cartItemKey, $q = null) {
     rebuildMergedView()
     state.loading.cart = false
     if ($q) $q.notify({ type: 'positive', message: 'Removed from cart', icon: 'shopping_cart' })
-    return
+    //return
   }
 
   // try to find API item by key
-  const apiItem = (state.cart_array?.items || []).find(i => i.key === cartItemKey)
+  const apiItem = (state.cart_array?.items || []).find(i => i.remote_key === cartItemAPIKey)
   if (!apiItem || state.offline) {
     if (apiItem) {
       // mark removal override locally
@@ -648,10 +653,10 @@ async function remove(cartItemKey, $q = null) {
       rebuildMergedView()
       state.loading.cart = false
       if ($q) $q.notify({ type: 'info', message: 'Removed from cart (local)', icon: 'cloud_off' })
-      return
+      //return
     } else {
       state.loading.cart = false
-      return
+      //return
     }
   }
 
@@ -661,7 +666,7 @@ async function remove(cartItemKey, $q = null) {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: cartItemKey })
+      body: JSON.stringify({ key: cartItemAPIKey })
     })
     const data = await res.json().catch(() => null)
     if (!res.ok) throw new Error((data && data.message) || 'Failed to remove item')
@@ -767,51 +772,188 @@ async function WLreplayOfflineItems(fetchedWL = { wishlist: [] }) {
 
 async function fetchWishlistItems() {
   if (typeof window === 'undefined') return
-  if (state.offline) { loadOfflineWL(); return }
+
+  // Always load local wishlist first (for instant UI)
+  loadOfflineWL()
+
+  // If offline or no logged-in user → stop here
+  if (state.offline || !state.user || !state.user.id) {
+    return
+  }
+
   state.loading.wishlist = true
+
   try {
-    const res = await fetchWithToken(`${API_BASE}/wishlist/`, { method: 'GET', credentials: 'include' })
-    const wishlistItems = await res.json()
-    // replay offline-only items into server
-    await WLreplayOfflineItems(wishlistItems)
-    // fetch again to ensure we have latest
-    const res2 = await fetchWithToken(`${API_BASE}/wishlist/`, { method: 'GET', credentials: 'include' })
-    const wishlistItems2 = await res2.json()
-    state.wishlist_items = wishlistItems2.wishlist || wishlistItems2 || []
+    // Fetch from server
+    const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+
+    const serverWishlist = await res.json()
+    const serverItems = serverWishlist.wishlist || serverWishlist || []
+
+    // Merge local wishlist with server wishlist (avoid duplicates)
+    const localIds = (state.wishlist_items || []).map(item => item.id)
+    const merged = [
+      ...serverItems,
+      ...state.wishlist_items.filter(item => !localIds.includes(item.id))
+    ]
+
+    state.wishlist_items = merged
     persistWLOffline()
   } catch (err) {
+    console.warn('Fetch wishlist error:', err)
     state.error = err.message
+    // fallback to local
     loadOfflineWL()
   } finally {
     state.loading.wishlist = false
   }
 }
 
+
 async function toggleWishlistItem(productId, $q = null) {
   state.loading.wishlist = true
-  if (state.offline) {
+  // --- GUEST (NON-LOGGED-IN / OFFLINE) LOGIC ---
+  if (state.offline || !state.user || !state.user.id) {
     try {
-      // load product minimal info from cache or just toggle id
-      const exists = Array.isArray(state.wishlist_items) && state.wishlist_items.find(p => p.id === productId)
-      if (!state.wishlist_items || !Array.isArray(state.wishlist_items)) state.wishlist_items = []
-      if (!exists) state.wishlist_items.push({ id: productId })
-      else state.wishlist_items = state.wishlist_items.filter(p => p.id !== productId)
+      // Ensure wishlist array exists
+      if (!Array.isArray(state.wishlist_items)) state.wishlist_items = []
+
+      const exists = state.wishlist_items.find(p => p.id === productId)
+
+      if (exists) {
+        // Remove item
+        state.wishlist_items = state.wishlist_items.filter(p => p.id !== productId)
+      } else {
+        // Fetch minimal product info from cache if available (for instant UI rendering)
+        const cachedProduct = await getCachedProduct(productId)
+        let productSlug = '';
+        if (cachedProduct && cachedProduct.permalink) {
+          try {
+            const url = new URL(cachedProduct.permalink)
+            // Get pathname, remove leading "/product" and trailing "/"
+            productSlug = url.pathname
+                .replace(/^\/product/, '')   // remove leading "/product"
+                .replace(/\/$/, '')          // remove trailing "/"
+                .replace(/^\//, '')         // remove leading "/"
+          } catch (err) {
+            console.warn('Invalid permalink URL', cachedProduct.permalink)
+          }
+        }
+        const newItem = cachedProduct ? { id: cachedProduct.id,
+          name: cachedProduct.name,
+          image: cachedProduct.images[0].thumbnail,
+        slug: productSlug} : { id: productId }
+        state.wishlist_items.push(newItem)
+        console.log(state.wishlist_items)
+      }
+
       persistWLOffline()
-    } catch (err) { console.warn(err) } finally { state.loading.wishlist = false }
+
+      if ($q && $q.notify) {
+        $q.notify({
+          type: 'positive',
+          message: exists ? 'Removed from wishlist' : 'Added to wishlist',
+          icon: 'favorite'
+        })
+      }
+    } catch (err) {
+      console.warn('Guest wishlist error:', err)
+    } finally {
+      state.loading.wishlist = false
+    }
+
     return
   }
+
+  // --- LOGGED-IN USER LOGIC ---
   try {
-    const res = await fetchWithToken(`${API_BASE}/wishlist/`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product_id: productId }) })
-    const wishlistItems = await res.json()
-    state.wishlist_items = wishlistItems.wishlist || wishlistItems || []
-    if ($q && $q.notify) {
-      //const oldCount = state.wishlist_items ? state.wishlist_items.length : 0
-      $q.notify({ type: 'positive', message: 'Wishlist updated', icon: 'favorite' })
+    // Optimistically update local UI (instant feedback)
+    const exists = state.wishlist_items.find(p => p.id === productId)
+    if (exists) {
+      state.wishlist_items = state.wishlist_items.filter(p => p.id !== productId)
+    } else {
+      const cachedProduct = await getCachedProduct(productId)
+      const newItem = cachedProduct ? { id: cachedProduct.id, name: cachedProduct.name, images: cachedProduct.images } : { id: productId }
+      state.wishlist_items.push(newItem)
     }
     persistWLOffline()
+
+    // Sync with backend
+    const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: productId })
+    })
+
+    const wishlistItems = await res.json()
+    state.wishlist_items = wishlistItems.wishlist || wishlistItems || []
+    persistWLOffline()
+
+    if ($q && $q.notify) {
+      $q.notify({
+        type: 'positive',
+        message: exists ? 'Removed from wishlist' : 'Added to wishlist',
+        icon: 'favorite'
+      })
+    }
   } catch (err) {
+    console.error('Wishlist API error:', err)
     state.error = err.message
-  } finally { state.loading.wishlist = false }
+  } finally {
+    state.loading.wishlist = false
+  }
+
+}
+
+async function mergeLocalWishlistWithServer(userToken = null) {
+  try {
+    const localRaw = localStorage.getItem('offline_wl')
+    const localItems = localRaw ? JSON.parse(localRaw) : []
+    const localIDs = localItems.map(i => i.id)
+
+    // Fetch current server wishlist
+    const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    const serverData = await res.json()
+    const serverItems = serverData.wishlist || serverData || []
+    const serverIDs = serverItems.map(i => i.id)
+
+    // Find items that exist locally but not on the server
+    const missingIDs = localIDs.filter(id => !serverIDs.includes(id))
+
+    // Add missing items to server
+    for (const id of missingIDs) {
+      await fetchWithToken(`${API_BASE}/wishlist/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: id })
+      })
+    }
+
+    // Fetch the final updated wishlist
+    const res2 = await fetchWithToken(`${API_BASE}/wishlist/`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    const merged = await res2.json()
+    state.wishlist_items = merged.wishlist || merged || []
+
+    // Persist locally for faster next load
+    persistWLOffline()
+
+    console.log('[Wishlist] merged local + server wishlist successfully')
+  } catch (err) {
+    console.warn('[mergeLocalWishlistWithServer] failed', err)
+  }
 }
 
 /* -------------------------
@@ -819,12 +961,14 @@ async function toggleWishlistItem(productId, $q = null) {
    ------------------------- */
 if (typeof window !== 'undefined') {
   loadLocalCart().then(() => rebuildMergedView());
+  loadOfflineWL()
 
   window.addEventListener('online', async () => {
     state.offline = false
     try {
       await fetchCart()
       await mergeLocalIntoApi()
+      await fetchWishlistItems()
     } catch (err) {
       console.warn('[cart] online sync failed', err)
     }

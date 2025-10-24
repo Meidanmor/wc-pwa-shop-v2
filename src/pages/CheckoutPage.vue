@@ -5,15 +5,24 @@
     <div v-if="!isLoggedIn">
     <GoogleLoginButton/>
     </div>
-    <q-form v-if="itemsCount!='0'" @submit.prevent="submitOrder">
+    <q-form v-if="itemsCount!='0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
+      <div class="float-left">
       <!-- Personal Info -->
       <q-card class="q-mb-md">
         <q-card-section>
           <div class="text-h6">Personal Details</div>
-          <q-input @blur="handleInputBlur('first_name')" v-model="form.first_name" label="First Name" filled class="q-mb-sm" />
-          <q-input @blur="handleInputBlur('last_name')" v-model="form.last_name" label="Last Name" filled class="q-mb-sm" />
-          <q-input @blur="handleInputBlur('email')" v-model="form.email" label="Email" filled class="q-mb-sm" type="email" />
-          <q-input @blur="handleInputBlur('phone')" v-model="form.phone" label="Phone" filled />
+          <q-input @blur="handleInputBlur('first_name')" v-model="form.first_name" label="First Name" filled class="q-mb-sm" :rules="[val => !!val || 'First Name is required']"/>
+          <q-input @blur="handleInputBlur('last_name')" v-model="form.last_name" label="Last Name" filled class="q-mb-sm" :rules="[val => !!val || 'Last Name is required']"/>
+          <q-input
+              @blur="handleInputBlur('email')" v-model="form.email"
+              label="Email" filled class="q-mb-sm"
+              type="text"
+              :rules="[
+                  val => !!val || 'Email is required',
+    val => /^\S+@\S+\.\S+$/.test(val) || 'Please enter a valid email'
+  ]"
+          />
+          <q-input @blur="handleInputBlur('phone')" v-model="form.phone" label="Phone" filled :rules="[val => !!val || 'Phone is required']"/>
         </q-card-section>
       </q-card>
 
@@ -21,10 +30,10 @@
       <q-card class="q-mb-md">
         <q-card-section>
           <div class="text-h6">Shipping Address</div>
-          <q-input @blur="handleInputBlur('postcode')" v-model="form.shipping.address_1" label="Address" filled class="q-mb-sm" />
-          <q-input @blur="handleInputBlur('postcode')" v-model="form.shipping.city" label="City" filled class="q-mb-sm" />
-          <q-input @blur="handleInputBlur('postcode')" v-model="form.shipping.postcode" label="Postcode" filled class="q-mb-sm" />
-          <q-input @blur="handleInputBlur('postcode')" v-model="form.shipping.country" label="Country" filled />
+          <q-input @blur="handleInputBlur('postcode')" v-model="form.shipping.address_1" label="Address" filled class="q-mb-sm" :rules="[val => !!val || 'Address is required']"/>
+          <q-input @blur="handleInputBlur('postcode')" v-model="form.shipping.city" label="City" filled class="q-mb-sm" :rules="[val => !!val || 'City is required']"/>
+          <q-input @blur="handleInputBlur('postcode')" v-model="form.shipping.postcode" label="Postcode" filled class="q-mb-sm" :rules="[val => !!val || 'Postcode is required']"/>
+          <q-input readonly @blur="handleInputBlur('postcode')" v-model="form.shipping.country" label="Country" filled />
         </q-card-section>
 
         <q-card-section>
@@ -80,6 +89,8 @@
         </q-card-section>
       </q-card>
 
+      </div>
+      <div class="float-right">
       <!-- Cart Items -->
       <q-card class="q-mb-md">
         <q-card-section>
@@ -110,7 +121,7 @@
              </div>
           </div>
          </div>
-              × {{ item.quantity }} - {{ formatCurrency(item.totals.line_total, {minorUnit: item.totals.currency_minor_unit, decimalSeparator: item.totals.currency_decimal_separator, prefix: item.totals.currency_prefix, suffix: item.totals.currency_suffix}) }}
+              × {{ item.quantity }} - {{ formatCurrency(item.totals?.line_total, {minorUnit: item.totals?.currency_minor_unit, decimalSeparator: item.totals?.currency_decimal_separator, prefix: item.totals?.currency_prefix, suffix: item.totals?.currency_suffix}) }}
             </div>
           </div>
         </q-card-section>
@@ -151,6 +162,7 @@
           <q-btn label="Place Order" type="submit" color="primary" />
         </q-card-actions>
       </q-card>
+        </div>
     </q-form>
     <div v-else-if="itemsCount === 0">Your cart is empty! <router-link to="/products/">Go to shop</router-link></div>
     <div v-else> <q-spinner color="primary" size="2em" /> </div>
@@ -209,18 +221,21 @@ const paymentMethods = ref([]);
 const selectedShippingRateId = ref(null);
 const shippingOptions = ref([]);
 
-const cartItems = computed(() => cart.state.items);
+const cartItems = computed(() => cart.state.cart_array.items);
 const cartTotal = computed(() => {
   const total = cart.state.totals?.total_price || '0';
-  const formattedTotal = formatCurrency(total, {minorUnit:2,decimalSeparator:'.',prefix:'₪',suffix:''});
+  const formattedTotal = formatCurrency(total, {minorUnit: 2, decimalSeparator: '.', prefix: '₪', suffix: ''});
 
   return formattedTotal;
 });
 
 // More reliable slug extractor using regex
 const getSlugFromPermalink = (permalink) => {
-  const match = permalink.match(/product\/([^/]+)\/?$/)
-  return match ? match[1] : ''
+  if(permalink) {
+    const match = permalink.match(/product\/([^/]+)\/?$/)
+    return match ? match[1] : ''
+  }
+  return '';
 }
 
 /*async function applyCoupon() {
@@ -245,17 +260,17 @@ const getSlugFromPermalink = (permalink) => {
 }*/
 
 const initializeFormFromCart = async () => {
-  await cart.fetchCart(); // Make sure cart is up to date
+  await cart.fetchCart(true); // Make sure cart is up to date
 
   cart.state.cart_array.payment_methods.forEach((method) => {
     let label = '';
-    if(method == 'bacs'){
+    if (method == 'bacs') {
       label = 'Bank transfer';
     } else {
       label = method;
     }
 
-    paymentMethods.value.push({ label: label, value: method });
+    paymentMethods.value.push({label: label, value: method});
   })
   itemsCount.value = cart.state.cart_array.items_count;
   const billing = cart.state.cart_array.billing_address || {};
@@ -281,7 +296,7 @@ const updateShippingAddress = async () => {
   try {
     const response = await fetchWithToken('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart/update-customer', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type': 'application/json'},
       credentials: 'include',
       body: JSON.stringify({
         billing_address: {
@@ -353,18 +368,23 @@ const removeCoupon = () => cart.removeCoupon(couponCode.value);
 // Fetch shipping methods
 const fetchShippingRates = async () => {
 
-    const data = await cart.fetchCart();
-    console.log(data);
-    console.log(cart.state.cart_array);
-    if(cart.state.cart_array.shipping_rates && cart.state.cart_array.shipping_rates[0]){
+  const data = await cart.fetchCart();
+  console.log(data);
+  console.log(cart.state.cart_array);
+  if (cart.state.cart_array.shipping_rates && cart.state.cart_array.shipping_rates[0]) {
     shippingOptions.value = cart.state.cart_array.shipping_rates[0].shipping_rates.map(rate => ({
-      label: `${rate.name} – ${ formatCurrency(rate.price, { minorUnit: 2,decimalSeparator: '.',prefix: '₪',suffix: ''}) }`,
+      label: `${rate.name} – ${formatCurrency(rate.price, {
+        minorUnit: 2,
+        decimalSeparator: '.',
+        prefix: '₪',
+        suffix: ''
+      })}`,
       value: rate.rate_id,
     }));
-    }
-    if (shippingOptions.value.length > 0) {
-      selectedShippingRateId.value = shippingOptions.value[0].value;
-    }
+  }
+  if (shippingOptions.value.length > 0) {
+    selectedShippingRateId.value = shippingOptions.value[0].value;
+  }
 };
 
 const onShippingMethodChange = async (newRateId) => {
@@ -372,9 +392,9 @@ const onShippingMethodChange = async (newRateId) => {
     // Send selected shipping rate to WooCommerce
     await fetchWithToken('https://nuxt.meidanm.com/wp-json/wc/store/cart/select-shipping-rate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.value}` },
+      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${token.value}`},
       credentials: 'include',
-      body: JSON.stringify({ package_id: 0, rate_id: newRateId })
+      body: JSON.stringify({package_id: 0, rate_id: newRateId})
     });
 
     // Re-fetch cart to get updated totals
@@ -385,43 +405,61 @@ const onShippingMethodChange = async (newRateId) => {
   }
 };
 
+const onValidationError = async(ref) => {
+  const valid = await ref.validate()
+
+  if (!valid) {
+    // Wait a tick for Quasar to focus the first invalid field
+    requestAnimationFrame(() => {
+      const el = document.activeElement
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({behavior: 'smooth', block: 'center'})
+      }
+    })
+    return
+  }
+
+}
 const submitOrder = async () => {
   try {
-const payload = {
-  billing_address: {
-    first_name: form.first_name,
-    last_name: form.last_name,
-    email: form.email,
-    phone: form.phone,
-    address_1: billingSameAsShipping.value ? form.shipping.address_1 : form.billing.address_1,
-    city: billingSameAsShipping.value ? form.shipping.city : form.billing.city,
-    postcode: billingSameAsShipping.value ? form.shipping.postcode : form.billing.postcode,
-    country: billingSameAsShipping.value ? form.shipping.country : form.billing.country,
-  },
-  shipping_address: {
-    first_name: form.first_name,
-    last_name: form.last_name,
-    address_1: form.shipping.address_1,
-    city: form.shipping.city,
-    postcode: form.shipping.postcode,
-    country: form.shipping.country,
-    phone: form.phone,
-    email: form.email,
-  },
-  payment_method: paymentMethod.value,
-  payment_data: {},
-  extensions: {},
-  billing_same_as_shipping: billingSameAsShipping.value
-};
+    const payload = {
+      billing_address: {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email,
+        phone: form.phone,
+        address_1: billingSameAsShipping.value ? form.shipping.address_1 : form.billing.address_1,
+        city: billingSameAsShipping.value ? form.shipping.city : form.billing.city,
+        postcode: billingSameAsShipping.value ? form.shipping.postcode : form.billing.postcode,
+        country: billingSameAsShipping.value ? form.shipping.country : form.billing.country,
+      },
+      shipping_address: {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        address_1: form.shipping.address_1,
+        city: form.shipping.city,
+        postcode: form.shipping.postcode,
+        country: form.shipping.country,
+        phone: form.phone,
+        email: form.email,
+      },
+      payment_method: paymentMethod.value,
+      payment_data: {},
+      extensions: {},
+      billing_same_as_shipping: billingSameAsShipping.value
+    };
 
-console.log(paymentMethod.value);
+    console.log(paymentMethod.value);
 
-console.log(payload);
-console.log(form);
+    console.log(payload);
+    console.log(form);
     const response = await cart.placeOrder(payload)
     console.log('Order placed:', response)
 
-    router.push({ name: 'thank-you',   query: { orderId: response.order_id, billing_email: response.billing_address.email, order_key: response.order_key } });
+    router.push({
+      name: 'thank-you',
+      query: {orderId: response.order_id, billing_email: response.billing_address.email, order_key: response.order_key}
+    });
 
     // Optional: clear cart, redirect to thank-you page, etc.
     await cart.fetchCart(); // Refresh cart in the store
@@ -438,3 +476,12 @@ onMounted( async () => {
 });
 
 </script>
+
+<style scoped>
+.q-form .float-left {
+  width: 57%;
+}
+.q-form .float-right {
+  width: 41%;
+}
+</style>
