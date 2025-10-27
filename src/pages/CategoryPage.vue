@@ -79,8 +79,7 @@
               <div class="text-subtitle2" v-html="product.price_html" />
             </q-card-section>
             <q-card-actions>
-              <q-btn v-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="primary" @click="addToCart(product)" />
-              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" :to="`/product/${getSlugFromPermalink(product.permalink)}`" label="Choose options" color="primary" />
+              <q-btn v-if="product.is_in_stock" label="Add to Cart" color="primary" @click="addToCart(product)" />
               <div v-else>Out of stock</div>
               <q-btn
                 label="View"
@@ -114,6 +113,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useMeta } from 'quasar'
+import { useRoute, useRouter } from 'vue-router'
 
 // Refs and state
 const products = ref([])
@@ -123,10 +123,16 @@ const search = ref('')
 const currentPage = ref(1)
 const perPage = 6
 
+const route = useRoute()
+const categorySlug = ref(route.params.slug || null)
+selectedCategory.value = categorySlug.value
+const router = useRouter();
+
 const seoData = ref({
   title: 'Home page',
   description: 'Home page description'
 });
+
 
 // Fetch SEO data during SSR
 async function fetchSeoData() {
@@ -149,7 +155,16 @@ const fetchProducts = async () => {
   const res = await api.getProducts()
   products.value = Array.isArray(res) ? res : []
 
-  const prices = products.value.map((p) =>
+  const hasSlug = selectedCategory.value;
+
+  let filteredProducts = products.value;
+  if(hasSlug){
+    filteredProducts = products.value.filter((p) => {
+      return p.categories.some((c) => c.slug === selectedCategory.value) ||
+          p.categories.some((c) => c.id === selectedCategory.value);
+    })
+  }
+  const prices = filteredProducts.map((p) =>
     parseFloat(
       p.prices.price_range != null
         ? p.prices.price_range.max_amount
@@ -159,9 +174,13 @@ const fetchProducts = async () => {
 
   const min = Math.floor(Math.min(...prices))
   const max = Math.ceil(Math.max(...prices))
-  priceMin.value = min
-  priceMax.value = max
-  priceRange.value = { min, max }
+
+  const minLastVal = (min === max) ? (min - 1) : min;
+  const maxLastVal = (min === max) ? (max + 1) : max;
+  console.log(minLastVal);
+  priceMin.value = minLastVal
+  priceMax.value = maxLastVal
+  priceRange.value = { min: minLastVal, max: maxLastVal }
 }
 
 // Fetch categories
@@ -214,8 +233,19 @@ const filteredProducts = computed(() => {
     const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
     const matchCategory =
         !selectedCategory.value ||
+        p.categories.some((c) => c.slug === selectedCategory.value) ||
         p.categories.some((c) => c.id === selectedCategory.value)
 
+    if(selectedCategory.value !== categorySlug.value) {
+      const catObject = p.categories.filter((c) => c.id === selectedCategory.value);
+      console.log(catObject[0]);
+      if (catObject[0]) {
+        router.push(`/product-category/${catObject[0].slug}`)
+        return;
+      }
+    }
+
+    console.log(matchCategory);
     const productPrice = parseFloat(p.prices.price) / 100
     const matchPrice =
         productPrice >= priceRange.value.min &&
@@ -256,7 +286,8 @@ watch(priceRange, (val) => {
 // Lifecycle
 onMounted(async() => {
   if (process.env.CLIENT) {
-    isClient.value = true;
+        isClient.value = true;
+
     await fetchSeoData()
     await fetchProducts()
     await fetchCategories()

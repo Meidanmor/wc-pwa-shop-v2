@@ -3,6 +3,7 @@
 
     <!-- Hero Section -->
     <div class="hero-section q-mb-xl">
+      <img src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png" loading="eager" width="1900" height="700"/>
       <div class="hero-content container">
         <h1 class="text-h1 q-mb-sm">NaturaBloom</h1>
         <p class="text-h6 text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
@@ -681,9 +682,22 @@ watch(() => $q.screen.name, async () => {
   max-width: 1210px;
   width: 100%;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 .hero-content.pre-animate {
   transform: translateY(40px);
+}
+
+.hero-section.q-mb-xl> img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100% + 70px);
+    object-fit: cover;
+    z-index: 0;
+    object-position: 59%;
 }
 
 .pre-animate {
@@ -692,8 +706,8 @@ watch(() => $q.screen.name, async () => {
 }
 
 @media(max-width: 767px) {
-  h1 {
-    font-size: 40px;
+  .hero-content h1.text-h1 {
+    font-size: 14vw;
   }
 
   .hero-section {
@@ -704,6 +718,9 @@ watch(() => $q.screen.name, async () => {
 @media(min-width: 600px) {
   .row.justify-between .col-md-4 {
     width: calc(100% / 2 - 10px);
+  }
+  .hero-section.q-mb-xl> img {
+    object-position: 0 -70px;
   }
 }
 @media(min-width: 1024px) {

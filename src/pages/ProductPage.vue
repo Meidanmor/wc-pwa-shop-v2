@@ -54,16 +54,19 @@
 
         <!-- Categories -->
         <div class="q-mb-md">
+          <router-link
+              v-for="cat in product.categories"
+              :key="cat.id"
+              :to="`/product-category/${cat.slug}`">
           <q-chip
-            v-for="cat in product.categories"
-            :key="cat.id"
             color="primary"
             text-color="white"
             dense
             clickable
+            v-html="cat.name"
           >
-            {{ cat.name }}
           </q-chip>
+          </router-link>
         </div>
 
         <!-- Price -->
