@@ -63,8 +63,8 @@
             text-color="white"
             dense
             clickable
-            v-html="cat.name"
           >
+              <span v-html="cat.name"></span>
           </q-chip>
           </router-link>
         </div>
