@@ -3,7 +3,7 @@
 
     <!-- Hero Section -->
     <div class="hero-section q-mb-xl">
-      <img src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png" loading="eager" width="1900" height="700"/>
+      <img src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 800w, https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 600w, https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 200w" loading="eager" width="1900" height="700"/>
       <div class="hero-content container">
         <h1 class="text-h1 q-mb-sm">NaturaBloom</h1>
         <p class="text-h6 text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
