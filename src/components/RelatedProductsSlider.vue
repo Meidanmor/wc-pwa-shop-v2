@@ -102,7 +102,7 @@
       </q-carousel-slide>
 
       <!-- Custom navigation dots -->
-      <template #navigation-icon="{ active, btnProps, onClick, index }">
+      <template #navigation-icon="{ active, btnProps, onClick/*, index*/ }">
         <q-btn
           v-bind="btnProps"
           :flat="false"
