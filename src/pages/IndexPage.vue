@@ -7,7 +7,7 @@
       <div class="hero-content container">
         <h1 class="text-h1 q-mb-sm">NaturaBloom</h1>
         <p class="text-h6 text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
-        <q-btn label="Browse Products" color="primary" class="q-mt-sm" @click="scrollToProducts" />
+        <q-btn label="Browse Products" color="primary" text-color="secondary" class="q-mt-sm" @click="scrollToProducts" />
       </div>
     </div>
 

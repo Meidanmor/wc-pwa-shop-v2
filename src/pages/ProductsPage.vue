@@ -1,6 +1,12 @@
 <template>
   <div class="q-pa-md">
     <div class="container">
+      <q-breadcrumbs>
+          <q-breadcrumbs-el label="Home" to="/" />
+          <q-breadcrumbs-el label="Products" />
+        </q-breadcrumbs>
+
+
       <h2>Products</h2>
 
       <!-- Search and Filter -->
@@ -149,19 +155,30 @@ const fetchProducts = async () => {
   const res = await api.getProducts()
   products.value = Array.isArray(res) ? res : []
 
-  const prices = products.value.map((p) =>
+  const pricesMax = products.value.map((p) =>
     parseFloat(
       p.prices.price_range != null
         ? p.prices.price_range.max_amount
         : p.prices.price
     ) / 100
   )
+  const pricesMin = products.value.map((p) =>
+    parseFloat(
+      p.prices.price_range != null
+        ? p.prices.price_range.min_amount
+        : p.prices.price
+    ) / 100
+  )
 
-  const min = Math.floor(Math.min(...prices))
-  const max = Math.ceil(Math.max(...prices))
-  priceMin.value = min
-  priceMax.value = max
-  priceRange.value = { min, max }
+  const min = Math.floor(Math.min(...pricesMin))
+  const max = Math.ceil(Math.max(...pricesMax))
+
+  const minLastVal = (min === max) ? (min - 1) : min;
+  const maxLastVal = (min === max) ? (max + 1) : max;
+  console.log(minLastVal);
+  priceMin.value = minLastVal
+  priceMax.value = maxLastVal
+  priceRange.value = { min: minLastVal, max: maxLastVal }
 }
 
 // Fetch categories
@@ -252,6 +269,7 @@ const getSlugFromPermalink = (permalink) => {
 watch(priceRange, (val) => {
   console.log('🧪 priceRange changed:', val, 'min:', priceMin.value, 'max:', priceMax.value)
 })
+
 
 // Lifecycle
 onMounted(async() => {

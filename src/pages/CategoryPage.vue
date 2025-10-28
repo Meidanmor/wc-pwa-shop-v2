@@ -1,8 +1,13 @@
 <template>
   <div class="q-pa-md">
     <div class="container">
-      <h2>Products</h2>
+      <q-breadcrumbs>
+          <q-breadcrumbs-el label="Home" to="/" />
+          <q-breadcrumbs-el><span v-html="selectedCategoryOBJ?.name"></span></q-breadcrumbs-el>
+        </q-breadcrumbs>
 
+      <h2 v-if="selectedCategoryOBJ?.name" v-html="selectedCategoryOBJ?.name"></h2>
+      <h2 v-else>Products</h2>
       <!-- Search and Filter -->
       <div class="row q-col-gutter-md q-mb-md">
         <div class="col-xs-12 col-md-6" v-if="!isClient">
@@ -119,6 +124,7 @@ import { useRoute, useRouter } from 'vue-router'
 const products = ref([])
 const categories = ref([])
 const selectedCategory = ref(null)
+const selectedCategoryOBJ = ref({})
 const search = ref('')
 const currentPage = ref(1)
 const perPage = 6
@@ -164,16 +170,23 @@ const fetchProducts = async () => {
           p.categories.some((c) => c.id === selectedCategory.value);
     })
   }
-  const prices = filteredProducts.map((p) =>
+  const pricesMax = filteredProducts.map((p) =>
     parseFloat(
       p.prices.price_range != null
         ? p.prices.price_range.max_amount
         : p.prices.price
     ) / 100
   )
+  const pricesMin = filteredProducts.map((p) =>
+    parseFloat(
+      p.prices.price_range != null
+        ? p.prices.price_range.min_amount
+        : p.prices.price
+    ) / 100
+  )
 
-  const min = Math.floor(Math.min(...prices))
-  const max = Math.ceil(Math.max(...prices))
+  const min = Math.floor(Math.min(...pricesMin))
+  const max = Math.ceil(Math.max(...pricesMax))
 
   const minLastVal = (min === max) ? (min - 1) : min;
   const maxLastVal = (min === max) ? (max + 1) : max;
@@ -185,7 +198,17 @@ const fetchProducts = async () => {
 
 // Fetch categories
 const fetchCategories = async () => {
-  categories.value = await api.getCategories()
+  const res = await api.getCategories()
+  console.log(res);
+  categories.value = res;
+  let catObject = res.filter(c => c.id == selectedCategory.value);
+
+  if (!catObject.length) {
+    catObject = res.filter(c => c.slug == selectedCategory.value);
+  }
+
+  selectedCategoryOBJ.value = catObject[0];
+
 }
 const isServer = import.meta.env.SSR
 const isClient = ref(false)
@@ -236,9 +259,16 @@ const filteredProducts = computed(() => {
         p.categories.some((c) => c.slug === selectedCategory.value) ||
         p.categories.some((c) => c.id === selectedCategory.value)
 
+
     if(selectedCategory.value !== categorySlug.value) {
-      const catObject = p.categories.filter((c) => c.id === selectedCategory.value);
-      console.log(catObject[0]);
+
+      let catObject = categories.value.filter(c => c.id == selectedCategory.value);
+
+      if (!catObject.length) {
+        catObject = categories.value.filter(c => c.slug == selectedCategory.value);
+      }
+
+      selectedCategoryOBJ.value = catObject[0];
       if (catObject[0]) {
         router.push(`/product-category/${catObject[0].slug}`)
         return;

@@ -50,6 +50,12 @@
 
       <!-- Product Details -->
       <div class="col-12 col-md-6">
+        <q-breadcrumbs>
+          <q-breadcrumbs-el label="Home" to="/" />
+          <q-breadcrumbs-el :to="`/product-category/${product.categories[0].slug}`"><span v-html="product.categories[0].name"></span></q-breadcrumbs-el>
+          <q-breadcrumbs-el :label="product.name" />
+        </q-breadcrumbs>
+
         <h1 class="text-h4 q-mb-sm">{{ product.name }}</h1>
 
         <!-- Categories -->
