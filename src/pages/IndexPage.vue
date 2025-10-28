@@ -237,7 +237,7 @@
     <section class="sustainability-section container pre-animate q-pa-md q-my-xl">
       <div class="row items-center">
         <div class="col-12 col-md-6">
-          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png" alt="Sustainability" width="1200" height="600"loading="lazy" class="full-width" />
+          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png" alt="Sustainability" width="1200" height="600" loading="lazy" class="full-width" />
         </div>
         <div class="col-12 col-md-6">
           <h2 class="text-h4 text-weight-light q-mb-md">Our Commitment to Sustainability</h2>
