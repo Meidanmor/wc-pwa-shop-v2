@@ -237,8 +237,7 @@
     <section class="sustainability-section container pre-animate q-pa-md q-my-xl">
       <div class="row items-center">
         <div class="col-12 col-md-6">
-          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png" alt="Sustainability" width="1200" height="600" loading="lazy" class="full-width" />
-        </div>
+          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png 800w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-768x512.png 600w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png 200w" alt="Sustainability" width="946" height="473" loading="lazy" class="full-width" />        </div>
         <div class="col-12 col-md-6">
           <h2 class="text-h4 text-weight-light q-mb-md">Our Commitment to Sustainability</h2>
           <p class="text-body1">
@@ -654,6 +653,7 @@ watch(() => $q.screen.name, async () => {
 }
 .sustainability-section img {
   border-radius: 8px;
+  height: auto;
 }
 .newsletter-section {
   background-color: #f9f9f9;
