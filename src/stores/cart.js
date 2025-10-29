@@ -423,13 +423,18 @@ async function fetchCart(force = false) {
     return
   }
 
-  state.loading.cart = true
   state.error = null
 
   try {
     const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
     if (!res.ok) throw new Error('Failed to fetch cart')
     const data = await res.json()
+    const cartToken = res.headers.get('Cart-Token') || null;
+    if (cartToken) {
+      console.log('🟢 Cart-Token received:', cartToken);
+      localStorage.setItem('wc_cart_token', cartToken);
+    }
+
     // store server snapshot only
     state.cart_array = data
     rebuildMergedView()

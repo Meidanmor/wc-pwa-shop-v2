@@ -11,6 +11,12 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+// Replace this with your own VAPID public key
+const APP_SERVER_KEY = 'BLDC7BhdZ5IEKTcBzhXz2jLkiaQvxpL8hjb-uVFIomYEArnRKhEvAIlDbHAiOgJwaj9IwHAJUD-p8POw0VCowYg';
+
+/**
+ * Subscribe to push notifications
+ */
 export async function subscribeToPushNotifications() {
   console.log('🚀 Push setup started');
 
@@ -30,7 +36,7 @@ export async function subscribeToPushNotifications() {
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array('BLDC7BhdZ5IEKTcBzhXz2jLkiaQvxpL8hjb-uVFIomYEArnRKhEvAIlDbHAiOgJwaj9IwHAJUD-p8POw0VCowYg')
+      applicationServerKey: urlBase64ToUint8Array(APP_SERVER_KEY),
     });
 
     console.log('📝 Push subscription object:', subscription);
@@ -38,7 +44,7 @@ export async function subscribeToPushNotifications() {
     const res = await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/save-subscription', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(subscription)
+      body: JSON.stringify(subscription),
     });
 
     const result = await res.json();
@@ -48,14 +54,46 @@ export async function subscribeToPushNotifications() {
   }
 }
 
+/**
+ * Sync cart token + timestamp when user leaves or hides the app
+ */
+async function syncCartTimestamp() {
+  try {
+    // Retrieve your cart token (saved when fetching WooCommerce Store API cart)
+    const cartToken = localStorage.getItem('wc_cart_token');
+    if (!cartToken) return;
+
+    await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/cart-timestamp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cart_token: cartToken,
+        timestamp: Date.now(),
+      }),
+    });
+
+    console.log('🕒 Cart timestamp synced:', cartToken);
+  } catch (err) {
+    console.error('❌ Failed to sync cart timestamp:', err);
+  }
+}
+
+/**
+ * Attach listeners for when user leaves or hides the app
+ */
+function setupCartTracking() {
+  window.addEventListener('beforeunload', syncCartTimestamp);
+  document.addEventListener('visibilitychange', () => {
+    alert('fired');
+    if (document.hidden) {
+      syncCartTimestamp();
+    }
+  });
+}
+
+// 🚦 Handle push navigation from SW
 if (process.env.CLIENT) {
-  /*if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
-    subscribeToPushNotifications();
-  } else {
-    console.warn('Push notifications are not supported in this browser.');
-  }*/
-  // 🚦 Listen for push navigation from the service worker
-  if ('serviceWorker' in navigator) {
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data?.action === 'navigate' && event.data.url) {
         const targetUrl = event.data.url;
@@ -68,5 +106,11 @@ if (process.env.CLIENT) {
         }
       }
     });
+
+    // Initialize on app start
+    setupCartTracking();
+
+    // Optional: auto-subscribe to push (or call manually elsewhere)
+    // subscribeToPushNotifications();
   }
 }
