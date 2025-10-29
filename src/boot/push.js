@@ -84,7 +84,6 @@ async function syncCartTimestamp() {
 function setupCartTracking() {
   window.addEventListener('beforeunload', syncCartTimestamp);
   document.addEventListener('visibilitychange', () => {
-    alert('fired');
     if (document.hidden) {
       syncCartTimestamp();
     }
