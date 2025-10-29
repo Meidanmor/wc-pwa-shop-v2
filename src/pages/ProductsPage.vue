@@ -8,7 +8,6 @@
 
 
       <h2>Products</h2>
-
       <!-- Search and Filter -->
       <div class="row q-col-gutter-md q-mb-md">
         <div class="col-xs-12 col-md-6" v-if="!isClient">
@@ -231,7 +230,9 @@ const filteredProducts = computed(() => {
     const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
     const matchCategory =
         !selectedCategory.value ||
-        p.categories.some((c) => c.id === selectedCategory.value)
+        p.categories.some((c) => c.id === selectedCategory.value) ||
+        p.extensions["mpress"].default_category?.id === selectedCategory.value ||
+        p.extensions["mpress"].default_category?.slug === selectedCategory.value
 
     const productPrice = parseFloat(p.prices.price) / 100
     const matchPrice =

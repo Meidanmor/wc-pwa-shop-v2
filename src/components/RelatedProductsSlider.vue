@@ -102,15 +102,18 @@
       </q-carousel-slide>
 
       <!-- Custom navigation dots -->
-      <template #navigation-icon="{ active, btnProps, onClick/*, index*/ }">
+      <template #navigation-icon="{ active, btnProps, onClick, index }">
         <q-btn
-          v-bind="btnProps"
-          :flat="false"
-          :color="active ? 'primary' : (btnProps.color || 'grey-5')"
-          size="sm"
-          round
-          dense
-          @click="onClick"
+            v-bind="btnProps"
+            :flat="false"
+            :color="active ? 'primary' : (btnProps.color || 'grey-5')"
+            size="sm"
+            :icon="null"
+            style="font-size: 5px;padding: 0"
+            round
+            dense
+            :aria-label="`Go to slide ${index + 1}`"
+            @click="onClick"
         />
       </template>
 

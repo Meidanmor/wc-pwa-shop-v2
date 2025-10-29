@@ -131,7 +131,7 @@ const perPage = 6
 
 const route = useRoute()
 const categorySlug = ref(route.params.slug || null)
-selectedCategory.value = categorySlug.value
+//selectedCategory.value = categorySlug.value
 const router = useRouter();
 
 const seoData = ref({
@@ -161,14 +161,19 @@ const fetchProducts = async () => {
   const res = await api.getProducts()
   products.value = Array.isArray(res) ? res : []
 
-  const hasSlug = selectedCategory.value;
+  const hasSlug = selectedCategory.value || categorySlug.value;
 
   let filteredProducts = products.value;
   if(hasSlug){
     filteredProducts = products.value.filter((p) => {
       return p.categories.some((c) => c.slug === selectedCategory.value) ||
-          p.categories.some((c) => c.id === selectedCategory.value);
+          p.categories.some((c) => c.id === selectedCategory.value) ||
+          p.extensions["mpress"].default_category?.id === selectedCategory.value ||
+          p.extensions["mpress"].default_category?.slug === selectedCategory.value ||
+          p.categories.some((c) => c.slug === categorySlug.value) ||
+          p.extensions["mpress"].default_category?.slug === categorySlug.value
     })
+
   }
   const pricesMax = filteredProducts.map((p) =>
     parseFloat(
@@ -201,14 +206,22 @@ const fetchCategories = async () => {
   const res = await api.getCategories()
   console.log(res);
   categories.value = res;
-  let catObject = res.filter(c => c.id == selectedCategory.value);
+  let catObject = [];
+  if (selectedCategory.value === null) {
+    catObject = res.filter(c => c.slug == categorySlug.value);
+    selectedCategory.value = catObject[0].name;
+    selectedCategoryOBJ.value = catObject[0];
+  } else {
+    catObject = res.filter(c => c.id == selectedCategory.value);
 
-  if (!catObject.length) {
-    catObject = res.filter(c => c.slug == selectedCategory.value);
+    if (!catObject.length) {
+      catObject = res.filter(c => c.slug == selectedCategory.value);
+    }
+
+    console.log(catObject);
+    selectedCategoryOBJ.value = catObject[0];
+
   }
-
-  selectedCategoryOBJ.value = catObject[0];
-
 }
 const isServer = import.meta.env.SSR
 const isClient = ref(false)
@@ -254,26 +267,15 @@ const categoryOptions = computed(() =>
 const filteredProducts = computed(() => {
   return products.value.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
+      if(!p.categories.length) {
+        p.categories = [p.extensions["mpress"].default_category]
+      }
     const matchCategory =
         !selectedCategory.value ||
-        p.categories.some((c) => c.slug === selectedCategory.value) ||
+        p.categories.some((c) => c.name === selectedCategory.value) ||
         p.categories.some((c) => c.id === selectedCategory.value)
+        //p.categories.some((c) => c.slug === categorySlug.value)
 
-
-    if(selectedCategory.value !== categorySlug.value) {
-
-      let catObject = categories.value.filter(c => c.id == selectedCategory.value);
-
-      if (!catObject.length) {
-        catObject = categories.value.filter(c => c.slug == selectedCategory.value);
-      }
-
-      selectedCategoryOBJ.value = catObject[0];
-      if (catObject[0]) {
-        router.push(`/product-category/${catObject[0].slug}`)
-        return;
-      }
-    }
 
     console.log(matchCategory);
     const productPrice = parseFloat(p.prices.price) / 100
@@ -292,6 +294,7 @@ const totalPages = computed(() => {
 
 
 const paginatedProducts = computed(() => {
+  console.log(filteredProducts)
   const start = (currentPage.value - 1) * perPage
   return filteredProducts.value.slice(start, start + perPage)
 })
@@ -312,6 +315,36 @@ const getSlugFromPermalink = (permalink) => {
 watch(priceRange, (val) => {
   console.log('🧪 priceRange changed:', val, 'min:', priceMin.value, 'max:', priceMax.value)
 })
+watch(selectedCategory, (val, oldVal) => {
+  console.log('VAL:',val);
+  console.log('VALOLD:',oldVal)
+    console.log(selectedCategory.value)
+    if(selectedCategory.value === null) {
+      selectedCategory.value = categorySlug.value;
+    }
+    let catObject = categories.value.filter(c => c.name === selectedCategory.value);
+    if(!catObject.length) {
+      catObject = categories.value.filter(c => c.id === selectedCategory.value);
+    }
+    if(!catObject.length) {
+      catObject = categories.value.filter(c => c.slug === categorySlug.value);
+    }
+     console.log(catObject)
+    if (catObject[0]) {
+      if (selectedCategory.value === null) {
+        selectedCategory.value = catObject[0]?.name;
+      }
+      console.log(selectedCategory.value)
+
+      selectedCategoryOBJ.value = catObject[0];
+      console.log(catObject[0]?.name)
+      if (categorySlug.value !== catObject[0]?.slug) {
+        router.push(`/product-category/${catObject[0].slug}`)
+      }
+    }
+})
+console.log(selectedCategory.value)
+
 
 // Lifecycle
 onMounted(async() => {

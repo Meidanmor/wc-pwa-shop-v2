@@ -127,9 +127,11 @@ body section {
 /********/
 
 .q-carousel {
-    padding-bottom: 45px;
+    padding-bottom: 30px;
 }
-
+i.q-icon.on-left.notranslate.material-icons {
+    margin-right: 3px;
+}
 @media (max-width: 767px) {
     body section {
         padding-top: 40px;

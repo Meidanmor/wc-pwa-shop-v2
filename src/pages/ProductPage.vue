@@ -52,8 +52,8 @@
       <div class="col-12 col-md-6">
         <q-breadcrumbs>
           <q-breadcrumbs-el label="Home" to="/" />
-          <q-breadcrumbs-el :to="`/product-category/${product.categories[0].slug}`"><span v-html="product.categories[0].name"></span></q-breadcrumbs-el>
-          <q-breadcrumbs-el :label="product.name" />
+          <q-breadcrumbs-el :to="`/product-category/${product.categories[0]?.slug}`"><span v-html="product.categories[0]?.name"></span></q-breadcrumbs-el>
+          <q-breadcrumbs-el :label="product?.name" />
         </q-breadcrumbs>
 
         <h1 class="text-h4 q-mb-sm">{{ product.name }}</h1>
@@ -123,6 +123,7 @@
 
         <q-btn
           label="Add to Cart"
+          class="q-mr-sm"
           v-if="product.is_in_stock"
           color="primary"
           :disable="shouldDisableCartButtons"
@@ -150,8 +151,8 @@
         <div v-else> Out of stock </div>
 
        <div class="full-width">
-        <q-btn :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation ? selectedVariation.id : product.id === obj.id)" @click="addToWishlist" color="accent" label="Remove from wishlist" icon="favorite_border" />
-        <q-btn :loading="cart.state.loading.wishlist" v-else @click="addToWishlist" color="accent" label="Add to wishlist" icon="favorite_border" />
+        <q-btn class="q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation ? selectedVariation.id : product.id === obj.id)" @click="addToWishlist" color="accent" label="Remove from wishlist" icon="favorite" />
+        <q-btn class="q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist" color="accent" label="Add to wishlist" icon="favorite_border" />
         </div>
       </div>
     </div>
@@ -358,6 +359,12 @@ async function fetchProduct(slug) {
   const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/products?per_page=100')
   const products = await res.json()
   product.value = products.find(p => getSlugFromPermalink(p.permalink) === slug)
+  console.log('Product Value Before', product.value);
+
+  if(!product.value?.categories.length) {
+    product.value.categories = [product.value.extensions["mpress"].default_category]
+  }
+  console.log('Product Value', product.value);
   quantity.value = 1
   activeSlide.value = 0
   lightbox.value.open = false

@@ -43,11 +43,16 @@ cleanupOutdatedCaches()
 registerRoute(
   ({ url }) =>
     url.origin === 'https://nuxt.meidanm.com' &&
-    (
-      url.pathname === '/wp-json/wc/store/v1/products' ||
-      url.pathname === '/wp-json/wc/store/v1/products/categories'
-    ) &&
-    url.searchParams.has('per_page'),
+      (
+          (
+              url.pathname === '/wp-json/wc/store/v1/products/categories'
+          ) ||
+          (
+              url.pathname === '/wp-json/wc/store/v1/products'
+           &&
+              url.searchParams.has('per_page')
+          )
+      ),
   new StaleWhileRevalidate({
     cacheName: 'woocommerce-api',
     plugins: [
@@ -58,7 +63,6 @@ registerRoute(
     ],
   })
 );
-
 /*registerRoute(
   ({ url }) =>
       url.origin === 'https://nuxt.meidanm.com' &&

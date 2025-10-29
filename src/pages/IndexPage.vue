@@ -145,6 +145,8 @@
       :flat="false"
       :color="active ? 'primary' : (btnProps.color || 'grey-5')"
       size="sm"
+      :icon="null"
+      style="font-size: 5px;padding: 0"
       round
       dense
       :aria-label="`Go to slide ${index + 1}`"
