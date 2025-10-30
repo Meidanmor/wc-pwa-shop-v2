@@ -117,11 +117,14 @@ self.addEventListener('push', event => {
   const notification = data.notification || data;
 
   const options = {
-    body: notification.body,
-    icon: notification.icon || '/icons/favicon-128x128.png',
-    badge: notification.badge || '/icons/favicon-96x96.png',
-    data: notification.data || {},
-    tag: notification.tag || 'default',
+      body: notification.body,
+      icon: notification.icon || '/icons/favicon-128x128.png',
+      badge: notification.badge || '/icons/favicon-96x96.png',
+      data: notification.data || {},
+      tag: notification.tag || 'default',
+      requireInteraction: notification.requireInteraction || true,
+      renotify: notification.renotify || true,
+      vibrate: notification.vibrate || ''
   };
 
   event.waitUntil(
