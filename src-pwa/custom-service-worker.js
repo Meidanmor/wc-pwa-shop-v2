@@ -104,43 +104,22 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim()); // Optional
 });
 
-self.addEventListener('push', function (event) {
-  console.log('[Service Worker] Push Received.');
-  const data = event.data.json();
-  console.log('[Service Worker] Push Data:', data);
-
-  let tag = 'order-confirmation';
-  if(data.product_id){
-      tag = 'product_'+data.product_id+'_sale';
-  }
-  const options = {
-    body: data.body,
-    icon: 'https://pwa.meidanm.com/icons/favicon-128x128.png',
-    badge: 'https://pwa.meidanm.com/icons/favicon-96x96.png',
-    data: data.data, // <-- ✅ This is critical
-    tag: tag, // optional: prevents duplicates
-    renotify: false
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
-});
 self.addEventListener('push', event => {
-  console.log('[SW] Push received', event);
+  console.log('[SW] Push received');
   let data = {};
-
   try {
     data = event.data.json();
   } catch (e) {
     console.error('Push data parse error', e);
   }
 
+  // Support both direct and wrapped payloads
   const notification = data.notification || data;
+
   const options = {
     body: notification.body,
-    icon: notification.icon || '/icons/icon-128x128.png',
-    badge: notification.badge || '/icons/icon-128x128.png',
+    icon: notification.icon || '/icons/favicon-128x128.png',
+    badge: notification.badge || '/icons/favicon-96x96.png',
     data: notification.data || {},
     tag: notification.tag || 'default',
   };
@@ -149,6 +128,7 @@ self.addEventListener('push', event => {
     self.registration.showNotification(notification.title, options)
   );
 });
+
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
   const clickUrl = event.notification?.data?.url || '/';
