@@ -122,8 +122,6 @@ self.addEventListener('push', event => {
     badge: notification.badge || '/icons/favicon-96x96.png',
     data: notification.data || {},
     tag: notification.tag || 'default',
-      vibrate: [200, 100, 200],
-      requireInteraction: true,
   };
 
   event.waitUntil(
