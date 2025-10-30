@@ -63,6 +63,7 @@ registerRoute(
     ],
   })
 );
+
 /*registerRoute(
   ({ url }) =>
       url.origin === 'https://nuxt.meidanm.com' &&
@@ -114,8 +115,8 @@ self.addEventListener('push', function (event) {
   }
   const options = {
     body: data.body,
-    icon: '/icons/icon-128x128.png',
-    badge: '/icons/icon-128x128.png',
+    icon: 'https://pwa.meidanm.com/icons/favicon-128x128.png',
+    badge: 'https://pwa.meidanm.com/icons/favicon-96x96.png',
     data: data.data, // <-- ✅ This is critical
     tag: tag, // optional: prevents duplicates
     renotify: false
@@ -125,7 +126,29 @@ self.addEventListener('push', function (event) {
     self.registration.showNotification(data.title, options)
   );
 });
+self.addEventListener('push', event => {
+  console.log('[SW] Push received', event);
+  let data = {};
 
+  try {
+    data = event.data.json();
+  } catch (e) {
+    console.error('Push data parse error', e);
+  }
+
+  const notification = data.notification || data;
+  const options = {
+    body: notification.body,
+    icon: notification.icon || '/icons/icon-128x128.png',
+    badge: notification.badge || '/icons/icon-128x128.png',
+    data: notification.data || {},
+    tag: notification.tag || 'default',
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(notification.title, options)
+  );
+});
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
   const clickUrl = event.notification?.data?.url || '/';
