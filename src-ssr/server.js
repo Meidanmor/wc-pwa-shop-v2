@@ -40,6 +40,16 @@ export const create = defineSsrCreate((/* { ... } */) => {
     app.use(compression())
   }
 
+  // 👉 Serve .well-known folder (for assetlinks.json, apple-app-site-association, etc.)
+  import path from 'path'
+  import { fileURLToPath } from 'url'
+  const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+  app.use(
+    '/.well-known',
+    express.static(path.join(__dirname, '../public/.well-known'))
+  )
+
   return app
 })
 
