@@ -11,6 +11,8 @@
  */
 import express from 'express'
 import compression from 'compression'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 import {
   defineSsrCreate,
@@ -41,8 +43,6 @@ export const create = defineSsrCreate((/* { ... } */) => {
   }
 
   // 👉 Serve .well-known folder (for assetlinks.json, apple-app-site-association, etc.)
-  import path from 'path'
-  import { fileURLToPath } from 'url'
   const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
   app.use(
