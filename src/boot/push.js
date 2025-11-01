@@ -12,7 +12,7 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 // Replace this with your own VAPID public key
-const APP_SERVER_KEY = 'BLDC7BhdZ5IEKTcBzhXz2jLkiaQvxpL8hjb-uVFIomYEArnRKhEvAIlDbHAiOgJwaj9IwHAJUD-p8POw0VCowYg';
+const APP_SERVER_KEY = 'BHSV149RpWY5IkRyGC_DvxRWQuO_29FAdwhhFu9IPyfUNHDedg7pTCer_WrlJipDvmU0JqxBy4lKHWItX2E6cLw';
 
 /**
  * Subscribe to push notifications
