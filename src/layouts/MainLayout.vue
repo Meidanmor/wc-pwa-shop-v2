@@ -194,7 +194,7 @@ import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
 import AiAssistant from "src/components/AiAssistant.vue";
-import { subscribeToPushNotifications } from 'src/boot/push'
+import { subscribeToWebPush } from 'src/boot/push'
 
 const permission = ref('default')
 const supported = ref(false)
@@ -237,7 +237,7 @@ function onPan(evt) {
 }
 
 async function handleSubscribe () {
-  await subscribeToPushNotifications()
+  await subscribeToWebPush()
   permission.value = Notification.permission
 }
 
