@@ -1,11 +1,12 @@
 <template>
   <q-page class="q-pa-md">
-  <div class="container">
-    <h2>Checkout</h2>
-    <div v-if="!isLoggedIn">
-    <GoogleLoginButton/>
-    </div>
-    <q-form v-if="itemsCount!='0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
+    <div class="container">
+      <h2>Checkout</h2>
+
+      <div v-if="!isLoggedIn">
+        <GoogleLoginButton />
+      </div>
+      <q-form v-if="itemsCount!='0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
       <div class="float-left">
       <!-- Personal Info -->
       <q-card class="q-mb-md">
@@ -164,8 +165,20 @@
       </q-card>
         </div>
     </q-form>
-    <div v-else-if="itemsCount === 0">Your cart is empty! <router-link to="/products/">Go to shop</router-link></div>
-    <div v-else> <q-spinner color="primary" size="2em" /> </div>
+      <div v-else-if="itemsCount === 0">
+        Your cart is empty!
+        <router-link to="/products/">Go to shop</router-link>
+      </div>
+
+      <!-- Render loader and sync retry state -->
+      <div v-if="cart.state.loading.cart" class="centered">
+        <q-spinner color="primary" size="2em" />
+        <div>Synchronizing cart, please wait...</div>
+      </div>
+      <div v-if="syncError" class="text-negative q-mt-md text-center">
+        {{ syncError }}
+        <q-btn label="Retry Sync" color="primary" @click="syncCart" class="q-ml-md" />
+      </div>
     </div>
   </q-page>
 </template>
@@ -177,7 +190,7 @@ import { useRouter } from 'vue-router';
 import { fetchWithToken } from 'src/composables/useApiFetch.js';
 import GoogleLoginButton from 'src/components/GoogleLoginButton.vue';
 
-
+const syncError = ref(null);
 
 const token = ref('');
 
@@ -421,6 +434,13 @@ const onValidationError = async(ref) => {
 
 }
 const submitOrder = async () => {
+  // Only place order after sync
+  if (!cart.state.synced) {
+    await syncCart();
+    if (syncError.value) {
+      return; // Don't submit if sync failed
+    }
+  }
   try {
     const payload = {
       billing_address: {
@@ -469,7 +489,23 @@ const submitOrder = async () => {
   }
 }
 
-onMounted( async () => {
+const syncCart = async () => {
+  syncError.value = null;
+  cart.state.loading.cart = true;
+  try {
+    await cart.syncLocalCartWithServer();
+  } catch (err) {
+    syncError.value = cart.state.error || 'Failed to sync cart';
+  } finally {
+    cart.state.loading.cart = false;
+  }
+}
+
+onMounted(async () => {
+  if (!cart.state.synced) {
+    await syncCart();
+    if (syncError.value) return; // Block further init if cart couldn't sync
+  }
   await initializeFormFromCart();
   await fetchShippingRates();
   await updateShippingAddress();
