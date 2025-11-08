@@ -5,7 +5,7 @@ import productsStore from 'src/stores/products'
 /* -------------------------
    Constants & state (same shape as before)
    ------------------------- */
-const API_BASE = import.meta.env.VITE_API_BASE;
+const API_BASE = import.meta.env.VITE_STORE_API_BASE;
 const LOCAL_CART_KEY = 'local_cart_v1'
 const LEGACY_OFFLINE_KEY = 'offline_cart'
 
@@ -345,7 +345,7 @@ async function syncLocalCartWithServer() {
   if (state.synced || state.offline) return
   state.loading.cart = true
   try {
-    const res = await fetchWithToken(`${API_BASE}/sync-local-cart`, {
+    const res = await fetchWithToken(`${API_BASE}/cart/sync-local-cart`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
