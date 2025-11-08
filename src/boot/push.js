@@ -124,27 +124,29 @@ function setupCartTracking() {
  */
 // --- The critical fix: Put all platform checks inside the boot hook! ---
 export default async () => {
-  setupCartTracking()
-
-  // Fix: defensive check for Platform and Platform.is
-  if (Platform && Platform.is && Platform.is.capacitor) {
-    try {
-      PushNotifications = require('@capacitor/push-notifications').PushNotifications
-      await registerNativePush()
-    } catch (e) {
-      console.warn('Push plugin not available:', e)
-    }
-  } else if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.action === 'navigate' && event.data.url) {
-        const targetUrl = event.data.url
-        if (window.$router) {
-          window.$router.push(targetUrl).catch(() => {})
-        } else {
-          window.location.href = targetUrl
-        }
+  // Only run setup in client/browser context
+  if (typeof window !== 'undefined') {
+    setupCartTracking()
+    // Native (Capacitor) logic only runs on client
+    if (Platform.is && Platform.is.capacitor) {
+      try {
+        PushNotifications = require('@capacitor/push-notifications').PushNotifications
+        await registerNativePush()
+      } catch (e) {
+        console.warn('Push plugin not available:', e)
       }
-    })
-    // Optional: await subscribeToWebPush()
+    } else if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.action === 'navigate' && event.data.url) {
+          const targetUrl = event.data.url
+          if (window.$router) {
+            window.$router.push(targetUrl).catch(() => {})
+          } else {
+            window.location.href = targetUrl
+          }
+        }
+      })
+      // Optional: await subscribeToWebPush()
+    }
   }
 }
