@@ -345,7 +345,7 @@ async function syncLocalCartWithServer() {
   if (state.synced || state.offline) return
   state.loading.cart = true
   try {
-    const res = await fetchWithToken(`${API_BASE}/cart/sync-local-cart`, {
+    const res = await fetchWithToken(`${API_BASE}/sync-local-cart`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
