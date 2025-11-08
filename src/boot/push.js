@@ -126,8 +126,8 @@ function setupCartTracking() {
 export default async () => {
   setupCartTracking()
 
-  // Only check Platform.is.capacitor here!
-  if (Platform.is && Platform.is.capacitor) {
+  // Fix: defensive check for Platform and Platform.is
+  if (Platform && Platform.is && Platform.is.capacitor) {
     try {
       PushNotifications = require('@capacitor/push-notifications').PushNotifications
       await registerNativePush()
