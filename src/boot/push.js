@@ -2,13 +2,6 @@ import { Platform } from 'quasar'
 
 // Optional Capacitor import — will only load on native
 let PushNotifications
-if (Platform.is.capacitor) {
-  try {
-    PushNotifications = require('@capacitor/push-notifications').PushNotifications
-  } catch (e) {
-    console.warn('Push plugin not available:', e)
-  }
-}
 
 /**
  * Convert VAPID base64 key to UInt8Array
@@ -129,14 +122,19 @@ function setupCartTracking() {
 /**
  * Init push + cart tracking
  */
+// --- The critical fix: Put all platform checks inside the boot hook! ---
 export default async () => {
   setupCartTracking()
 
-  if (Platform.is.capacitor) {
-    // Native build (Android/iOS)
-    await registerNativePush()
+  // Only check Platform.is.capacitor here!
+  if (Platform.is && Platform.is.capacitor) {
+    try {
+      PushNotifications = require('@capacitor/push-notifications').PushNotifications
+      await registerNativePush()
+    } catch (e) {
+      console.warn('Push plugin not available:', e)
+    }
   } else if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-    // Web/PWA build
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data?.action === 'navigate' && event.data.url) {
         const targetUrl = event.data.url
@@ -147,8 +145,6 @@ export default async () => {
         }
       }
     })
-
-    // Optional: Auto-subscribe or call manually later
-    // await subscribeToWebPush()
+    // Optional: await subscribeToWebPush()
   }
 }
