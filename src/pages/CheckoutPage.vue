@@ -273,7 +273,7 @@ const getSlugFromPermalink = (permalink) => {
 }*/
 
 const initializeFormFromCart = async () => {
-  await cart.fetchCart(true); // Make sure cart is up to date
+  await cart.fetchCart(); // Make sure cart is up to date
 
   cart.state.cart_array.payment_methods.forEach((method) => {
     let label = '';
@@ -507,9 +507,9 @@ onMounted(async () => {
     await syncCart();
     if (syncError.value) return; // Block further init if cart couldn't sync
   }
-  await initializeFormFromCart();
-  await fetchShippingRates();
-  await updateShippingAddress();
+  initializeFormFromCart();
+  fetchShippingRates();
+  updateShippingAddress();
 });
 
 </script>
