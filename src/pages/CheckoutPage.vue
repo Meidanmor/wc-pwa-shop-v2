@@ -495,6 +495,7 @@ const syncCart = async () => {
   try {
     await cart.syncLocalCartWithServer();
   } catch (err) {
+    console.log(err);
     syncError.value = cart.state.error || 'Failed to sync cart';
   } finally {
     cart.state.loading.cart = false;
