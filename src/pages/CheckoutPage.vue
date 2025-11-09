@@ -4,6 +4,7 @@
       <h2>Checkout</h2>
 
       <div v-if="isLoggedIn === false">
+        {{isLoggedIn}}
         <GoogleLoginButton />
       </div>
       <q-form v-if="itemsCount!='0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
