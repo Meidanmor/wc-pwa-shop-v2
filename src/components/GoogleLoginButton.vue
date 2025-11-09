@@ -14,7 +14,7 @@ import { ref, /*nextTick*/ } from "vue";
 
 // 🔒 Use environment variable in production
 const GOOGLE_CLIENT_ID =
-  "484223740755-cjhfcl0as9hmo0a1866o596m6r7ed8sa.apps.googleusercontent.com";
+  "541818756446-cpeeist28iikua9g1i436vpj5mncslmb.apps.googleusercontent.com";
 
 const loading = ref(false);
 /*const router = useRouter();
