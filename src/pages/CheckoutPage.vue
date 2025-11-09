@@ -3,7 +3,7 @@
     <div class="container">
       <h2>Checkout</h2>
 
-      <div v-if="!isLoggedIn">
+      <div v-if="isLoggedIn === false">
         <GoogleLoginButton />
       </div>
       <q-form v-if="itemsCount!='0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
@@ -196,6 +196,7 @@ const token = ref('');
 
 if(process.env.Client) {
   token.value = localStorage.getItem('jwt_token');
+  console.log(!!token.value);
 }
 
 const isLoggedIn = ref(!!token.value)
