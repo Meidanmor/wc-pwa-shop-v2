@@ -195,7 +195,7 @@ const syncError = ref(null);
 
 const token = ref('');
 
-if(process.env.Client) {
+if(process.env.CLIENT) {
   token.value = localStorage.getItem('jwt_token');
   console.log(!!token.value);
 }
@@ -517,10 +517,17 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.q-form .float-left {
-  width: 57%;
-}
+.q-form .float-left,
 .q-form .float-right {
-  width: 41%;
+  width: 100%;
+}
+@media(min-width: 768px) {
+  .q-form .float-left {
+    width: 57%;
+  }
+
+  .q-form .float-right {
+    width: 41%;
+  }
 }
 </style>

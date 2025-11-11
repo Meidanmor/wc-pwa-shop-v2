@@ -209,7 +209,7 @@ const fetchCategories = async () => {
   let catObject = [];
   if (selectedCategory.value === null) {
     catObject = res.filter(c => c.slug == categorySlug.value);
-    selectedCategory.value = catObject[0].name;
+    selectedCategory.value = decodeHtml(catObject[0].name);
     selectedCategoryOBJ.value = catObject[0];
   } else {
     catObject = res.filter(c => c.id == selectedCategory.value);
@@ -255,13 +255,20 @@ const priceMin = ref(0)
 const priceMax = ref(1000)
 const priceRange = ref({ min: 0, max: 1000 })
 
+const decodeHtml = (html) => {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
+};
+
 // Computed: category options
 const categoryOptions = computed(() =>
     categories.value.map((cat) => ({
-      label: cat.name,
+      label: decodeHtml(cat.name),
       value: cat.id
     }))
 )
+
 
 // Computed: filtered products
 const filteredProducts = computed(() => {
@@ -272,7 +279,7 @@ const filteredProducts = computed(() => {
       }
     const matchCategory =
         !selectedCategory.value ||
-        p.categories.some((c) => c.name === selectedCategory.value) ||
+        p.categories.some((c) => decodeHtml(c.name) === selectedCategory.value) ||
         p.categories.some((c) => c.id === selectedCategory.value)
         //p.categories.some((c) => c.slug === categorySlug.value)
 
@@ -322,7 +329,7 @@ watch(selectedCategory, (val, oldVal) => {
     if(selectedCategory.value === null) {
       selectedCategory.value = categorySlug.value;
     }
-    let catObject = categories.value.filter(c => c.name === selectedCategory.value);
+    let catObject = categories.value.filter(c => decodeHtml(c.name) === selectedCategory.value);
     if(!catObject.length) {
       catObject = categories.value.filter(c => c.id === selectedCategory.value);
     }
@@ -332,7 +339,7 @@ watch(selectedCategory, (val, oldVal) => {
      console.log(catObject)
     if (catObject[0]) {
       if (selectedCategory.value === null) {
-        selectedCategory.value = catObject[0]?.name;
+        selectedCategory.value = decodeHtml(catObject[0]?.name);
       }
       console.log(selectedCategory.value)
 

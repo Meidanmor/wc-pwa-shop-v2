@@ -216,10 +216,16 @@ const priceMin = ref(0)
 const priceMax = ref(1000)
 const priceRange = ref({ min: 0, max: 1000 })
 
+const decodeHtml = (html) => {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
+};
+
 // Computed: category options
 const categoryOptions = computed(() =>
     categories.value.map((cat) => ({
-      label: cat.name,
+      label: decodeHtml(cat.name),
       value: cat.id
     }))
 )

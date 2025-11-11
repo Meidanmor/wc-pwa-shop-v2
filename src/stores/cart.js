@@ -30,23 +30,31 @@ const state = reactive({
    ------------------------- */
 function getMaxAllowed(item) {
   if (!item) return Infinity
+
+  // 1. If quantity_limits.maximum exists (number)
   if (item.quantity_limits && typeof item.quantity_limits.maximum === 'number') {
     const m = item.quantity_limits.maximum
     return (m === null || Number.isNaN(m)) ? Infinity : m
   }
+
+  // 2. Try add_to_cart.maximum
   if (item.add_to_cart && typeof item.add_to_cart.maximum === 'number') {
     const m = item.add_to_cart.maximum
     return (m === null || Number.isNaN(m)) ? Infinity : m
   }
+
+  // 3. Try stock_availability.text (extract number)
   const stockText = item?.stock_availability?.text
   if (stockText && String(stockText).trim() !== '') {
     const m = String(stockText).match(/\d+/)
     if (m) return parseInt(m[0], 10)
   }
+
   return Infinity
 }
 
 async function getCachedProduct(productId) {
+  // 1) Prefer in-memory global products store (fast, SSR hydrated if available)
   try {
     const fromStore = productsStore.getById(Number(productId))
     if (fromStore) return fromStore
@@ -54,9 +62,13 @@ async function getCachedProduct(productId) {
     console.error(err)
     // swallow
   }
+
+  // 2) Try SW cache (the same cache / key used by products store)
+  // NOTE: ensure these keys match products store SW cache keys
   try {
     if (typeof window !== 'undefined' && 'caches' in window) {
-      const cache = await caches.open('products-cache')
+      const cache = await caches.open('products-cache') // same name product store uses
+      // the products store writes a synthetic key like '/api/products' (see earlier products.js)
       const matchKey = '/api/products'
       const res = await cache.match(matchKey)
       if (res && res.ok) {
@@ -68,9 +80,14 @@ async function getCachedProduct(productId) {
       }
     }
   } catch (err) {
+    // ignore read/cache errors
     console.warn('[cart] getCachedProduct cache read failed', err)
   }
+
+  // 3) As a last resort: ask the products store to fetch the listing if needed,
+  //    (productsStore.fetchProductsIfNeeded will reuse SSR/cache and only hit network when needed)
   try {
+    // Only fetch when online to avoid blocking while offline:
     if (typeof navigator !== 'undefined' && navigator.onLine) {
       await productsStore.fetchProductsIfNeeded()
       const fromAfterFetch = productsStore.getById(Number(productId))
@@ -80,10 +97,13 @@ async function getCachedProduct(productId) {
     console.warn('[cart]', err)
     // swallow
   }
+
+  // Nothing found
   return null
 }
 
 function normalizeVariation(variation) {
+  // Always return sorted array of { attribute, value }
   if (!variation) return []
   if (Array.isArray(variation)) {
     const mapped = variation.map(v => {
@@ -102,12 +122,14 @@ function normalizeVariation(variation) {
       if (attribute === '' && (value === '' || typeof value === 'undefined')) return []
       return [{ attribute: String(attribute), value: String(value) }]
     }
+    // treat as object map { attr: value }
     const arr = Object.entries(variation).map(([k, v]) => {
       const val = (v && typeof v === 'object' && 'value' in v) ? v.value : v
       return { attribute: String(k), value: String(val ?? '') }
     }).filter(v => v.attribute !== '' || v.value !== '')
     return arr.sort((a, b) => (a.attribute + a.value).localeCompare(b.attribute + b.value))
   }
+  // scalar fallback
   return [{ attribute: '', value: String(variation) }]
 }
 
@@ -124,9 +146,11 @@ function itemSignature(itemLike) {
 }
 
 function generateLocalKeyForSig(sig) {
+  // deterministic short key based on signature (stable across reloads)
   let h = 5381
   for (let i = 0; i < sig.length; i++) h = ((h << 5) + h) + sig.charCodeAt(i)
   const num = (h >>> 0).toString(36)
+  // include a short sanitized part of the signature for easier debugging
   const friendly = sig.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 18)
   return `local-${num}-${friendly}`
 }
@@ -157,6 +181,7 @@ function buildLocalItemFromProduct(productLike, variation = [], quantity = 1) {
 function persistLocalCart() {
   try {
     localStorage.setItem(LOCAL_CART_KEY, JSON.stringify(state.local_cart.items || []))
+    // keep legacy key for compatibility
     localStorage.setItem(LEGACY_OFFLINE_KEY, JSON.stringify(state.local_cart.items || []))
   } catch (err) {
     console.warn('[cart] persistLocalCart failed', err)
@@ -172,6 +197,8 @@ async function loadLocalCart() {
       const legacy = localStorage.getItem(LEGACY_OFFLINE_KEY)
       if (legacy) items = JSON.parse(legacy) || []
     }
+
+    // Normalize and dedupe by signature (sum quantities)
     const map = new Map()
     for (const it of items) {
       const normalized = {
@@ -193,30 +220,52 @@ async function loadLocalCart() {
         map.set(sig, normalized)
       }
     }
+
     state.local_cart.items = Array.from(map.values())
     persistLocalCart()
   } catch (err) {
     console.warn('[cart] loadLocalCart failed', err)
     state.local_cart.items = []
   }
+
   rebuildMergedView()
 }
 
+/* -------------------------
+   rebuildMergedView (local-first)
+   - local items are authoritative
+   - include API items only if no local override exists
+   ------------------------- */
 function rebuildMergedView() {
+
+  // mutate the same array instance so all refs/aliases stay reactive
   state.items.splice(0, state.items.length, ...(state.local_cart.items || []))
+
+  // keep items_count as a number (recalculated here)
   state.items_count = state.items.reduce((s, i) => s + (i.quantity || 0), 0)
+
+// totals: if server cart exists, use it; else compute minimal local total
   state.totals = state.cart_array?.totals || {
     total_items: String(state.items.reduce((s, it) =>
       s + ((it.prices?.price ? parseFloat(it.prices.price) * (it.quantity || 1) : 0)), 0))
   }
   state.coupons = state.cart_array?.coupons || []
+  //console.log('cart merged', state);
 }
 
+/* -------------------------
+   Background sync (local -> API) (does not overwrite local_cart)
+   - attempts add/update/remove
+   - after actions, fetch server cart into state.cart_array (informational)
+   - mark local items _synced if found on server
+   ------------------------- */
 async function mergeLocalIntoApi($q = null) {
   if (!state.local_cart.items.length) return
   if (state.offline) return
+
   const apiItems = state.cart_array?.items || []
   const apiMap = new Map(apiItems.map(i => [itemSignature(i), i]))
+
   const actions = []
   for (const localItem of state.local_cart.items) {
     const sig = itemSignature(localItem)
@@ -225,23 +274,29 @@ async function mergeLocalIntoApi($q = null) {
       if (apiItem && apiItem.key) actions.push({ type: 'remove', payload: { key: apiItem.key }, sig })
       continue
     }
+
+    // clamp quantity using API limits (if available)
     const maxAllowed = getMaxAllowed(apiItem || localItem)
     if (Number.isFinite(maxAllowed) && localItem.quantity > maxAllowed) localItem.quantity = maxAllowed
     if (apiItem) {
       if ((localItem.quantity || 0) !== (apiItem.quantity || 0)) {
+        // update via api key
         if (apiItem.key) actions.push({ type: 'update', payload: { key: apiItem.key, quantity: localItem.quantity }, sig })
         else actions.push({ type: 'add', payload: { id: localItem.id, quantity: localItem.quantity, variation: localItem.variation }, sig })
       }
     } else {
+      // not on server -> add
       actions.push({ type: 'add', payload: { id: localItem.id, quantity: localItem.quantity, variation: localItem.variation }, sig })
     }
   }
   if (!actions.length) {
+    // no actions, but refresh server snapshot
     try {
       const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         state.cart_array = data
+        // mark synced local items
         const serverMap = new Map((state.cart_array.items || []).map(i => [itemSignature(i), i]))
         for (const li of state.local_cart.items) {
           const matching = serverMap.get(itemSignature(li))
@@ -303,6 +358,8 @@ async function mergeLocalIntoApi($q = null) {
       console.warn('[cart] merge action error', err)
     }
   }
+
+  // Refresh server snapshot and mark local items as synced if present on server
   try {
     const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
     if (res.ok) {
@@ -331,7 +388,11 @@ async function mergeLocalIntoApi($q = null) {
   }
 }
 
+/* -------------------------
+   API fetch/update functions
+   ------------------------- */
 async function updateCartState(data) {
+  // Update server snapshot but do NOT let server override local items
   state.cart_array = data || null
 }
 
@@ -375,13 +436,17 @@ async function syncLocalCartWithServer() {
 async function fetchCart(force = false) {
   if (state.synced && !force) return
   console.log('cart is being fetched')
+  // We still fetch the api cart to know server quantities/keys for syncing,
+  // but we do not let it replace the local cart.
   if (state.offline) {
     loadLocalCart()
     state.cart_array = null
     rebuildMergedView()
     return
   }
+
   state.error = null
+
   try {
     const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
     if (!res.ok) throw new Error('Failed to fetch cart')
@@ -391,9 +456,11 @@ async function fetchCart(force = false) {
       console.log('🟢 Cart-Token received:', cartToken);
       localStorage.setItem('wc_cart_token', cartToken);
     }
+
+    // store server snapshot only
     state.cart_array = data
     rebuildMergedView()
-    state.synced = true
+    // try to push local changes (background)
     if(force){
      await mergeLocalIntoApi().catch(err => console.warn('[cart] mergeLocalIntoApi failed', err))
     } else {
@@ -438,6 +505,8 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     state.drawerOpen = true
     return
   }
+
+  // Try to find an API item with this signature (to use product metadata)
   const apiItem = (state.cart_array?.items || []).find(i => itemSignature(i) === sigCandidate)
   if (apiItem) {
     const maxAllowed = getMaxAllowed(apiItem)
@@ -471,6 +540,8 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     state.drawerOpen = true
     return
   }
+
+  // fallback: create local-only item using cached product metadata if possible
   let productData = null
   try { productData = await getCachedProduct(productId) } catch (err) { console.error(err); productData = null }
   const sourceProduct = productData || { id: productId, name: '', images: [], prices: {}, add_to_cart: { minimum: 1, maximum: null }, stock_availability: { text: '' } }
@@ -494,10 +565,12 @@ async function increase(productIdOrKey, $q = null) {
   if (typeof productIdOrKey === 'string' && productIdOrKey.startsWith('local-')) {
     localItem = state.local_cart.items.find(i => i.key === productIdOrKey)
   } else {
+    // try interpret as signature
     localItem = state.local_cart.items.find(i => itemSignature(i) === String(productIdOrKey))
     if (!localItem) {
       const idNum = Number(productIdOrKey)
       if (!Number.isNaN(idNum)) {
+        // prefer no-variation local item for that id
         localItem = state.local_cart.items.find(i => Number(i.id) === idNum && normalizeVariation(i.variation).length === 0)
         if (!localItem) localItem = state.local_cart.items.find(i => Number(i.id) === idNum)
       }
@@ -515,6 +588,8 @@ async function increase(productIdOrKey, $q = null) {
     if ($q) $q.notify({ type: 'info', message: 'Quantity updated', icon: 'shopping_cart' })
     return
   }
+
+  // fallback: create minimal local item
   const minimal = { id: productIdOrKey, name: '', quantity: 1, prices: {}, images: [], variation: [], _local: true, _synced: false }
   const sig = itemSignature(minimal)
   minimal.key = generateLocalKeyForSig(sig)
@@ -540,6 +615,8 @@ async function decrease(cartItemKey, /*$q = null*/) {
     rebuildMergedView()
     return
   }
+
+  // not local: try to find API item and create local override
   const apiItem = (state.cart_array?.items || []).find(i => i.key === cartItemKey || i.id === cartItemKey)
   if (apiItem) {
     const desired = (apiItem.quantity || 1) - 1
@@ -555,6 +632,8 @@ async function decrease(cartItemKey, /*$q = null*/) {
     rebuildMergedView()
     return
   }
+
+  // nothing matched
   return
 }
 
@@ -562,6 +641,8 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
   markCartChanged() // <--- NEW
   state.loading.cart = true
   state.error = null
+
+  // if local key exists -> remove locally
   const idxLocal = state.local_cart.items.findIndex(i => i.key === cartItemKey)
   if (idxLocal !== -1) {
     state.local_cart.items.splice(idxLocal, 1)
@@ -569,10 +650,14 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
     rebuildMergedView()
     state.loading.cart = false
     if ($q) $q.notify({ type: 'positive', message: 'Removed from cart', icon: 'shopping_cart' })
+    //return
   }
+
+  // try to find API item by key
   const apiItem = (state.cart_array?.items || []).find(i => i.remote_key === cartItemAPIKey)
   if (!apiItem || state.offline) {
     if (apiItem) {
+      // mark removal override locally
       const rm = {
         key: generateLocalKeyForSig(itemSignature(apiItem)),
         id: apiItem.id,
@@ -592,6 +677,8 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
       state.loading.cart = false
     }
   }
+
+  // online + apiItem present -> remove remotely and then update server snapshot
   try {
     const res = await fetchWithToken(`${API_BASE}/cart/remove-item`, {
       method: 'POST',
@@ -601,8 +688,12 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
     })
     const data = await res.json().catch(() => null)
     if (!res.ok) throw new Error((data && data.message) || 'Failed to remove item')
+
+    // remove any local items that match sig
     const sig = itemSignature(apiItem)
     state.local_cart.items = state.local_cart.items.filter(i => itemSignature(i) !== sig)
+
+    // update server snapshot (no replace of local)
     await updateCartState(data)
     if ($q) $q.notify({ type: 'positive', message: 'Removed from cart.', icon: 'shopping_cart' })
   } catch (err) {
