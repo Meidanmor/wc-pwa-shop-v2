@@ -77,7 +77,7 @@ export default defineConfig((/* ctx */) => {
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
 
-      extractCSS: true,
+      cssCodeSplit: true,
       vitePlugins: [
         ['vite-plugin-checker', {
           eslint: {
