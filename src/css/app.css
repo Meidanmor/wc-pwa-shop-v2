@@ -1,4 +1,26 @@
 /* app global css */
+:root {
+ /* --bg: #faf9f7;
+  --bg-alt: #ffffff;
+
+  --text: #1e1e1e;
+  --text-muted: #6f6f6f;*/
+
+  /* Darker primary gradient */
+  /*--primary: #c3af87;
+  --primary-dark: #a99774;*/
+  --primary-gradient: linear-gradient(135deg, #d7c7a3, #b8a27b);
+    --q-accent: #ffffff;
+    --q-secondary: #5a4c49;
+    --q-primary: #b8a27b;
+  /*--accent: #e8c8c0;
+  --accent-dark: #d1a89f;
+
+  --radius: 18px;
+  --card-shadow: 0 8px 28px rgba(0,0,0,0.06);*/
+}
+
+
 body{
   color: var(--q-secondary);
   /*scroll-behavior: smooth;*/

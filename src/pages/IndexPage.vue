@@ -2,7 +2,14 @@
   <div>
 
     <!-- Hero Section -->
-    <div class="hero-section q-mb-xl">
+    <section class="hero-section-sec">
+    <div class="hero-section container q-mb-xl row">
+      <div class="hero-content col-12 col-md-6 q-mb-lg">
+        <h1 class="text-h1 text-secondary q-mb-sm">NaturaBloom</h1>
+        <p class="text-h6 text-secondary text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
+        <q-btn label="Browse Products" text-color="accent" class="q-mt-sm" @click="scrollToProducts" />
+      </div>
+
       <img
           fetchpriority="high"
           loading="eager"
@@ -18,16 +25,12 @@
          1900px"
           width="1900"
           height="700"
+          class="col-12 col-md-6"
       />
-      <div class="hero-content container">
-        <h1 class="text-h1 q-mb-sm">NaturaBloom</h1>
-        <p class="text-h6 text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
-        <q-btn label="Browse Products" color="primary" text-color="secondary" class="q-mt-sm" @click="scrollToProducts" />
-      </div>
     </div>
-
+</section>
 <!-- Featured Products Slider -->
-<section ref="productSection" class="featured-products q-my-xl">
+<section ref="productSection" class="featured-products">
   <div class="container">
     <h2 class="text-h3 text-weight-light text-center q-mb-md">Featured Products</h2>
 
@@ -557,11 +560,50 @@ watch(() => $q.screen.name, async () => {
 </script>
 
 <style scoped>
+
+@keyframes gradientAnimation {
+  0% {background-position: 0% 50%;}
+  50% {background-position: 100% 50%;}
+  100% {background-position: 0% 50%;}
+}
+
+.hero-section-sec {
+  --text: #1e1e1e;
+  --muted: #6f6f6f;
+  /* richer gradient palette */
+  --primary1: #f6f2e7;  /* very light beige */
+  --primary2: #e9ddc4;  /* light warm beige */
+  --primary3: #d0c1a3;  /* medium beige */
+  --primary4: #bfa07c;  /* deeper warm tone */
+  --primary5: #a88360;  /* dark accent */
+  --card-shadow: 0 12px 40px rgba(16,16,16,0.08);
+}
+.hero-section-sec {
+  position: relative;
+    inset: 0;
+    background: linear-gradient(270deg, var(--primary1), var(--primary2), var(--primary3), var(--primary4), var(--primary5));
+    background-size: 1200% 1200%;
+    animation: gradientAnimation 25s
+ease infinite;
+}
+
+.hero-section-sec:before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle at 20% 30%, rgb(255 255 255) 0%, transparent 60%), radial-gradient(circle at 80% 70%, rgb(255 255 255 / 70%) 0%, transparent 60%), radial-gradient(circle at 50% 50%, rgb(255 255 255 / 38%) 0%, #00000000 60%);
+  background-size: 200% 200%;
+}
 .hero-section {
-  background: rgb(243, 236, 226);
-  padding: 150px 20px;
+ /* background: rgb(243, 236, 226);*/
+  padding: 0px 20px;
   position: relative;
   overflow: hidden;
+  z-index: 1;
 }
 
 .hero-content h1 {
@@ -570,6 +612,7 @@ watch(() => $q.screen.name, async () => {
   font-weight: 600;
   font-size: 4rem;
   line-height: 1;
+  margin-top: 0;
 }
 
 .hero-content .text-h6 {
@@ -695,17 +738,21 @@ watch(() => $q.screen.name, async () => {
   margin-left: auto;
 }
 .hero-content {
-  transition: 0.3s ease;
+  /*transition: 0.3s ease;
   max-width: 1210px;
   width: 100%;
   margin: 0 auto;
   position: relative;
-  z-index: 1;
+  z-index: 1;*/
 }
 
 .hero-content button {
-  font-weight: 800;
-  text-shadow: 1px 1px #ffffff60;
+  /*font-weight: 800;*/
+  /*text-shadow: 1px 1px #ffffff60;*/
+  border-radius: 50px;
+  padding: 10px 20px;
+  color: #fff;
+  background: var(--primary-gradient);
 }
 
 .hero-content.pre-animate {
@@ -713,14 +760,17 @@ watch(() => $q.screen.name, async () => {
 }
 
 .hero-section.q-mb-xl> img {
-    position: absolute;
+   /* position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: calc(100% + 70px);
     object-fit: cover;
     z-index: 0;
-    object-position: 59%;
+    object-position: 59%;*/
+  object-fit: contain;
+  margin: 0;
+  border-radius: 50px;
 }
 
 .pre-animate {
@@ -734,16 +784,13 @@ watch(() => $q.screen.name, async () => {
   }
 
   .hero-section {
-    padding: 70px 20px;
+    padding: 0px 20px;
   }
 
 }
 @media(min-width: 600px) {
   .row.justify-between .col-md-4 {
     width: calc(100% / 2 - 10px);
-  }
-  .hero-section.q-mb-xl> img {
-    object-position: 0 -70px;
   }
 }
 @media(min-width: 1024px) {
