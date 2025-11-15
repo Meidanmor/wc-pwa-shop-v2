@@ -466,20 +466,20 @@ const addToCart = (product) => {
 const getSlugFromPermalink = (permalink) =>
   permalink.split('/').filter(Boolean).pop()
 
-function revealFallback() {
+/*function revealFallback() {
   document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
-}
+}*/
 
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {
-  if (typeof window !== 'undefined' && productSection.value) {
+  /*if (typeof window !== 'undefined' && productSection.value) {
     import('gsap').then(({ gsap }) => {
       import('gsap/ScrollToPlugin').then(({ ScrollToPlugin }) => {
         gsap.registerPlugin(ScrollToPlugin)
         gsap.to(window, { duration: 1, scrollTo: { y: productSection.value, offsetY: 80 }, ease: 'power2.out' })
       })
     })
-  }
+  }*/
 }
 defineExpose({ scrollToProducts })
 
@@ -505,8 +505,8 @@ onMounted(async () => {
   isHydrated.value = true
 
   // GSAP animations (client-only)
-  if (typeof window !== 'undefined') {
-    const {gsap} = await import('gsap')
+  /*if (typeof window !== 'undefined') {
+    /*const {gsap} = await import('gsap')
     const {ScrollToPlugin} = await import('gsap/ScrollToPlugin')
     const {ScrollTrigger} = await import('gsap/ScrollTrigger')
     gsap.registerPlugin(ScrollToPlugin, ScrollTrigger)
@@ -548,7 +548,7 @@ onMounted(async () => {
       console.error('GSAP failed, using fallback:', err)
       revealFallback()
     }
-  }
+  }*/
 
 })
 
