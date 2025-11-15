@@ -78,6 +78,10 @@ export default defineConfig((/* ctx */) => {
       // viteVuePluginOptions: {},
 
       cssCodeSplit: true,
+      preloadChunks: true,   // ensures critical JS is preloaded
+      polyfills: {
+        coreJs: false        // PWA modern browsers don't need heavy polyfills
+      },
       vitePlugins: [
         ['vite-plugin-checker', {
           eslint: {
@@ -144,7 +148,7 @@ export default defineConfig((/* ctx */) => {
 
 
       // Quasar plugins
-      plugins: ['Notify','Meta']
+      plugins: ['Meta']
     },
 
     // animations: 'all', // --- includes all animations
