@@ -13,7 +13,7 @@ const initialized = ref(false)
 const SSR_KEY = '__PRE_FETCH_PRODUCTS__'
 
 // --- core fetchers ---
-async function preFetchProducts(ctx) {
+export async function preFetchProducts(ctx) {
   try {
     productsLoading.value = true
 

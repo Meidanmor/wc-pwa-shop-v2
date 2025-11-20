@@ -4,7 +4,7 @@
     <!-- Hero Section -->
     <section class="hero-section-sec">
     <div class="hero-section container q-mb-xl row">
-      <div class="hero-content col-12 col-md-6 q-mb-lg">
+      <div class="hero-content pre-animate col-12 col-md-6 q-mb-lg">
         <h1 class="text-h1 text-secondary q-mb-sm">NaturaBloom</h1>
         <p class="text-h6 text-secondary text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
         <q-btn label="Browse Products" text-color="accent" class="q-mt-sm" @click="scrollToProducts" />
@@ -215,7 +215,7 @@
 
 
     <!-- CTA Section -->
-    <section class="cta-section pre-animate q-pa-md">
+    <section class="cta-section  q-pa-md">
       <div class="container">
         <div class="cta-overlay">
           <div class="cta-content">
@@ -233,7 +233,7 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section class="testimonials-section container pre-animate q-pa-md q-my-xl">
+    <section class="testimonials-section container  q-pa-md q-my-xl">
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
@@ -254,7 +254,7 @@
     </section>
 
     <!-- Sustainability Section -->
-    <section class="sustainability-section container pre-animate q-pa-md q-my-xl">
+    <section class="sustainability-section container  q-pa-md q-my-xl">
       <div class="row items-center">
         <div class="col-12 col-md-6">
           <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png 800w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-768x512.png 600w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png 200w" alt="Sustainability" width="946" height="473" loading="lazy" class="full-width" />        </div>
@@ -268,7 +268,7 @@
     </section>
 
     <!-- Newsletter Signup Section -->
-    <section class="newsletter-section pre-animate container q-my-xl text-center">
+    <section class="newsletter-section  container q-my-xl text-center">
       <h2 class="text-h4 text-weight-light q-mb-md">Stay Updated</h2>
       <p class="text-body1 q-mb-lg">Subscribe to our newsletter for the latest products and offers.</p>
       <q-input filled v-model="email" label="Your Email" class="subscribe-email-input q-mb-md" />
@@ -276,7 +276,7 @@
     </section>
 
     <!-- Instagram Feed Section -->
-    <section class="instagram-section pre-animate container q-my-xl">
+    <section class="instagram-section  container q-my-xl">
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
       <div class="row q-col-gutter-md">
         <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
@@ -286,7 +286,7 @@
     </section>
 
     <!-- Enhanced About Section -->
-    <section class="about-section pre-animate container q-pa-md q-my-xl">
+    <section class="about-section  container q-pa-md q-my-xl">
       <h2 class="text-h4 text-weight-light q-mb-md">About NaturaBloom</h2>
       <p class="text-body1">
         NaturaBloom blends modern technology with nature's purity, offering organic, cruelty-free, and environmentally friendly products.
@@ -304,6 +304,8 @@ import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
+import fs from 'fs'
+import path from 'path'
 
 let initialSeo = { title: '', description: '' }
 let fallbackSeo = { title: 'Loading...', description: '...' }
@@ -317,7 +319,18 @@ defineOptions({
     if (ctx?.ssrContext) {
       ctx.ssrContext.__PRE_FETCH_SEO__ = ctx.ssrContext.__PRE_FETCH_SEO__ || {}
       ctx.ssrContext.__PRE_FETCH_SEO__['homepage'] = seo
+    }
 
+    // Prefetch products from products.json (SSR)
+    try {
+      const filePath = path.join(process.cwd(), 'public/data/products.json')
+      if (fs.existsSync(filePath)) {
+        const raw = fs.readFileSync(filePath, 'utf-8')
+        const preProducts = raw ? JSON.parse(raw) : []
+        ctx.ssrContext.__PRE_FETCH_PRODUCTS__ = preProducts
+      }
+    } catch (err) {
+      console.error('[preFetch products]', err)
     }
   }
 })
@@ -327,21 +340,17 @@ if (import.meta.env.SSR) {
   try {
     const ssr = useSSRContext()
     initialSeo = ssr.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
+    preProducts = ssr.__PRE_FETCH_PRODUCTS__ || []
   } catch (err) {
-    console.error(err);
+    console.error(err)
   }
 }
 
+const {seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
-const {seoData,fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
-
-let hadPrefetchedProducts = !!(preProducts && preProducts.length)
-let initialProducts = [];
-
-
-const products = ref(initialProducts || [])
-const featuredProducts = ref((initialProducts?.filter(p => p.id).slice(0, 6)) || [])
-const productsLoading = ref(!(preProducts && preProducts.length)) // true if no SSR products
+const products = ref(preProducts || [])
+const featuredProducts = ref((preProducts?.filter(p => p.id).slice(0, 6)) || [])
+const productsLoading = ref(!(preProducts && preProducts.length))
 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
@@ -356,8 +365,6 @@ const productSection = ref(null)
 const ctaBtn = ref(null)
 const email = ref('')
 
-
-
 // Helper: chunk array
 const getChunks = (array, size) => {
   if (!Array.isArray(array) || !array.length) return []
@@ -368,49 +375,47 @@ const getChunks = (array, size) => {
 
 // computeSlideChunks: SSR -> chunkSize=1, after hydration choose by $q.screen
 const computeSlideChunks = async (opts = {}) => {
-  // opts.forceRemount: if true, will briefly set slidesReady=false to force full remount
   const forceRemount = !!opts.forceRemount
 
-  // If empty featured list, set empty slides and mark ready
   if (!featuredProducts.value || !featuredProducts.value.length) {
     slideChunks.value = []
     slide.value = 0
     slidesReady.value = true
-    //console.log('[computeSlideChunks] no featuredProducts -> slideChunks empty')
     return
   }
 
   const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
 
-  //console.log('[computeSlideChunks] chunkSize:', chunkSize, 'featuredProducts len:', featuredProducts.value.length)
-
-  // optionally force a brief unmount so carousel re-initializes cleanly
   if (forceRemount) {
     slidesReady.value = false
     await nextTick()
   }
-  // compute and assign
+
   slideChunks.value = getChunks(featuredProducts.value, chunkSize)
-  // safety: if current slide index out of range -> reset
-  if (slide.value >= slideChunks.value.length) {
-    slide.value = 0
-  }
-// bump key to force carousel full remount if we're forcing remount
-  if (forceRemount) {
-    carouselKey.value += 1
-  }
+  if (slide.value >= slideChunks.value.length) slide.value = 0
+
+  if (forceRemount) carouselKey.value += 1
   slidesReady.value = true
 }
 
 // Initial SSR-safe compute (no remount)
 computeSlideChunks()
 
-// ----------------- Fetch products client-side if needed -----------------
+// ----------------- Fetch products client-side -----------------
 const fetchProducts = async () => {
   productsLoading.value = true
   try {
-    const allProducts = await api.getProducts()
-    //console.log('[fetchProducts] allProducts length:', Array.isArray(allProducts) ? allProducts.length : allProducts)
+    let allProducts = []
+
+    // Option 1: fetch from local products.json
+    try {
+      const res = await fetch('/data/products.json')
+      allProducts = await res.json()
+    } catch (err) {
+      console.warn('[fetchProducts] fallback to WooCommerce API', err)
+      allProducts = await api.getProducts()
+    }
+
     if (allProducts && Array.isArray(allProducts)) {
       products.value = allProducts
       featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6)
@@ -418,7 +423,7 @@ const fetchProducts = async () => {
       products.value = []
       featuredProducts.value = []
     }
-    // Force remount when new products arrive to ensure carousel rebuilds
+
     await computeSlideChunks({ forceRemount: true })
     return products.value
   } catch (err) {
@@ -466,34 +471,18 @@ const addToCart = (product) => {
 const getSlugFromPermalink = (permalink) =>
   permalink.split('/').filter(Boolean).pop()
 
-/*function revealFallback() {
-  document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
-}*/
-
 // ----------------- Scroll -----------------
-const scrollToProducts = () => {
-  /*if (typeof window !== 'undefined' && productSection.value) {
-    import('gsap').then(({ gsap }) => {
-      import('gsap/ScrollToPlugin').then(({ ScrollToPlugin }) => {
-        gsap.registerPlugin(ScrollToPlugin)
-        gsap.to(window, { duration: 1, scrollTo: { y: productSection.value, offsetY: 80 }, ease: 'power2.out' })
-      })
-    })
-  }*/
-}
+const scrollToProducts = () => {}
 defineExpose({ scrollToProducts })
 
 // ----------------- Mounted -----------------
 onMounted(async () => {
   // reveal hero immediately
-  document.querySelectorAll('.hero-content.pre-animate').forEach(el => el.classList.remove('pre-animate'))
-
+  document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
 
   // If we somehow had no products from SSR, fetch them on client
   if (!products.value || !products.value.length) {
     await fetchProducts()
-    productsLoading.value = false
-    hadPrefetchedProducts = true
   }
 
   // Ensure SEO is up-to-date on client
@@ -501,63 +490,15 @@ onMounted(async () => {
     fetchSeoData('homepage')
   }
 
-  // mark hydration
   isHydrated.value = true
-
-  // GSAP animations (client-only)
-  /*if (typeof window !== 'undefined') {
-    /*const {gsap} = await import('gsap')
-    const {ScrollToPlugin} = await import('gsap/ScrollToPlugin')
-    const {ScrollTrigger} = await import('gsap/ScrollTrigger')
-    gsap.registerPlugin(ScrollToPlugin, ScrollTrigger)
-
-    await nextTick()
-
-    try {
-      document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
-
-      const sections = [
-        {selector: '.testimonials-section', y: 40},
-        {selector: '.sustainability-section', x: -40},
-        {selector: '.newsletter-section', y: 40},
-        {selector: '.instagram-section', y: 40},
-        {selector: '.about-section', y: 40}
-      ]
-
-      sections.forEach(({selector, x, y}) => {
-        gsap.from(selector, {
-          autoAlpha: 0,
-          x: x || 0,
-          y: y || 0,
-          duration: 0.8,
-          ease: 'power2.out',
-          scrollTrigger: {trigger: selector, start: 'top 80%', once: true}
-        })
-      })
-
-      if (ctaBtn.value?.$el) {
-        gsap.from(ctaBtn.value.$el, {
-          autoAlpha: 0,
-          y: 20,
-          duration: 0.8,
-          ease: 'power2.out',
-          scrollTrigger: {trigger: '.cta-section', start: 'top 80%', once: true}
-        })
-      }
-    } catch (err) {
-      console.error('GSAP failed, using fallback:', err)
-      revealFallback()
-    }
-  }*/
-
 })
 
 // ----------------- Responsive -----------------
 watch(() => $q.screen.name, async () => {
-  // recompute and force remount to make sure carousel updates correctly on resize
   computeSlideChunks({ forceRemount: true })
 })
 </script>
+
 
 <style scoped>
 
