@@ -78,8 +78,8 @@ export default defineConfig((/* ctx */) => {
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
 
-      cssCodeSplit: true,
-      preloadChunks: true,   // ensures critical JS is preloaded
+      //cssCodeSplit: true,
+      //preloadChunks: true,   // ensures critical JS is preloaded
       polyfills: {
         coreJs: false        // PWA modern browsers don't need heavy polyfills
       },
@@ -123,8 +123,6 @@ export default defineConfig((/* ctx */) => {
           warning: '#F2C037'
         }
       },
-
-      importStrategy: 'auto', // recommended
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
