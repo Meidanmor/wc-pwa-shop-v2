@@ -356,7 +356,7 @@ const getSlugFromPermalink = (permalink) => {
 }
 
 async function fetchProduct(slug) {
-  const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/products?per_page=100')
+  const res = await fetch('/data/products.json')
   const products = await res.json()
   product.value = products.find(p => getSlugFromPermalink(p.permalink) === slug)
   console.log('Product Value Before', product.value);
@@ -378,7 +378,7 @@ async function fetchProduct(slug) {
 if (process.env.SERVER) {
   await useSeo('', initialSeo);
   try {
-  const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/products?per_page=100')
+  const res = await fetch('/data/products.json')
   const products = await res.json()
   product.value = products.find(p => getSlugFromPermalink(p.permalink) === route.params.slug)
 

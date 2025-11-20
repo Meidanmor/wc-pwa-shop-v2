@@ -100,7 +100,7 @@
           </div>
         </div>
       </q-carousel-slide>
-
+'
       <!-- Custom navigation dots -->
       <template #navigation-icon="{ active, btnProps, onClick, index }">
         <q-btn
@@ -150,7 +150,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import cart from 'src/stores/cart'
-import { fetchAllProducts } from 'src/boot/woocommerce'
+//import { fetchAllProducts } from 'src/boot/woocommerce'
 
 const props = defineProps({
   productId: Number,
@@ -203,7 +203,8 @@ const nextSlide = () => {
 }
 
 const fetchRelatedProducts = async () => {
-  const allProducts = await fetchAllProducts()
+  const res = await fetch('/data/products.json');
+  const allProducts = await res.json();
   let related = allProducts
     .filter(
       (p) =>

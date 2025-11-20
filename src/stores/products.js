@@ -14,61 +14,70 @@ const SSR_KEY = '__PRE_FETCH_PRODUCTS__'
 
 // --- core fetchers ---
 export async function preFetchProducts(ctx) {
-  try {
-    productsLoading.value = true
+  if (import.meta.env.SSR) {
 
-    let allProducts = []
-
-    const filePath = path.join(process.cwd(), 'public/data/products.json')
-
-    // 1️⃣ Try reading local JSON safely
     try {
-      if (fs.existsSync(filePath)) {
-        const raw = fs.readFileSync(filePath, 'utf-8')
-        if (raw.trim()) { // make sure it's not empty
-          allProducts = JSON.parse(raw)
-          if (Array.isArray(allProducts) && allProducts.length) {
-            console.log('Products loaded from products.json')
-            products.value = allProducts
-            initialized.value = true
-            return allProducts
+      productsLoading.value = true
+      let allProducts = []
+
+      const filePath = path.join(process.cwd(), 'public/data/products.json')
+
+      // 1️⃣ Try reading local JSON safely
+      try {
+        if (fs.existsSync(filePath)) {
+          const raw = fs.readFileSync(filePath, 'utf-8')
+          if (raw.trim()) { // make sure it's not empty
+            allProducts = JSON.parse(raw)
+            if (Array.isArray(allProducts) && allProducts.length) {
+              console.log('Products loaded from products.json')
+              products.value = allProducts
+              initialized.value = true
+              return allProducts
+            }
           }
         }
-      }
-    } catch (err) {
-      console.warn('Failed to read products.json, will fetch API', err)
-    }
-
-    // 2️⃣ Fallback: fetch WooCommerce API if JSON missing or empty
-    if (!allProducts.length) {
-      console.log('Fetching products from API...')
-      allProducts = await api.getProducts()
-
-      // ✅ Write products.json directly
-      try {
-        fs.mkdirSync(path.dirname(filePath), { recursive: true })
-        fs.writeFileSync(filePath, JSON.stringify(allProducts, null, 2), 'utf-8')
-        console.log('products.json updated on server.')
       } catch (err) {
-        console.warn('Failed to update products.json', err)
+        console.warn('Failed to read products.json, will fetch API', err)
       }
+
+      // 2️⃣ Fallback: fetch WooCommerce API if JSON missing or empty
+      if (!allProducts.length) {
+        console.log('Fetching products from API...')
+        allProducts = await api.getProducts()
+
+        // ✅ Write products.json directly
+        try {
+          fs.mkdirSync(path.dirname(filePath), {recursive: true})
+          fs.writeFileSync(filePath, JSON.stringify(allProducts, null, 2), 'utf-8')
+          console.log('products.json updated on server.')
+        } catch (err) {
+          console.warn('Failed to update products.json', err)
+        }
+      }
+
+      products.value = allProducts
+      initialized.value = true
+
+      // SSR hydration support
+      if (ctx?.ssrContext) {
+        ctx.ssrContext[SSR_KEY] = allProducts
+      } else if (typeof window !== 'undefined') {
+        window[SSR_KEY] = allProducts
+      }
+
+    } catch (err) {
+      console.error('[products store] preFetchProducts error', err)
+      products.value = []
+    } finally {
+      productsLoading.value = false
     }
-
-    products.value = allProducts
-    initialized.value = true
-
-    // SSR hydration support
-    if (ctx?.ssrContext) {
-      ctx.ssrContext[SSR_KEY] = allProducts
-    } else if (typeof window !== 'undefined') {
-      window[SSR_KEY] = allProducts
+  } else {
+    try {
+      const productsRes = await fetch('/data/products.json').then(res => res.json());
+      products.value = productsRes;
+    } catch(err){
+      console.log(err);
     }
-
-  } catch (err) {
-    console.error('[products store] preFetchProducts error', err)
-    products.value = []
-  } finally {
-    productsLoading.value = false
   }
 }
 

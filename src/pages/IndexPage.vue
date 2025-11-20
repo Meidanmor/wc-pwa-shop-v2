@@ -304,8 +304,8 @@ import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
-import fs from 'fs'
-import path from 'path'
+//import fs from 'fs'
+//import path from 'path'
 
 let initialSeo = { title: '', description: '' }
 let fallbackSeo = { title: 'Loading...', description: '...' }
@@ -322,13 +322,17 @@ defineOptions({
     }
 
     // Prefetch products from products.json (SSR)
-    try {
-      const filePath = path.join(process.cwd(), 'public/data/products.json')
-      if (fs.existsSync(filePath)) {
-        const raw = fs.readFileSync(filePath, 'utf-8')
-        const preProducts = raw ? JSON.parse(raw) : []
+        try {
+      const res = await fetch('/data/products.json')
+      const preProducts = await res.json() || []
+
+      // Make sure SSR context exists
+      if (ctx && ctx.ssrContext) {
         ctx.ssrContext.__PRE_FETCH_PRODUCTS__ = preProducts
+      } else {
+        console.warn('[preFetch products] SSR context not available')
       }
+
     } catch (err) {
       console.error('[preFetch products]', err)
     }

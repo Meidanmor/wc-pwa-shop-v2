@@ -30,6 +30,7 @@ export default defineConfig((/* ctx */) => {
         { path: 'push', client: true } ,
         { path: 'woocommerce', client: true } ,
         { path: 'products' } ,
+      { path: 'deferred-css', client: true } ,
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
@@ -122,6 +123,8 @@ export default defineConfig((/* ctx */) => {
           warning: '#F2C037'
         }
       },
+
+      importStrategy: 'auto', // recommended
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
