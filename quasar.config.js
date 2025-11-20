@@ -134,15 +134,14 @@ export default defineConfig((/* ctx */) => {
       // you can manually specify Quasar components/directives to be available everywhere:
       //
 
-      components: [
+      /*components: [
           // Only list the components you REALLY need above the fold
         'QLayout',
         'QHeader',
         'QToolbar',
         'QBtn',
         'QImg'
-      ],
-
+      ],*/
 
       directives: [
           'TouchPan',   // only if you use it
