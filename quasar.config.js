@@ -78,7 +78,7 @@ export default defineConfig((/* ctx */) => {
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
 
-      //cssCodeSplit: true,
+      cssCodeSplit: true,
       //preloadChunks: true,   // ensures critical JS is preloaded
       polyfills: {
         coreJs: false        // PWA modern browsers don't need heavy polyfills
@@ -124,6 +124,8 @@ export default defineConfig((/* ctx */) => {
         }
       },
 
+      cssAddon: false,
+
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
 
@@ -141,10 +143,10 @@ export default defineConfig((/* ctx */) => {
         'QImg'
       ],*/
 
-      directives: [
+     /* directives: [
           'TouchPan',   // only if you use it
         //'Ripple',
-      ],
+      ],*/
 
 
       // Quasar plugins
@@ -186,11 +188,12 @@ export default defineConfig((/* ctx */) => {
       // manualStoreHydration: true,
       // manualPostHydrationTrigger: true,
 
-      pwa: true
+      pwa: true,
       // pwaOfflineHtmlFilename: 'offline.html', // do NOT use index.html as name!
 
       // pwaExtendGenerateSWOptions (cfg) {},
       // pwaExtendInjectManifestOptions (cfg) {}
+      criticalCSS: true
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
