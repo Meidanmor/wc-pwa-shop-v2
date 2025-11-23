@@ -117,7 +117,7 @@ i.q-icon.on-left.notranslate.material-icons {
   height: 100%;
   background: linear-gradient(-45deg, #4c6e5d96, var(--q-primary), #4c6e5d96);
   background-size: 600% 600%;
-  animation: gradientShift 10s ease infinite;
+  animation: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,6 +125,11 @@ i.q-icon.on-left.notranslate.material-icons {
   padding: 40px 20px;
   overflow: hidden;
 }
+
+.cta-overlay.animate-bg {
+    animation: gradientShift 10s ease infinite;
+}
+
 .cta-overlay:after {
     content: '';
     display: block;

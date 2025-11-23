@@ -49,11 +49,11 @@
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
 
         <!-- SKELETON LOADER -->
-    <div v-if="!isHydrated || slideChunks.length === 0" class="q-pa-md flex justify-center">
+   <!-- <div v-if="!isHydrated || slideChunks.length === 0" class="q-pa-md flex justify-center">
       <div class="row justify-center full-width">
 
         <!-- Mobile: 1 skeleton -->
-        <div
+        <!--<div
             v-if="$q.screen.lt.sm"
             class="col-12 col-sm-6 col-md-4"
         >
@@ -71,7 +71,7 @@
         </div>
 
         <!-- Tablet: 2 skeletons -->
-        <div
+       <!-- <div
             v-else-if="$q.screen.lt.md"
             v-for="n in 2"
             :key="'skeleton-tablet-' + n"
@@ -91,7 +91,7 @@
         </div>
 
         <!-- Desktop: 3 skeletons -->
-        <div
+        <!--<div
             v-else
             v-for="n in 3"
             :key="'skeleton-desktop-' + n"
@@ -110,13 +110,13 @@
           </q-card>
         </div>
         <!-------->
-
+<!--
       </div>
     </div>
 
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
-      v-else-if="isHydrated && slideChunks.length > 0"
+      v-if="products.length"
       :key="carouselKey"
       @touchstart.stop
       @mousedown.stop
@@ -497,7 +497,16 @@ defineExpose({ scrollToProducts })
 onMounted(async () => {
   // reveal hero immediately
   document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
-  document.querySelector('.hero-section-sec').classList.add('animate-bg');
+  const img = document.querySelector('.hero-img');
+  if (img.complete) {
+    document.querySelector('.hero-section-sec').classList.add('animate-bg');
+    document.querySelector('.cta-overlay').classList.add('animate-bg');
+  } else {
+    img.addEventListener('load', () => {
+      document.querySelector('.hero-section-sec').classList.add('animate-bg');
+      document.querySelector('.cta-overlay').classList.add('animate-bg');
+    });
+  }
 
   // If we somehow had no products from SSR, fetch them on client
   if (!products.value || !products.value.length) {
