@@ -483,6 +483,7 @@ defineExpose({ scrollToProducts })
 onMounted(async () => {
   // reveal hero immediately
   document.querySelectorAll('.pre-animate').forEach(el => el.classList.remove('pre-animate'))
+  document.querySelector('.hero-section-sec').classList.add('animate-bg');
 
   // If we somehow had no products from SSR, fetch them on client
   if (!products.value || !products.value.length) {
@@ -528,8 +529,11 @@ watch(() => $q.screen.name, async () => {
     inset: 0;
     background: linear-gradient(270deg, var(--primary1), var(--primary2), var(--primary3), var(--primary4), var(--primary5));
     background-size: 1200% 1200%;
-    animation: gradientAnimation 25s
-ease infinite;
+    animation: none;
+}
+
+.hero-section-sec.animate-bg {
+  animation: gradientAnimation 25s ease infinite;
 }
 
 .hero-section-sec:before {
