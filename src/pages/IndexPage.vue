@@ -50,7 +50,7 @@
 
         <!-- SKELETON LOADER -->
    <!-- <div v-if="!isHydrated || slideChunks.length === 0" class="q-pa-md flex justify-center">
-      <div class="row justify-center full-width">
+      <div class="row justify-center full-width"> -->
 
         <!-- Mobile: 1 skeleton -->
         <!--<div
@@ -68,7 +68,7 @@
               <q-skeleton type="QBtn" />
             </q-card-actions>
           </q-card>
-        </div>
+        </div> -->
 
         <!-- Tablet: 2 skeletons -->
        <!-- <div
@@ -89,7 +89,7 @@
             </q-card-actions>
           </q-card>
         </div>
-
+-->
         <!-- Desktop: 3 skeletons -->
         <!--<div
             v-else
@@ -109,11 +109,11 @@
             </q-card-actions>
           </q-card>
         </div>
-        <!-------->
+        ------>
 <!--
       </div>
     </div>
-
+-->
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
       v-if="products.length"
