@@ -2,32 +2,46 @@
   <div>
 
     <!-- Hero Section -->
-    <section class="hero-section-sec">
-    <div class="hero-section container q-mb-xl row">
-      <div class="hero-content pre-animate col-12 col-md-6 q-mb-lg">
-        <h1 class="text-h1 text-secondary q-mb-sm">NaturaBloom</h1>
-        <p class="text-h6 text-secondary text-weight-light">We encompasses products that are organic, cruelty-free, and environmentally friendly</p>
-        <q-btn label="Browse Products" text-color="accent" class="q-mt-sm" @click="scrollToProducts" />
-      </div>
+<section class="hero-section-sec">
+  <div class="hero-section container q-mb-xl row">
 
+    <!-- Left side text -->
+    <div class="hero-content col-12 col-md-6 q-mb-lg">
+      <h1 class="text-h1 text-secondary q-mb-sm">NaturaBloom</h1>
+      <p class="text-h6 text-secondary text-weight-light">
+        We encompass products that are organic, cruelty-free, and environmentally friendly
+      </p>
+
+      <!-- Replace QBtn with regular button for **ZERO hydration delay** -->
+      <button class="hero-btn q-btn" @click="scrollToProducts">
+        <span class="q-focus-helper" tabindex="-1"></span>
+        Browse Products
+      </button>
+    </div>
+
+    <!-- LCP Image -->
+    <div class="lcp-wrapper col-12 col-md-6">
       <img
-          fetchpriority="high"
-          loading="eager"
-          alt="Homepage hero image"
-          src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
-          srcset="
-    https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 800w,
-    https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 600w,
-    https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 200w
-  "
-          sizes="(max-width: 768px) 100vw,
-         (max-width: 1200px) 90vw,
-         1900px"
-          width="1900"
-          height="700"
-          class="col-12 col-md-6"
+        fetchpriority="high"
+        loading="eager"
+        decoding="sync"
+        alt="Homepage hero image"
+        src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
+        srcset="
+          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 800w,
+          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 600w,
+          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 200w
+        "
+        sizes="(max-width: 768px) 100vw,
+               (max-width: 1200px) 90vw,
+               1900px"
+        width="1900"
+        height="700"
+        class="hero-img"
       />
     </div>
+
+  </div>
 </section>
 <!-- Featured Products Slider -->
 <section ref="productSection" class="featured-products">
@@ -581,6 +595,36 @@ watch(() => $q.screen.name, async () => {
   z-index: 1;*/
 }
 
+/* Prevent layout shifts and ensure instant paint */
+.lcp-wrapper {
+  content-visibility: auto;
+  contain-intrinsic-size: 700px;
+}
+
+/* Ensure image is painted ASAP */
+.hero-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Replace Quasar button to avoid hydration delay */
+/*.hero-btn {
+  background-color: transparent;
+  border: 2px solid var(--q-accent);
+  color: var(--q-accent);
+  padding: 10px 22px;
+  font-size: 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.hero-btn:hover {
+  background-color: var(--q-accent);
+  color: white;
+}*/
+
 .hero-content button {
   /*font-weight: 800;*/
   /*text-shadow: 1px 1px #ffffff60;*/
@@ -588,13 +632,41 @@ watch(() => $q.screen.name, async () => {
   padding: 10px 20px;
   color: #fff;
   background: var(--primary-gradient);
+  border: none;
+  cursor: pointer;
+  position: relative;
 }
+
+.hero-content button:before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: inherit;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12);
+}
+
+.hero-content button:before {
+  transition: box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);
+}
+
+.hero-content button:hover .q-focus-helper {
+  opacity: 1;
+}
+.hero-content button:hover .q-focus-helper:after {
+  opacity: 0.15;
+}
+
+
 
 .hero-content.pre-animate {
   transform: translateY(40px);
 }
 
-.hero-section.q-mb-xl> img {
+.hero-section .hero-img {
    /* position: absolute;
     top: 0;
     left: 0;
