@@ -44,76 +44,46 @@
   </div>
 </section>
 <!-- Featured Products Slider -->
+
 <section ref="productSection" class="featured-products">
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
-
-        <!-- SKELETON LOADER -->
-   <!-- <div v-if="!isHydrated || slideChunks.length === 0" class="q-pa-md flex justify-center">
-      <div class="row justify-center full-width"> -->
-
-        <!-- Mobile: 1 skeleton -->
-        <!--<div
-            v-if="$q.screen.lt.sm"
-            class="col-12 col-sm-6 col-md-4"
-        >
-          <q-card class="full-height column">
-            <q-skeleton height="300px" square />
-            <q-card-section>
-              <q-skeleton type="text" width="70%" />
-              <q-skeleton type="text" width="40%" />
-            </q-card-section>
-            <q-card-actions align="right">
-              <q-skeleton type="QBtn" />
-              <q-skeleton type="QBtn" />
-            </q-card-actions>
-          </q-card>
-        </div> -->
-
-        <!-- Tablet: 2 skeletons -->
-       <!-- <div
-            v-else-if="$q.screen.lt.md"
-            v-for="n in 2"
-            :key="'skeleton-tablet-' + n"
-            class="col-12 col-sm-6 col-md-4"
-        >
-          <q-card class="full-height column">
-            <q-skeleton height="300px" square />
-            <q-card-section>
-              <q-skeleton type="text" width="70%" />
-              <q-skeleton type="text" width="40%" />
-            </q-card-section>
-            <q-card-actions align="right">
-              <q-skeleton type="QBtn" />
-              <q-skeleton type="QBtn" />
-            </q-card-actions>
-          </q-card>
+<template v-if="isSSR">
+  <!-- SSR horizontal row that visually matches client carousel -->
+  <div class="featured-products-ssr">
+    <div class="row no-wrap items-stretch ssr-carousel-row">
+      <div
+        v-for="(p, idx) in featuredProducts"
+        :key="p.id || idx"
+        class="col-12 col-sm-6 col-md-4 ssr-col"
+      >
+        <!-- Mirror client card structure so heights match on hydration -->
+        <div class="my-card ssr-card full-height">
+          <div class="ssr-img-wrap">
+            <!-- use the same srcset / sizes if available; keep object-fit -->
+            <img
+              :src="p.images?.[0]?.src"
+              :srcset="p.images?.[0]?.srcset"
+              :sizes="p.images?.[0]?.sizes"
+              :alt="p.name"
+              class="ssr-img"
+              width="100%"
+              height="300"
+              loading="lazy"
+            />
+          </div>
+          <div class="ssr-card-body">
+            <div class="text-h6 ssr-title">{{ p.name }}</div>
+            <div class="text-subtitle2 ssr-price" v-html="p.price_html"></div>
+          </div>
         </div>
--->
-        <!-- Desktop: 3 skeletons -->
-        <!--<div
-            v-else
-            v-for="n in 3"
-            :key="'skeleton-desktop-' + n"
-            class="col-12 col-sm-6 col-md-4"
-        >
-          <q-card class="full-height column">
-            <q-skeleton height="300px" square />
-            <q-card-section>
-              <q-skeleton type="text" width="70%" />
-              <q-skeleton type="text" width="40%" />
-            </q-card-section>
-            <q-card-actions align="right">
-              <q-skeleton type="QBtn" />
-              <q-skeleton type="QBtn" />
-            </q-card-actions>
-          </q-card>
-        </div>
-        ------>
-<!--
       </div>
     </div>
--->
+  </div>
+</template>
+
+
+    <template v-else-if="!isSSR">
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
       v-if="products.length"
@@ -215,8 +185,10 @@
 
     </q-carousel>
 
+    </template>
+
     <!-- 'No products' banner only when there was NO SSR prefetched data -->
-    <q-banner v-else-if="slidesReady && !hadPrefetchedProducts && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
+    <q-banner v-else-if="slidesReady && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
       No featured products found.
     </q-banner>
 
@@ -318,15 +290,18 @@ import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
-//import fs from 'fs'
-//import path from 'path'
 
 let initialSeo = { title: '', description: '' }
 let fallbackSeo = { title: 'Loading...', description: '...' }
+const isSSR = import.meta.env.SSR
 
 // --- defineOptions preFetch (hoisted) ---
 defineOptions({
   async preFetch(ctx) {
+    // SSR-only modules
+    const fs = await import('fs')
+    const path = await import('path')
+
     // Fetch SEO
     const seo = await fetchSeoForPath('homepage');
     // SSR context
@@ -336,20 +311,21 @@ defineOptions({
     }
 
     // Prefetch products from products.json (SSR)
-        try {
-      const res = await fetch('/data/products.json')
-      const preProducts = await res.json() || []
+    try {
+      const filePath = path.resolve('./public/data/products.json') // absolute path
+      const fileContent = fs.readFileSync(filePath, 'utf-8')
+      const preProducts = JSON.parse(fileContent) || []
 
-      // Make sure SSR context exists
-      if (ctx && ctx.ssrContext) {
+      if (ctx?.ssrContext) {
         ctx.ssrContext.__PRE_FETCH_PRODUCTS__ = preProducts
-      } else {
-        console.warn('[preFetch products] SSR context not available')
       }
+
+      console.log('Products loaded from public/data/products.json')
 
     } catch (err) {
       console.error('[preFetch products]', err)
     }
+
   }
 })
 
@@ -714,4 +690,80 @@ watch(() => $q.screen.name, async () => {
     width: calc(100% / 3 - 10px);
   }
 }
+
+/* SSR / Carousel parity helpers */
+.featured-products-ssr {
+  /* keep visual parity and allow horizontal overflow so SSR looks like the carousel */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 10px; /* match carousel padding-bottom */
+}
+
+.ssr-carousel-row {
+  display: flex;
+  gap: 16px;
+  align-items: stretch; /* important — cards fill same height */
+  flex-wrap: nowrap;
+}
+
+.ssr-col {
+  flex: 0 0 calc(100%); /* mobile */
+}
+
+/* responsive: match client chunking (1/2/3 columns widths) */
+@media (min-width: 600px) {
+  .ssr-col { flex: 0 0 calc(50% - 10px); }
+}
+@media (min-width: 1024px) {
+  .ssr-col { flex: 0 0 calc(33.333% - 10px); }
+}
+
+/* Card parity with client q-card */
+.ssr-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 10px;
+  background: white;
+  box-shadow: var(--card-shadow, 0 6px 20px rgba(0,0,0,0.04));
+  overflow: hidden;
+}
+
+/* Reserve image area matching q-img height used in carousel */
+.ssr-img-wrap {
+  width: 100%;
+  flex: 0 0 auto;
+  height: 300px; /* MUST match q-img height="300px" */
+  display: block;
+}
+.ssr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* body and text */
+.ssr-card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 8px;
+  flex: 1 1 auto;
+}
+
+/* ensure titles wrap the same way */
+.ssr-title {
+  line-height: 1.2;
+  max-height: calc(1.2em * 3); /* cap lines visually similar to client */
+  overflow: hidden;
+}
+
+/* ensure overall the SSR row height equals client carousel height */
+.featured-products-ssr {
+  /* Reserve a minimum height for the entire section to avoid any micro-jump */
+  min-height: 340px; /* 300px image + paddings — adjust slightly if needed */
+}
+
 </style>
