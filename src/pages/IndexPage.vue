@@ -201,7 +201,7 @@
 
 
     <!-- CTA Section -->
-    <section class="cta-section  q-pa-md">
+    <section class="cta-section pre-animate q-pa-md">
       <div class="container">
         <div class="cta-overlay">
           <div class="cta-content">
@@ -219,7 +219,7 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section class="testimonials-section container  q-pa-md q-my-xl">
+    <section class="testimonials-section container pre-animate q-pa-md q-my-xl">
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
@@ -240,7 +240,7 @@
     </section>
 
     <!-- Sustainability Section -->
-    <section class="sustainability-section container  q-pa-md q-my-xl">
+    <section class="sustainability-section container pre-animate q-pa-md q-my-xl">
       <div class="row items-center">
         <div class="col-12 col-md-6">
           <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png 800w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-768x512.png 600w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png 200w" alt="Sustainability" width="946" height="473" loading="lazy" class="full-width" />        </div>
@@ -254,7 +254,7 @@
     </section>
 
     <!-- Newsletter Signup Section -->
-    <section class="newsletter-section  container q-my-xl text-center">
+    <section class="newsletter-section  container pre-animate q-my-xl text-center">
       <h2 class="text-h4 text-weight-light q-mb-md">Stay Updated</h2>
       <p class="text-body1 q-mb-lg">Subscribe to our newsletter for the latest products and offers.</p>
       <q-input filled v-model="email" label="Your Email" class="subscribe-email-input q-mb-md" />
@@ -262,7 +262,7 @@
     </section>
 
     <!-- Instagram Feed Section -->
-    <section class="instagram-section  container q-my-xl">
+    <section class="instagram-section pre-animate container q-my-xl">
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
       <div class="row q-col-gutter-md">
         <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
@@ -272,7 +272,7 @@
     </section>
 
     <!-- Enhanced About Section -->
-    <section class="about-section  container q-pa-md q-my-xl">
+    <section class="about-section pre-animate container q-pa-md q-my-xl">
       <h2 class="text-h4 text-weight-light q-mb-md">About NaturaBloom</h2>
       <p class="text-body1">
         NaturaBloom blends modern technology with nature's purity, offering organic, cruelty-free, and environmentally friendly products.
