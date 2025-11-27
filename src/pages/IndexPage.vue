@@ -592,8 +592,11 @@ watch(() => $q.screen.name, async () => {
   width: 100%;
   height: auto;
   display: block;
+  aspect-ratio: 4.5/3;
 }
-
+div.q-img__loading > svg{
+  display: none;
+}
 /* Replace Quasar button to avoid hydration delay */
 /*.hero-btn {
   background-color: transparent;
