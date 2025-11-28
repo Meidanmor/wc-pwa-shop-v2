@@ -213,7 +213,7 @@
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
       <div class="row q-col-gutter-md">
         <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
-          <img width="300" height="300" :src="post.image" :alt="post.caption" class="rounded-borders full width" />
+          <img width="300" height="300" :src="post.image" :alt="post.caption" class="rounded-borders full-width" />
         </div>
       </div>
     </section>
