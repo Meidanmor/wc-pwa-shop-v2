@@ -281,7 +281,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, nextTick, watch, computed } from 'vue'
 //import { useSSRContext } from 'vue'
 import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
@@ -317,7 +317,11 @@ const {seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
 const products = productsStore.products
 const productsLoading = productsStore.productsLoading
-const featuredProducts = ref((Array.isArray(products) ? products : []).slice(0, 6))
+// featuredProducts now reacts to products automatically
+const featuredProducts = computed(() => {
+  if (!Array.isArray(products.value)) return []
+  return products.value.filter(p => p.id).slice(0, 6)
+})
 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
