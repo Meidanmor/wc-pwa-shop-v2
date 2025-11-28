@@ -28,23 +28,21 @@
         alt="Homepage hero image"
         src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
         srcset="
-          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 800w,
+          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,
           https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 600w,
-          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 200w
+          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 800w
         "
-        sizes="(max-width: 768px) 100vw,
-               (max-width: 1200px) 90vw,
-               1900px"
-        width="1900"
-        height="700"
+        sizes="(min-width: 768px) 50vw, 100vw"
+        width="950"
+        height="350"
         class="hero-img"
       />
     </div>
 
   </div>
 </section>
-<!-- Featured Products Slider -->
 
+<!-- Featured Products Slider -->
 <section ref="productSection" class="featured-products">
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
@@ -186,7 +184,7 @@
     </q-carousel>
 
     <!-- 'No products' banner only when there was NO SSR prefetched data -->
-    <q-banner v-else-if="slidesReady && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
+    <q-banner v-else-if="isHydrated && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
       No featured products found.
     </q-banner>
 
@@ -198,7 +196,6 @@
 
   </div>
 </section>
-
 
     <!-- CTA Section -->
     <section class="cta-section q-pa-md">
@@ -243,7 +240,7 @@
     <section class="sustainability-section container q-pa-md q-my-xl">
       <div class="row items-center">
         <div class="col-12 col-md-6">
-          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png 800w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-768x512.png 600w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png 200w" alt="Sustainability" width="946" height="473" loading="lazy" class="full-width" />        </div>
+          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png 800w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-768x512.png 600w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png 300w" alt="Sustainability" sizes="100vw" width="946" height="473" loading="lazy" class="full-width" />        </div>
         <div class="col-12 col-md-6">
           <h2 class="text-h4 text-weight-light q-mb-md">Our Commitment to Sustainability</h2>
           <p class="text-body1">
@@ -503,7 +500,6 @@ watch(() => $q.screen.name, async () => {
 })
 </script>
 
-
 <style scoped>
 
 @keyframes gradientAnimation {
@@ -567,6 +563,9 @@ watch(() => $q.screen.name, async () => {
   margin-top: 40px;
 }
 
+.my-card img {
+  object-fit: cover;
+}
 .hero-content {
   /*transition: 0.3s ease;
   max-width: 1210px;
