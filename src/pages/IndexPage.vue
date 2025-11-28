@@ -282,7 +282,7 @@
 
 <script setup>
 import { ref, onMounted, nextTick, watch } from 'vue'
-import { useSSRContext } from 'vue'
+//import { useSSRContext } from 'vue'
 import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
@@ -298,8 +298,6 @@ const isSSR = import.meta.env.SSR
 defineOptions({
   async preFetch(ctx) {
     // SSR-only modules
-    const fs = await import('fs')
-    const path = await import('path')
 
     // Fetch SEO
     const seo = await fetchSeoForPath('homepage');
