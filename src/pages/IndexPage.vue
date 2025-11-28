@@ -284,7 +284,7 @@
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
 //import { useSSRContext } from 'vue'
 import { useQuasar } from 'quasar'
-import api from 'src/boot/woocommerce'
+//import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
@@ -316,7 +316,6 @@ defineOptions({
 const {seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
 const products = productsStore.products
-const productsLoading = productsStore.productsLoading
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref([])
 
@@ -453,10 +452,6 @@ onMounted(async () => {
 watch(featuredProducts, () => recomputeSlides(true))
 watch(() => $q.screen.name, () => recomputeSlides(true))
 
-// ----------------- Responsive -----------------
-watch(() => $q.screen.name, async () => {
-  computeSlideChunks({ forceRemount: true })
-})
 </script>
 
 <style scoped>
