@@ -27,11 +27,7 @@
         decoding="async"
         alt="Homepage hero image"
         src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
-        srcset="
-          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,
-          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 600w,
-          https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 800w
-        "
+        srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 600w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 800w"
         sizes="(min-width: 768px) 50vw, 100vw"
         width="950"
         height="350"
@@ -46,45 +42,10 @@
 <section ref="productSection" class="featured-products">
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
-<template v-if="isSSR">
-  <!-- SSR horizontal row that visually matches client carousel -->
-  <div class="featured-products-ssr">
-    <div class="row no-wrap items-stretch ssr-carousel-row">
-      <div
-        v-for="(p, idx) in featuredProducts"
-        :key="p.id || idx"
-        class="col-12 col-sm-6 col-md-4 ssr-col"
-      >
-        <!-- Mirror client card structure so heights match on hydration -->
-        <div class="my-card ssr-card full-height">
-          <div class="ssr-img-wrap">
-            <!-- use the same srcset / sizes if available; keep object-fit -->
-            <img
-              :src="p.images?.[0]?.src"
-              :srcset="p.images?.[0]?.srcset"
-              :sizes="p.images?.[0]?.sizes"
-              :alt="p.name"
-              class="ssr-img"
-              width="100%"
-              height="300"
-              loading="lazy"
-            />
-          </div>
-          <div class="ssr-card-body">
-            <div class="text-h6 ssr-title">{{ p.name }}</div>
-            <div class="text-subtitle2 ssr-price" v-html="p.price_html"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
 
 
-    <template v-else>
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
-      v-if="featuredProducts.length"
       :key="carouselKey"
       @touchstart.stop
       @mousedown.stop
@@ -183,17 +144,6 @@
 
     </q-carousel>
 
-      <div v-else-if="!isSSR && !featuredProducts.length">
-        <q-spinner color="primary" size="6em" />
-      </div>
-
-    <!-- 'No products' banner only when there was NO SSR prefetched data -->
-    <q-banner v-else class="bg-grey-2 text-center q-pa-md">
-      No featured products found.
-    </q-banner>
-
-    </template>
-
   </div>
 </section>
 
@@ -263,7 +213,7 @@
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
       <div class="row q-col-gutter-md">
         <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
-          <img width="300" height="300" :spinner="false" :src="post.image" :alt="post.caption" class="rounded-borders full width" />
+          <img width="300" height="300" :src="post.image" :alt="post.caption" class="rounded-borders full width" />
         </div>
       </div>
     </section>
