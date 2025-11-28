@@ -317,11 +317,29 @@ const {seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
 const products = productsStore.products
 const productsLoading = productsStore.productsLoading
-// featuredProducts now reacts to products automatically
-const featuredProducts = computed(() => {
+// --- featuredProducts prefilled SSR-safe ---
+const featuredProducts = ref([])
+
+// --- computed version (reactive) ---
+const featuredProductsComputed = computed(() => {
   if (!Array.isArray(products.value)) return []
   return products.value.filter(p => p.id).slice(0, 6)
 })
+
+// --- fill SSR payload first (if exists) ---
+if (import.meta.env.SSR) {
+  featuredProducts.value = featuredProductsComputed.value
+}
+
+// --- helper to ensure SPA navigation works ---
+const hydrateFeaturedProducts = async () => {
+  if (productsStore.initialized.value && products.value.length) {
+    featuredProducts.value = products.value.filter(p => p.id).slice(0,6)
+  } else {
+    await productsStore.preFetchProducts()
+    featuredProducts.value = products.value.filter(p => p.id).slice(0,6)
+  }
+}
 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
@@ -345,10 +363,8 @@ const getChunks = (array, size) => {
 }
 
 // computeSlideChunks: SSR -> chunkSize=1, after hydration choose by $q.screen
-const computeSlideChunks = async (opts = {}) => {
-  const forceRemount = !!opts.forceRemount
-
-  if (!featuredProducts.value || !featuredProducts.value.length) {
+const recomputeSlides = async (forceRemount = false) => {
+  if (!featuredProducts.value.length) {
     slideChunks.value = []
     slide.value = 0
     slidesReady.value = true
@@ -357,10 +373,8 @@ const computeSlideChunks = async (opts = {}) => {
 
   const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
 
-  if (forceRemount) {
-    slidesReady.value = false
-    await nextTick()
-  }
+  if (forceRemount) slidesReady.value = false
+  await nextTick()
 
   slideChunks.value = getChunks(featuredProducts.value, chunkSize)
   if (slide.value >= slideChunks.value.length) slide.value = 0
@@ -370,44 +384,7 @@ const computeSlideChunks = async (opts = {}) => {
 }
 
 // Initial SSR-safe compute (no remount)
-computeSlideChunks()
-
-// ----------------- Fetch products client-side -----------------
-const fetchProducts = async () => {
-  productsLoading.value = true
-  console.log('fetching products');
-  try {
-    let allProducts = []
-
-    // Option 1: fetch from local products.json
-    try {
-      const res = await fetch('/data/products.json')
-      allProducts = await res.json()
-    } catch (err) {
-      console.warn('[fetchProducts] fallback to WooCommerce API', err)
-      allProducts = await api.getProducts()
-    }
-
-    if (allProducts && Array.isArray(allProducts)) {
-      products.value = allProducts
-      featuredProducts.value = allProducts.filter(p => p.id).slice(0, 6)
-    } else {
-      products.value = []
-      featuredProducts.value = []
-    }
-
-    await computeSlideChunks({ forceRemount: true })
-    return products.value
-  } catch (err) {
-    console.error('[fetchProducts]', err)
-    products.value = []
-    featuredProducts.value = []
-    await computeSlideChunks({ forceRemount: true })
-    return []
-  } finally {
-    productsLoading.value = false
-  }
-}
+//computeSlideChunks()
 
 // ----------------- Testimonials & Instagram -----------------
 const avatarSVG =
@@ -461,10 +438,9 @@ onMounted(async () => {
     });
   }
 
-  // If we somehow had no products from SSR, fetch them on client
-  if (!products.value || !products.value.length) {
-    await fetchProducts()
-  }
+  await hydrateFeaturedProducts()
+
+  await recomputeSlides(true)
 
   // Ensure SEO is up-to-date on client
   if (!seoData.value.title || !seoData.value.description) {
@@ -473,6 +449,9 @@ onMounted(async () => {
 
   isHydrated.value = true
 })
+
+watch(featuredProducts, () => recomputeSlides(true))
+watch(() => $q.screen.name, () => recomputeSlides(true))
 
 // ----------------- Responsive -----------------
 watch(() => $q.screen.name, async () => {
