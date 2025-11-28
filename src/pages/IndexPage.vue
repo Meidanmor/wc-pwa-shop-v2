@@ -456,6 +456,10 @@ watch(() => $q.screen.name, () => recomputeSlides(true))
   margin-top: 40px;
 }
 
+section.featured-products {
+    min-height: 664px;
+}
+
 .my-card img {
   object-fit: cover;
 }
