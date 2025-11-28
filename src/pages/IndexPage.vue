@@ -287,6 +287,8 @@ import { useQuasar } from 'quasar'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
+import productsStore from 'src/stores/products'
+
 
 let initialSeo = { title: '', description: '' }
 let fallbackSeo = { title: 'Loading...', description: '...' }
@@ -307,41 +309,17 @@ defineOptions({
       ctx.ssrContext.__PRE_FETCH_SEO__['homepage'] = seo
     }
 
-    // Prefetch products from products.json (SSR)
-    try {
-      const filePath = path.resolve('./public/data/products.json') // absolute path
-      const fileContent = fs.readFileSync(filePath, 'utf-8')
-      const preProducts = JSON.parse(fileContent) || []
 
-      if (ctx?.ssrContext) {
-        ctx.ssrContext.__PRE_FETCH_PRODUCTS__ = preProducts
-      }
-
-      console.log('Products loaded from public/data/products.json')
-
-    } catch (err) {
-      console.error('[preFetch products]', err)
-    }
 
   }
 })
 
-let preProducts = []
-if (import.meta.env.SSR) {
-  try {
-    const ssr = useSSRContext()
-    initialSeo = ssr.__PRE_FETCH_SEO__?.['homepage'] || initialSeo
-    preProducts = ssr.__PRE_FETCH_PRODUCTS__ || []
-  } catch (err) {
-    console.error(err)
-  }
-}
 
 const {seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 
-const products = ref(preProducts || [])
-const featuredProducts = ref((preProducts?.filter(p => p.id).slice(0, 6)) || [])
-const productsLoading = ref(!(preProducts && preProducts.length))
+const products = productsStore.products
+const productsLoading = productsStore.productsLoading
+const featuredProducts = ref((Array.isArray(products) ? products : []).slice(0, 6))
 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
