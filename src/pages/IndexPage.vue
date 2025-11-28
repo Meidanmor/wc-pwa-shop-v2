@@ -240,7 +240,6 @@ import productsStore from 'src/stores/products'
 
 let initialSeo = { title: '', description: '' }
 let fallbackSeo = { title: 'Loading...', description: '...' }
-const isSSR = import.meta.env.SSR
 
 // --- defineOptions preFetch (hoisted) ---
 defineOptions({
