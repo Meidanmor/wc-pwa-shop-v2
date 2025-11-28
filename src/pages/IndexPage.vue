@@ -112,8 +112,7 @@
             class="col-12 col-sm-6 col-md-4"
           >
             <q-card class="my-card full-height">
-              <q-img
-                :spinner="false"
+              <img
                 :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
                 width="100%"
                 height="300px"
@@ -267,7 +266,7 @@
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
       <div class="row q-col-gutter-md">
         <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
-          <q-img width="300" height="300" :spinner="false" :src="post.image" :alt="post.caption" class="rounded-borders" />
+          <img width="300" height="300" :spinner="false" :src="post.image" :alt="post.caption" class="rounded-borders" />
         </div>
       </div>
     </section>
@@ -530,10 +529,6 @@ watch(() => $q.screen.name, async () => {
     background: linear-gradient(270deg, var(--primary1), var(--primary2), var(--primary3), var(--primary4), var(--primary5));
     background-size: 1200% 1200%;
     animation: none;
-}
-
-.hero-section-sec.animate-bg {
-  animation: gradientAnimation 25s ease infinite;
 }
 
 .hero-section-sec:before {

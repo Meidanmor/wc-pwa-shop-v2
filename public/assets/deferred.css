@@ -130,6 +130,10 @@ i.q-icon.on-left.notranslate.material-icons {
     animation: gradientShift 10s ease infinite;
 }
 
+.hero-section-sec.animate-bg {
+    animation: gradientAnimation 25s ease infinite;
+}
+
 .cta-overlay:after {
     content: '';
     display: block;
