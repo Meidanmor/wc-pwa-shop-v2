@@ -81,10 +81,10 @@
 </template>
 
 
-    <template v-else-if="!isSSR">
+    <template v-else>
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
-      v-if="products.length"
+      v-if="featuredProducts.length"
       :key="carouselKey"
       @touchstart.stop
       @mousedown.stop
@@ -183,15 +183,15 @@
 
     </q-carousel>
 
+      <div v-else-if="!isSSR && !featuredProducts.length">
+        <q-spinner color="primary" size="6em" />
+      </div>
+
     <!-- 'No products' banner only when there was NO SSR prefetched data -->
-    <q-banner v-else-if="isHydrated && featuredProducts.length === 0" class="bg-grey-2 text-center q-pa-md">
+    <q-banner v-else class="bg-grey-2 text-center q-pa-md">
       No featured products found.
     </q-banner>
 
-    <!-- loading spinner fallback -->
-    <div v-else class="q-pa-md flex items-center justify-center">
-      <q-spinner color="primary" size="6em" />
-    </div>
     </template>
 
   </div>
@@ -282,9 +282,7 @@
 
 <script setup>
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
-//import { useSSRContext } from 'vue'
 import { useQuasar } from 'quasar'
-//import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
@@ -312,13 +310,10 @@ defineOptions({
   }
 })
 
-
 const {seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
-
 const products = productsStore.products
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref([])
-
 // --- computed version (reactive) ---
 const featuredProductsComputed = computed(() => {
   if (!Array.isArray(products.value)) return []
@@ -361,7 +356,6 @@ const getChunks = (array, size) => {
   return chunks
 }
 
-// computeSlideChunks: SSR -> chunkSize=1, after hydration choose by $q.screen
 const recomputeSlides = async (forceRemount = false) => {
   if (!featuredProducts.value.length) {
     slideChunks.value = []
@@ -381,9 +375,6 @@ const recomputeSlides = async (forceRemount = false) => {
   if (forceRemount) carouselKey.value += 1
   slidesReady.value = true
 }
-
-// Initial SSR-safe compute (no remount)
-//computeSlideChunks()
 
 // ----------------- Testimonials & Instagram -----------------
 const avatarSVG =
@@ -438,8 +429,7 @@ onMounted(async () => {
   }
 
   await hydrateFeaturedProducts()
-
-  await recomputeSlides(true)
+  recomputeSlides(false)
 
   // Ensure SEO is up-to-date on client
   if (!seoData.value.title || !seoData.value.description) {
