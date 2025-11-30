@@ -34,7 +34,6 @@
         class="hero-img"
       />
     </div>
-
   </div>
 </section>
 
@@ -42,7 +41,6 @@
 <section ref="productSection" class="featured-products">
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
-
 
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
@@ -54,7 +52,7 @@
       infinite
       navigation
       swipeable
-      :arrows="false"
+      arrows
       height="100%"
       control-color="primary"
       class="rounded-borders"
@@ -73,8 +71,8 @@
             <q-card class="my-card full-height">
               <img
                 :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
-                width="100%"
-                height="300px"
+                width="300"
+                height="300"
                 :src="fp.images?.[0]?.src"
                 :srcset="fp.images?.[0]?.srcset"
                 :sizes="fp.images?.[0]?.sizes"
@@ -565,6 +563,9 @@ div.q-img__loading > svg{
   visibility: hidden;
 }
 
+.sustainability-section img {
+  aspect-ratio: 946 / 473;
+}
 @media(max-width: 767px) {
   .hero-content h1.text-h1 {
     font-size: 14vw;

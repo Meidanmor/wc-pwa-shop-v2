@@ -1,4 +1,9 @@
 /* app global css */
+@font-face {
+  font-family: Roboto;
+  font-display: swap;
+}
+
 :root * {
  /* --bg: #faf9f7;
   --bg-alt: #ffffff;

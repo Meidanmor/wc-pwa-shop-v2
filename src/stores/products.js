@@ -1,6 +1,5 @@
 // src/stores/products.js
 import { ref } from 'vue'
-import { useSSRContext } from 'vue'
 import api from 'src/boot/woocommerce'
 import path from 'path'
 import fs from 'fs'
@@ -72,11 +71,18 @@ export async function preFetchProducts(ctx) {
       productsLoading.value = false
     }
   } else {
-    try {
-      const productsRes = await fetch('/data/products.json').then(res => res.json());
-      products.value = productsRes;
-    } catch(err){
-      console.log(err);
+    // CLIENT: do NOT fetch
+    initFromSSR()
+
+    if (!initialized.value) {
+      // fallback only if SSR failed
+      try {
+        const productsRes = await fetch('/data/products.json').then(res => res.json());
+        products.value = productsRes
+        initialized.value = true
+      } catch (err) {
+        console.log(err)
+      }
     }
   }
 }
@@ -85,18 +91,13 @@ function initFromSSR() {
   if (initialized.value) return
 
   let pre = []
-  if (import.meta.env.SSR) {
-    try {
-      const ssr = useSSRContext()
-      pre = ssr?.[SSR_KEY] || []
-    } catch (err) {
-      console.warn(err)
-    }
-  } else if (typeof window !== 'undefined') {
-    pre = window?.[SSR_KEY] || []
+
+  // client hydration
+  if (typeof window !== 'undefined') {
+    pre = window.__PRE_FETCH_PRODUCTS__ || []
   }
 
-  if (pre && Array.isArray(pre) && pre.length) {
+  if (Array.isArray(pre) && pre.length) {
     products.value = pre
     initialized.value = true
   }
