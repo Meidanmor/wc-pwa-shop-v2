@@ -134,20 +134,34 @@ function setupCartTracking() {
  * Init push + cart tracking
  */
 export default async () => {
-  // Only run setup in client/browser context
   if (typeof window !== 'undefined') {
-    // Delay everything non-critical to idle time
+
+    // 🚨 MUST run immediately, not in idle
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => {
+          console.log('SW registered:', reg)
+        })
+        .catch(err => {
+          console.error('SW registration failed:', err)
+        })
+    }
+
+    // 🟦 Delay ONLY non-critical logic
     runWhenIdle(async () => {
       setupCartTracking()
 
-      if (Platform.is && Platform.is.capacitor) {
+      if (Platform.is.capacitor) {
+        // Native setup
         try {
           PushNotifications = require('@capacitor/push-notifications').PushNotifications
           await registerNativePush()
         } catch (e) {
           console.warn('Push plugin not available:', e)
         }
-      } else if ('serviceWorker' in navigator) {
+
+      } else {
+        // Web-only listeners
         navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data?.action === 'navigate' && event.data.url) {
             const targetUrl = event.data.url
@@ -158,7 +172,6 @@ export default async () => {
             }
           }
         })
-        // Optional: await subscribeToWebPush()
       }
     })
   }
