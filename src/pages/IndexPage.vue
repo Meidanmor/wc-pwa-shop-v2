@@ -52,7 +52,7 @@
       infinite
       navigation
       swipeable
-      arrows
+      :arrows="false"
       height="100%"
       control-color="primary"
       class="rounded-borders"
