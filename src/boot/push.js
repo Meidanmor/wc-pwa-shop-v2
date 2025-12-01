@@ -4,17 +4,6 @@ import { Platform } from 'quasar'
 let PushNotifications
 
 /**
- * Polyfill for requestIdleCallback if not available
- */
-const runWhenIdle = (cb) => {
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(cb)
-  } else {
-    setTimeout(() => cb(Date.now()), 1) // minimal fallback
-  }
-}
-
-/**
  * Convert VAPID base64 key to UInt8Array
  */
 function urlBase64ToUint8Array(base64String) {
@@ -133,46 +122,31 @@ function setupCartTracking() {
 /**
  * Init push + cart tracking
  */
+// --- The critical fix: Put all platform checks inside the boot hook! ---
 export default async () => {
+  // Only run setup in client/browser context
   if (typeof window !== 'undefined') {
-
-    // 🚨 MUST run immediately, not in idle
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(reg => {
-          console.log('SW registered:', reg)
-        })
-        .catch(err => {
-          console.error('SW registration failed:', err)
-        })
-    }
-
-    // 🟦 Delay ONLY non-critical logic
-    runWhenIdle(async () => {
-      setupCartTracking()
-
-      if (Platform.is.capacitor) {
-        // Native setup
-        try {
-          PushNotifications = require('@capacitor/push-notifications').PushNotifications
-          await registerNativePush()
-        } catch (e) {
-          console.warn('Push plugin not available:', e)
-        }
-
-      } else {
-        // Web-only listeners
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data?.action === 'navigate' && event.data.url) {
-            const targetUrl = event.data.url
-            if (window.$router) {
-              window.$router.push(targetUrl).catch(() => {})
-            } else {
-              window.location.href = targetUrl
-            }
-          }
-        })
+    setupCartTracking()
+    // Native (Capacitor) logic only runs on client
+    if (Platform.is && Platform.is.capacitor) {
+      try {
+        PushNotifications = require('@capacitor/push-notifications').PushNotifications
+        await registerNativePush()
+      } catch (e) {
+        console.warn('Push plugin not available:', e)
       }
-    })
+    } else if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.action === 'navigate' && event.data.url) {
+          const targetUrl = event.data.url
+          if (window.$router) {
+            window.$router.push(targetUrl).catch(() => {})
+          } else {
+            window.location.href = targetUrl
+          }
+        }
+      })
+      // Optional: await subscribeToWebPush()
+    }
   }
 }
