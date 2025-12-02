@@ -302,11 +302,11 @@
         "sku": "",
         "short_description": "",
         "description": "<p>Set of three lip balms made with beeswax, shea butter, and essential oils for hydrated lips.</p>",
-        "on_sale": false,
+        "on_sale": true,
         "prices": {
-            "price": "5000",
+            "price": "4900",
             "regular_price": "5000",
-            "sale_price": "5000",
+            "sale_price": "4900",
             "price_range": null,
             "currency_code": "ILS",
             "currency_symbol": "\u20aa",
@@ -316,7 +316,7 @@
             "currency_prefix": "",
             "currency_suffix": "\u20aa"
         },
-        "price_html": "<span class=\"woocommerce-Price-amount amount\">50.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span>",
+        "price_html": "<del aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">50.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></del> <span class=\"screen-reader-text\">Original price was: 50.00&#8362;.</span><ins aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">49.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></ins><span class=\"screen-reader-text\">Current price is: 49.00&#8362;.</span>",
         "average_rating": "0",
         "review_count": 0,
         "images": [
