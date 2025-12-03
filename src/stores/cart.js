@@ -747,8 +747,21 @@ async function removeCoupon(code) {
 async function placeOrder(payload) {
   // ensure server reflects local cart before placing order
   await mergeLocalIntoApi()
+
   try {
-    const res = await fetchWithToken(`${API_BASE}/checkout`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    // Include device_id for backend targeting
+    const deviceId = localStorage.getItem('pwa_device_id') || null
+    if (deviceId) {
+      payload.pwa_device_id = deviceId
+    }
+
+    const res = await fetchWithToken(`${API_BASE}/checkout`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Checkout failed')
     return data
