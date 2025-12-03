@@ -1,8 +1,15 @@
 import { Platform } from 'quasar'
 
-// Optional Capacitor import — will only load on native
 let PushNotifications
 
+function generateUUID() {
+  // https://stackoverflow.com/a/2117523/1218980
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
 /**
  * Convert VAPID base64 key to UInt8Array
  */
@@ -21,34 +28,48 @@ function urlBase64ToUint8Array(base64String) {
 const APP_SERVER_KEY = 'BHSV149RpWY5IkRyGC_DvxRWQuO_29FAdwhhFu9IPyfUNHDedg7pTCer_WrlJipDvmU0JqxBy4lKHWItX2E6cLw'
 
 /**
+ * Get or create a unique device ID (stored in localStorage)
+ */
+function getDeviceId() {
+  let deviceId = localStorage.getItem('pwa_device_id')
+  if (!deviceId) {
+    deviceId = generateUUID()
+    localStorage.setItem('pwa_device_id', deviceId)
+  }
+  return deviceId
+}
+
+/**
  * Subscribe to push notifications (Web/PWA)
  */
 export async function subscribeToWebPush() {
   console.log('🚀 Push setup started (Web)')
   const permission = await Notification.requestPermission()
-  console.log('🟢 Permission result:', permission)
-
   if (permission !== 'granted') {
     console.warn('🔴 Notification permission not granted.')
     return
   }
 
   try {
-    console.log('🔄 Waiting for service worker')
     const registration = await navigator.serviceWorker.ready
-    console.log('🟢 Service worker ready:', registration)
-
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(APP_SERVER_KEY)
     })
 
-    console.log('📝 Push subscription object:', subscription)
+    const deviceId = getDeviceId()
+    const cartToken = localStorage.getItem('wc_cart_token') || null
+
+    const payload = {
+      device_id: deviceId,
+      cart_token: cartToken,
+      subscription: subscription
+    }
 
     const res = await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/save-subscription', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(subscription)
+      body: JSON.stringify(payload)
     })
 
     const result = await res.json()
@@ -64,8 +85,6 @@ export async function subscribeToWebPush() {
 async function registerNativePush() {
   if (!PushNotifications) return
 
-  console.log('📱 Registering native push notifications')
-
   let permStatus = await PushNotifications.checkPermissions()
   if (permStatus.receive !== 'granted') {
     permStatus = await PushNotifications.requestPermissions()
@@ -75,10 +94,9 @@ async function registerNativePush() {
     await PushNotifications.register()
   }
 
-  // Get FCM token
   PushNotifications.addListener('registration', (token) => {
     console.log('📡 Native push token:', token.value)
-    // TODO: Send token to your WP backend
+    // Send to backend if needed
   })
 
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
@@ -109,9 +127,6 @@ async function syncCartTimestamp() {
   }
 }
 
-/**
- * Attach listeners for when user leaves or hides the app
- */
 function setupCartTracking() {
   window.addEventListener('beforeunload', syncCartTimestamp)
   document.addEventListener('visibilitychange', () => {
@@ -122,31 +137,27 @@ function setupCartTracking() {
 /**
  * Init push + cart tracking
  */
-// --- The critical fix: Put all platform checks inside the boot hook! ---
 export default async () => {
-  // Only run setup in client/browser context
-  if (typeof window !== 'undefined') {
-    setupCartTracking()
-    // Native (Capacitor) logic only runs on client
-    if (Platform.is && Platform.is.capacitor) {
-      try {
-        PushNotifications = require('@capacitor/push-notifications').PushNotifications
-        await registerNativePush()
-      } catch (e) {
-        console.warn('Push plugin not available:', e)
-      }
-    } else if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data?.action === 'navigate' && event.data.url) {
-          const targetUrl = event.data.url
-          if (window.$router) {
-            window.$router.push(targetUrl).catch(() => {})
-          } else {
-            window.location.href = targetUrl
-          }
-        }
-      })
-      // Optional: await subscribeToWebPush()
+  if (typeof window === 'undefined') return
+
+  setupCartTracking()
+
+  if (Platform.is && Platform.is.capacitor) {
+    try {
+      PushNotifications = require('@capacitor/push-notifications').PushNotifications
+      await registerNativePush()
+    } catch (e) {
+      console.warn('Push plugin not available:', e)
     }
+  } else if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.action === 'navigate' && event.data.url) {
+        if (window.$router) {
+          window.$router.push(event.data.url).catch(() => {})
+        } else {
+          window.location.href = event.data.url
+        }
+      }
+    })
   }
 }
