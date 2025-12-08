@@ -53,6 +53,7 @@
               dense
               color="primary"
               @change="paginatedProducts"
+              step="0.01"
           />
         </q-card>
 
@@ -119,9 +120,9 @@ import { ref, computed, onMounted, watch } from 'vue'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useMeta } from 'quasar'
+import productsStore from 'src/stores/products'
 
 // Refs and state
-const products = ref([])
 const categories = ref([])
 const selectedCategory = ref(null)
 const search = ref('')
@@ -147,37 +148,6 @@ async function fetchSeoData() {
   } catch (err) {
     console.error('[SSR] SEO Fetch Error:', err)
   }
-}
-
-// Fetch products and auto-set price range
-const fetchProducts = async () => {
-  const res = await api.getProducts()
-  products.value = Array.isArray(res) ? res : []
-
-  const pricesMax = products.value.map((p) =>
-    parseFloat(
-      p.prices.price_range != null
-        ? p.prices.price_range.max_amount
-        : p.prices.price
-    ) / 100
-  )
-  const pricesMin = products.value.map((p) =>
-    parseFloat(
-      p.prices.price_range != null
-        ? p.prices.price_range.min_amount
-        : p.prices.price
-    ) / 100
-  )
-
-  const min = Math.floor(Math.min(...pricesMin))
-  const max = Math.ceil(Math.max(...pricesMax))
-
-  const minLastVal = (min === max) ? (min - 1) : min;
-  const maxLastVal = (min === max) ? (max + 1) : max;
-  console.log(minLastVal);
-  priceMin.value = minLastVal
-  priceMax.value = maxLastVal
-  priceRange.value = { min: minLastVal, max: maxLastVal }
 }
 
 // Fetch categories
@@ -232,7 +202,7 @@ const categoryOptions = computed(() =>
 
 // Computed: filtered products
 const filteredProducts = computed(() => {
-  return products.value.filter((p) => {
+  return productsStore.products.value.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
     const matchCategory =
         !selectedCategory.value ||
@@ -240,10 +210,18 @@ const filteredProducts = computed(() => {
         p.extensions["mpress"].default_category?.id === selectedCategory.value ||
         p.extensions["mpress"].default_category?.slug === selectedCategory.value
 
-    const productPrice = parseFloat(p.prices.price) / 100
-    const matchPrice =
-        productPrice >= priceRange.value.min &&
-        productPrice <= priceRange.value.max
+    // 🚨 FIX: Determine the TRUE MIN and TRUE MAX price for the product
+    const pMin = parseFloat(p.prices.price_range?.min_amount || p.prices.price) / 100
+    const pMax = parseFloat(p.prices.price_range?.max_amount || p.prices.price) / 100
+
+    // The product price range (pMin to pMax) must OVERLAP with the selected range (priceRange.min to priceRange.max)
+    const filterMin = priceRange.value.min
+    const filterMax = priceRange.value.max
+
+    // An overlap exists if:
+    // 1. The product's lowest price is LESS THAN or equal to the filter's MAX, AND
+    // 2. The product's highest price is GREATER THAN or equal to the filter's MIN
+    const matchPrice = pMin <= filterMax && pMax >= filterMin
 
     return matchSearch && matchCategory && matchPrice
   })
@@ -280,12 +258,97 @@ watch(priceRange, (val) => {
 
 // Lifecycle
 onMounted(async() => {
+  await productsStore.fetchProductsIfNeeded()
+// 🚨 NEW FIX: Call the update function immediately after fetching data
+  // This sets the correct min/max values for the initial page load.
+  updatePriceLimits(productsStore.products.value)
+
   if (process.env.CLIENT) {
     isClient.value = true;
     await fetchSeoData()
-    await fetchProducts()
     await fetchCategories()
   }
+})
+
+// Function to recalculate price limits based on a product list
+const updatePriceLimits = (productsList) => {
+    if (!productsList || productsList.length === 0) {
+        priceMin.value = 0;
+        priceMax.value = 1000;
+        priceRange.value = { min: 0, max: 1000 };
+        return;
+    }
+
+    // 1. Filter products based on category and search
+    const productsInCurrentCategory = productsList.filter(p => {
+        const matchCategory =
+            !selectedCategory.value ||
+            p.categories.some((c) => c.id === selectedCategory.value) ||
+            p.extensions["mpress"].default_category?.id === selectedCategory.value ||
+            p.extensions["mpress"].default_category?.slug === selectedCategory.value
+
+        const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
+
+        return matchCategory && matchSearch
+    });
+
+    if (productsInCurrentCategory.length === 0) {
+        return;
+    }
+
+    // Map prices to raw float values
+    const pricesMaxList = productsInCurrentCategory.map((p) =>
+        parseFloat(
+            p.prices.price_range != null
+                ? p.prices.price_range.max_amount
+                : p.prices.price
+        ) / 100
+    )
+
+    const pricesMinList = productsInCurrentCategory.map((p) =>
+        parseFloat(
+            p.prices.price_range != null
+                ? p.prices.price_range.min_amount
+                : p.prices.price
+        ) / 100
+    )
+
+    // Find the true minimum and maximum prices
+    const trueMin = Math.min(...pricesMinList);
+    const trueMax = Math.max(...pricesMaxList);
+
+    // 2. Set the displayed limits to the EXACT min/max price
+    // This addresses your requirement to display 30.00 if the lowest price is 30.00.
+    priceMin.value = trueMin;
+    priceMax.value = trueMax;
+
+    // 3. Conditional Internal Buffer for Single Price Points
+
+    // If the range is zero or near-zero (due to floating point artifacts)
+    if (Math.abs(trueMax - trueMin) < 0.0000001) {
+        const buffer = 0.000001; // A buffer small enough to not affect display
+
+        // Apply the buffer to the slider's limits. This ensures the slider is usable.
+        priceMin.value = trueMin - buffer;
+        priceMax.value = trueMax + buffer;
+    }
+
+    // 4. Reset the priceRange model to the new bounds
+    priceRange.value = {min: priceMin.value, max: priceMax.value}
+}
+
+// Watch the selected category and update limits
+watch(selectedCategory, () => {
+    // When the category changes, recalculate limits based on the full product set
+    updatePriceLimits(productsStore.products.value)
+    // Also reset the current page to 1
+    currentPage.value = 1
+}, { immediate: true }) // immediate: true ensures it runs on initial load if selectedCategory has a default value
+
+// Watch the search filter as well, since it also narrows the possible price range
+watch(search, () => {
+    updatePriceLimits(productsStore.products.value)
+    currentPage.value = 1
 })
 </script>
 

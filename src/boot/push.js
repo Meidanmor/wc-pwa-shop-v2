@@ -134,6 +134,29 @@ function setupCartTracking() {
   })
 }
 
+// Add this function to your Quasar file
+async function syncSubscriptionCartToken() {
+  const deviceId = getDeviceId()
+  const cartToken = localStorage.getItem('wc_cart_token')
+
+  if (!cartToken || !deviceId) return
+
+  try {
+    // Send the stable deviceId and the volatile cartToken
+    await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/update-cart-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id: deviceId,
+        cart_token: cartToken
+      })
+    })
+
+    console.log('✅ Cart token synced to push subscription.')
+  } catch (err) {
+    console.error('❌ Failed to sync cart token:', err)
+  }
+}
 /**
  * Init push + cart tracking
  */
@@ -150,6 +173,8 @@ export default async () => {
       console.warn('Push plugin not available:', e)
     }
   } else if ('serviceWorker' in navigator) {
+    // 🚨 Now we sync the subscription token on load/resume
+    syncSubscriptionCartToken()
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data?.action === 'navigate' && event.data.url) {
         if (window.$router) {
