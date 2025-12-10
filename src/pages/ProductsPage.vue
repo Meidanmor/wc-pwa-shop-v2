@@ -159,7 +159,6 @@ const isClient = ref(false)
 
 if (isServer) {
   await fetchSeoData()
-  await fetchProducts()
   await fetchCategories()
 }
 
