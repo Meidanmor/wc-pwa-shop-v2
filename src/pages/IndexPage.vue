@@ -235,6 +235,10 @@ import cart from 'src/stores/cart'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 
+// ----------------- Scroll -----------------
+const scrollToProducts = () => {}
+defineExpose({ scrollToProducts })
+
 const seo = await fetchSeoForPath('homepage')
 useMeta(() => ({
   title: seo.title || 'NaturaBloom',
@@ -355,9 +359,6 @@ const addToCart = (product) => {
 const getSlugFromPermalink = (permalink) =>
   permalink.split('/').filter(Boolean).pop()
 
-// ----------------- Scroll -----------------
-const scrollToProducts = () => {}
-defineExpose({ scrollToProducts })
 
 // ----------------- Mounted -----------------
 onMounted(async () => {

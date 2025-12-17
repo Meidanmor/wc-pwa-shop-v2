@@ -213,8 +213,8 @@ import { useRoute } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
-import { useQuasar } from 'quasar'
-import { useSeo } from 'src/composables/useSeo'
+import { useQuasar, useMeta } from 'quasar'
+import { fetchSeoForPath } from 'src/composables/useSeo'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -226,6 +226,39 @@ const initialSeo = {
   title: 'Product',
   description: 'product page'
 }
+
+// 🟢 Run on SSR only
+if (process.env.SERVER) {
+  try {
+    const res = await fetch('/data/products.json')
+    const products = await res.json()
+    product.value = products.find(p => getSlugFromPermalink(p.permalink) === route.params.slug)
+
+  } catch (err) {
+    console.error('[SEO Fetch Error]', err)
+  }
+
+}
+
+
+const seo = await fetchSeoForPath(route.params.slug)
+useMeta(() => ({
+  title: seo.title || 'NaturaBloom',
+  meta: {
+    description: {
+      name: 'description',
+      content: seo.description || "Let's Bloom Together"
+    },
+    'og:title': {
+      property: 'og:title',
+      content: seo.title || 'NaturaBloom'
+    },
+    'og:description': {
+      property: 'og:description',
+      content: seo.description || "Let's Bloom Together"
+    }
+  }
+}))
 
 // Log for debugging
 if (process.env.SERVER) {
@@ -373,21 +406,6 @@ async function fetchProduct(slug) {
   await fetchWishlistData()
 }
 
-
-// 🟢 Run on SSR only
-if (process.env.SERVER) {
-  await useSeo('', initialSeo);
-  try {
-  const res = await fetch('/data/products.json')
-  const products = await res.json()
-  product.value = products.find(p => getSlugFromPermalink(p.permalink) === route.params.slug)
-
-} catch (err) {
-  console.error('[SEO Fetch Error]', err)
-}
-
-}
-
 const isVariable = computed(() => product.value?.type === 'variable')
 
 const selectedVariations = ref({})
@@ -510,7 +528,6 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
 }
 onMounted(async() => {
     if (process.env.CLIENT) {
-      await useSeo('', initialSeo);
       await fetchProduct(route.params.slug);
       await fetchWishlistData()
     }
