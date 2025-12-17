@@ -2,12 +2,14 @@
   <q-page class="q-pa-md">
     <div class="container">
       <h2>Checkout</h2>
-
       <div v-if="isLoggedIn === false">
         {{isLoggedIn}}
         <GoogleLoginButton />
       </div>
-      <q-form v-if="itemsCount!='0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
+
+      <q-skeleton v-if="!checkoutReady" height="300px" />
+
+      <q-form v-else-if="checkoutReady && itemsCount !== '0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
       <div class="float-left">
       <!-- Personal Info -->
       <q-card class="q-mb-md">
@@ -65,11 +67,11 @@
             <div class="col-auto">
               <q-btn label="Apply" color="primary" @click="applyCoupon" />
               <q-btn
-  v-if="couponApplied"
-  label="Remove Coupon"
-  color="negative"
-  @click="removeCoupon"
-/>
+                  v-if="couponApplied"
+                  label="Remove Coupon"
+                  color="negative"
+                  @click="removeCoupon"
+              />
             </div>
           </div>
           <div v-if="couponApplied" class="text-positive q-mt-sm">
@@ -78,16 +80,14 @@
           <div v-if="couponError" class="text-negative q-mt-sm">
             {{ couponError }}
           </div>
-
           <div v-if="cart.state.coupons.length">
-  <div v-for="coupon in cart.state.coupons" :key="coupon.code" class="q-mb-sm row items-center">
-    <q-chip color="primary" text-color="white" class="q-mr-sm">
-      {{ coupon.code }}
-    </q-chip>
-    <q-btn flat color="negative" label="Remove" @click="removeCoupon(coupon.code)" />
-  </div>
-</div>
-
+            <div v-for="coupon in cart.state.coupons" :key="coupon.code" class="q-mb-sm row items-center">
+              <q-chip color="primary" text-color="white" class="q-mr-sm">
+                {{ coupon.code }}
+              </q-chip>
+              <q-btn flat color="negative" label="Remove" @click="removeCoupon(coupon.code)" />
+            </div>
+          </div>
         </q-card-section>
       </q-card>
 
@@ -142,7 +142,6 @@
       </q-card-section>
     </q-card>
 
-
       <!-- Payment -->
       <q-card class="q-mb-md">
         <q-card-section>
@@ -172,7 +171,7 @@
       </div>
 
       <!-- Render loader and sync retry state -->
-      <div v-if="cart.state.loading.cart" class="centered">
+      <div v-if="!checkoutReady && needsSync" class="centered">
         <q-spinner color="primary" size="2em" />
         <div>Synchronizing cart, please wait...</div>
       </div>
@@ -190,20 +189,15 @@ import cart from 'src/stores/cart';
 import { useRouter } from 'vue-router';
 import { fetchWithToken } from 'src/composables/useApiFetch.js';
 import GoogleLoginButton from 'src/components/GoogleLoginButton.vue';
-
 const syncError = ref(null);
-
 const token = ref('');
-
 if(process.env.CLIENT) {
   token.value = localStorage.getItem('jwt_token');
   console.log(!!token.value);
 }
-
+const checkoutReady = ref(false)
 const isLoggedIn = ref(!!token.value)
-
 const router = useRouter();
-
 const form = reactive({
   first_name: '',
   last_name: '',
@@ -224,26 +218,20 @@ const form = reactive({
 });
 
 const billingSameAsShipping = ref(true)
-
-//const useDifferentBilling = ref(false);
 const couponCode = ref('');
 const couponApplied = ref(false);
 const itemsCount = ref("0");
 const couponError = ref(null);
-//const deliveryMethod = ref('pickup');
 const paymentMethod = ref('bacs');
 const paymentMethods = ref([]);
 const selectedShippingRateId = ref(null);
 const shippingOptions = ref([]);
-
 const cartItems = computed(() => cart.state.cart_array.items);
 const cartTotal = computed(() => {
   const total = cart.state.totals?.total_price || '0';
   const formattedTotal = formatCurrency(total, {minorUnit: 2, decimalSeparator: '.', prefix: '₪', suffix: ''});
-
   return formattedTotal;
 });
-
 // More reliable slug extractor using regex
 const getSlugFromPermalink = (permalink) => {
   if(permalink) {
@@ -252,61 +240,45 @@ const getSlugFromPermalink = (permalink) => {
   }
   return '';
 }
-
-/*async function applyCoupon() {
-  couponApplied.value = false;
-  couponError.value = null;
-  try {
-    const res = await fetchWithToken('https://nuxt.meidanm.com/wp-json/wc/store/cart/apply-coupon', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ code: couponCode.value })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Invalid coupon');
-
-    couponApplied.value = true;
-    await cart.fetchCart();
-  } catch (err) {
-    couponError.value = err.message;
-  }
-}*/
-
 const initializeFormFromCart = async () => {
-  await cart.fetchCart(); // Make sure cart is up to date
+  const cartData = cart.state.cart_array
 
-  cart.state.cart_array.payment_methods.forEach((method) => {
-    let label = '';
-    if (method == 'bacs') {
-      label = 'Bank transfer';
-    } else {
-      label = method;
-    }
+  if (!cartData) {
+    console.warn('Cart not ready yet, skipping form init')
+    return
+  }
 
-    paymentMethods.value.push({label: label, value: method});
-  })
-  itemsCount.value = cart.state.cart_array.items_count;
-  const billing = cart.state.cart_array.billing_address || {};
-  const shipping = cart.state.cart_array.shipping_address || {};
+  paymentMethods.value = []
 
-  form.first_name = shipping.first_name || '';
-  form.last_name = shipping.last_name || '';
-  form.email = billing.email || '';
-  form.phone = billing.phone || '';
+  if (Array.isArray(cartData.payment_methods)) {
+    cartData.payment_methods.forEach(method => {
+      paymentMethods.value.push({
+        label: method === 'bacs' ? 'Bank transfer' : method,
+        value: method
+      })
+    })
+  }
 
-  form.shipping.address_1 = shipping.address_1 || '';
-  form.shipping.city = shipping.city || '';
-  form.shipping.postcode = shipping.postcode || '';
-  form.shipping.country = shipping.country || 'IL';
+  itemsCount.value = cartData.items_count || '0'
 
-  form.billing.address_1 = billing.address_1 || '';
-  form.billing.city = billing.city || '';
-  form.billing.postcode = billing.postcode || '';
-  form.billing.country = billing.country || 'IL';
+  const billing = cartData.billing_address || {}
+  const shipping = cartData.shipping_address || {}
+
+  form.first_name = shipping.first_name || ''
+  form.last_name = shipping.last_name || ''
+  form.email = billing.email || ''
+  form.phone = billing.phone || ''
+
+  form.shipping.address_1 = shipping.address_1 || ''
+  form.shipping.city = shipping.city || ''
+  form.shipping.postcode = shipping.postcode || ''
+  form.shipping.country = shipping.country || 'IL'
+
+  form.billing.address_1 = billing.address_1 || ''
+  form.billing.city = billing.city || ''
+  form.billing.postcode = billing.postcode || ''
+  form.billing.country = billing.country || 'IL'
 };
-
 const updateShippingAddress = async () => {
   try {
     const response = await fetchWithToken('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart/update-customer', {
@@ -336,12 +308,10 @@ const updateShippingAddress = async () => {
         }
       }),
     });
-
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Failed to update shipping address');
     }
-
     const updatedCart = await response.json();
     //cart.fetchCart();
     console.log('Cart updated', updatedCart);
@@ -350,7 +320,6 @@ const updateShippingAddress = async () => {
     console.error('Error updating shipping address:', error.message);
   }
 };
-
 const handleInputBlur = (field) => {
   const value = form.shipping[field] ? form.shipping[field] : form[field];
   if (value && value.length > 1) {
@@ -358,7 +327,6 @@ const handleInputBlur = (field) => {
     fetchShippingRates();
   }
 };
-
 function formatCurrency(amountStr, {
   minorUnit = 2,
   decimalSeparator = '.',
@@ -366,41 +334,35 @@ function formatCurrency(amountStr, {
   suffix = ''
 } = {}) {
   const amount = parseInt(amountStr, 10);
-
   if (isNaN(amount)) return `${prefix}0${decimalSeparator}${'0'.repeat(minorUnit)}${suffix}`;
-
   const factor = Math.pow(10, minorUnit);
   const number = amount / factor;
-
   return `${number.toLocaleString(undefined, {
     minimumFractionDigits: minorUnit,
     maximumFractionDigits: minorUnit
   })}${suffix}${prefix}`;
 }
-
 const applyCoupon = () => cart.applyCoupon(couponCode.value);
 const removeCoupon = () => cart.removeCoupon(couponCode.value);
 // Fetch shipping methods
 const fetchShippingRates = async () => {
+  if (!cart.state.cart_array) return
 
-  const data = await cart.fetchCart();
-  console.log(data);
-  console.log(cart.state.cart_array);
-  if (cart.state.cart_array.shipping_rates && cart.state.cart_array.shipping_rates[0]) {
-    shippingOptions.value = cart.state.cart_array.shipping_rates[0].shipping_rates.map(rate => ({
-      label: `${rate.name} – ${formatCurrency(rate.price, {
-        minorUnit: 2,
-        decimalSeparator: '.',
-        prefix: '₪',
-        suffix: ''
-      })}`,
-      value: rate.rate_id,
-    }));
+  const rates = cart.state.cart_array.shipping_rates?.[0]?.shipping_rates || []
+
+  shippingOptions.value = rates.map(rate => ({
+    label: `${rate.name} – ${formatCurrency(rate.price, {
+      minorUnit: 2,
+      decimalSeparator: '.',
+      prefix: '₪'
+    })}`,
+    value: rate.rate_id
+  }))
+
+  if (shippingOptions.value.length) {
+    selectedShippingRateId.value ??= shippingOptions.value[0].value
   }
-  if (shippingOptions.value.length > 0) {
-    selectedShippingRateId.value = shippingOptions.value[0].value;
-  }
-};
+}
 
 const onShippingMethodChange = async (newRateId) => {
   try {
@@ -411,7 +373,6 @@ const onShippingMethodChange = async (newRateId) => {
       credentials: 'include',
       body: JSON.stringify({package_id: 0, rate_id: newRateId})
     });
-
     // Re-fetch cart to get updated totals
     await cart.fetchCart();
     console.log(cart);
@@ -419,10 +380,8 @@ const onShippingMethodChange = async (newRateId) => {
     console.error('Error updating shipping method:', error);
   }
 };
-
 const onValidationError = async(ref) => {
   const valid = await ref.validate()
-
   if (!valid) {
     // Wait a tick for Quasar to focus the first invalid field
     requestAnimationFrame(() => {
@@ -433,7 +392,6 @@ const onValidationError = async(ref) => {
     })
     return
   }
-
 }
 const submitOrder = async () => {
   // Only place order after sync
@@ -470,9 +428,7 @@ const submitOrder = async () => {
       extensions: {},
       billing_same_as_shipping: billingSameAsShipping.value
     };
-
     console.log(paymentMethod.value);
-
     console.log(payload);
     console.log(form);
     const response = await cart.placeOrder(payload)
@@ -490,30 +446,64 @@ const submitOrder = async () => {
     console.error('Checkout error:', err.message)
   }
 }
-
 const syncCart = async () => {
-  syncError.value = null;
-  cart.state.loading.cart = true;
+  syncError.value = null
+
+  if (!needsSync.value) {
+    return // ⬅️ DO NOTHING
+  }
+
   try {
-    await cart.syncLocalCartWithServer();
+    await cart.syncLocalCartWithServer()
   } catch (err) {
-    console.log(err);
-    syncError.value = cart.state.error || 'Failed to sync cart';
-  } finally {
-    cart.state.loading.cart = false;
+    console.log(err)
+    syncError.value = cart.state.error || 'Failed to sync cart'
   }
 }
 
-onMounted(async () => {
-  if (!cart.state.synced) {
-    await syncCart();
-    if (syncError.value) return; // Block further init if cart couldn't sync
-  }
-  initializeFormFromCart();
-  fetchShippingRates();
-  updateShippingAddress();
-});
+const needsSync = computed(() => {
+  // offline → never block
+  if (cart.state.offline) return false
 
+  // no server snapshot yet → need sync
+// cart not hydrated yet → NOT a sync case
+  if (!cart.state.cart_array || !Array.isArray(cart.state.cart_array.items)) {
+    return false
+  }
+  const localItems = cart.state.local_cart.items || []
+  const serverItems = cart.state.cart_array.items || []
+
+  if (localItems.length !== serverItems.length) return true
+
+  const serverSigs = new Set(
+      serverItems.map(i => cart.signatureFor(i.id, i.variation))
+  )
+
+  for (const li of localItems) {
+    if (li._removed) return true
+    const sig = cart.signatureFor(li.id, li.variation)
+    if (!serverSigs.has(sig)) return true
+  }
+
+  return false
+})
+
+onMounted(async () => {
+  checkoutReady.value = false
+
+  // Ensure server cart exists at least once
+  await cart.fetchCartOnce()
+
+  if (needsSync.value) {
+    await syncCart()
+    if (syncError.value) return
+  }
+
+  await initializeFormFromCart()
+  await fetchShippingRates()
+
+  checkoutReady.value = true
+})
 </script>
 
 <style scoped>

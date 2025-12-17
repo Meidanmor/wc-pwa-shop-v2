@@ -28,6 +28,22 @@ const state = reactive({
 /* -------------------------
    Helpers (robust)
    ------------------------- */
+let cartFetchPromise = null
+
+async function fetchCartOnce () {
+  if (cartFetchPromise) return cartFetchPromise
+
+  cartFetchPromise = (async () => {
+    try {
+      await fetchCart()
+    } finally {
+      // allow refetch only if explicitly forced
+    }
+  })()
+
+  return cartFetchPromise
+}
+
 function getMaxAllowed(item) {
   if (!item) return Infinity
 
@@ -253,6 +269,38 @@ function rebuildMergedView() {
   //console.log('cart merged', state);
 }
 
+// ----- sync helpers / debounce -----
+let __syncDebounceTimer = null;
+const SYNC_DEBOUNCE_MS = 700;
+
+function localAndServerSignaturesEqual() {
+  // produce sorted array of signatures for local items (ignore _synced/_local/_removed flags)
+  const local = (state.local_cart.items || [])
+    .filter(i => !i._removed) // items marked removed are part of diff
+    .map(i => itemSignature(i))
+    .sort()
+    .join('|');
+
+  const server = ((state.cart_array && state.cart_array.items) || [])
+    .map(i => itemSignature(i))
+    .sort()
+    .join('|');
+
+  return local === server;
+}
+
+function scheduleSyncLocalToServer() {
+  // Mark changed already sets state.synced = false — ensure scheduled sync runs
+  if (__syncDebounceTimer) clearTimeout(__syncDebounceTimer);
+  __syncDebounceTimer = setTimeout(() => {
+    // fire and ignore errors
+    syncLocalCartWithServer().catch(err => {
+      console.warn('[cart] scheduled sync failed', err);
+    });
+    __syncDebounceTimer = null;
+  }, SYNC_DEBOUNCE_MS);
+}
+
 /* -------------------------
    Background sync (local -> API) (does not overwrite local_cart)
    - attempts add/update/remove
@@ -281,7 +329,7 @@ async function mergeLocalIntoApi($q = null) {
     if (apiItem) {
       if ((localItem.quantity || 0) !== (apiItem.quantity || 0)) {
         // update via api key
-        if (apiItem.key) actions.push({ type: 'update', payload: { key: apiItem.key, quantity: localItem.quantity }, sig })
+        if (apiItem.key) actions.push({ type: 'update', payload: { key: apiItem.key, quantity: Number(localItem.quantity) }, sig })
         else actions.push({ type: 'add', payload: { id: localItem.id, quantity: localItem.quantity, variation: localItem.variation }, sig })
       }
     } else {
@@ -403,8 +451,28 @@ function markCartChanged() {
 
 /* --------- ENHANCEMENT: batch sync API ----------- */
 async function syncLocalCartWithServer() {
-  if (state.synced || state.offline) return
-  state.loading.cart = true
+  // If offline, nothing to do
+  if (state.offline) return state.cart_array || null;
+
+  // If we already believe the two sides are synced, verify signature equality;
+  // only skip when signatures match. Otherwise we must perform a sync.
+  if (state.synced === true) {
+    try {
+      if (localAndServerSignaturesEqual()) {
+        // nothing changed; ensure we still have cart_array to present on checkout
+        // return the existing server snapshot for immediate use.
+        // console.log('[cart] sync skipped: local and server signatures match.')
+        return state.cart_array || null;
+      }
+      // signatures differ -> fallthrough to perform actual sync
+    } catch (err) {
+      // if comparison fails for any reason, fallback to performing a sync
+      console.warn('[cart] signature compare failed, proceeding to sync', err);
+    }
+  }
+
+  // perform full sync (local -> server). This keeps local authoritative.
+  state.loading.cart = true;
   try {
     const res = await fetchWithToken(`${API_BASE}/cart/sync-local-cart`, {
       method: 'POST',
@@ -414,21 +482,37 @@ async function syncLocalCartWithServer() {
         items: state.local_cart.items,
         coupons: state.coupons.map(c => c.code)
       })
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error('Cart sync failed')
-    state.cart_array = data
-    state.synced = true
-    rebuildMergedView()
-    persistLocalCart()
-    state.loading.cart = false
-    state.error = null
-    return data
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || 'Cart sync failed');
+
+    // update server snapshot (cart_array) and mark synced
+    state.cart_array = data;
+    state.synced = true;
+
+    // mark local items as synced if matched on returned cart
+    const serverMap = new Map((state.cart_array.items || []).map(i => [itemSignature(i), i]));
+    for (const li of state.local_cart.items) {
+      const matching = serverMap.get(itemSignature(li));
+      if (matching) {
+        li._synced = true;
+        li.remote_key = matching.key || li.remote_key;
+      } else {
+        li._synced = false;
+      }
+    }
+
+    persistLocalCart();
+    rebuildMergedView();
+    state.loading.cart = false;
+    state.error = null;
+    return data;
   } catch (err) {
-    state.error = err.message
-    state.loading.cart = false
-    state.synced = false
-    throw err
+    state.error = err.message || String(err);
+    state.loading.cart = false;
+    state.synced = false;
+    throw err;
   }
 }
 
@@ -500,6 +584,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     localItem._removed = false
     persistLocalCart()
     rebuildMergedView()
+    scheduleSyncLocalToServer()
     if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: 'shopping_cart' })
     state.loading.cart = false
     state.drawerOpen = true
@@ -535,6 +620,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     state.local_cart.items.push(clone)
     persistLocalCart()
     rebuildMergedView()
+    scheduleSyncLocalToServer()
     if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: 'shopping_cart' })
     state.loading.cart = false
     state.drawerOpen = true
@@ -554,6 +640,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
   state.local_cart.items.push(localItemNew)
   persistLocalCart()
   rebuildMergedView()
+  scheduleSyncLocalToServer()
   if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: 'shopping_cart' })
   state.loading.cart = false
   state.drawerOpen = true
@@ -582,9 +669,10 @@ async function increase(productIdOrKey, $q = null) {
       if ($q) $q.notify({ type: 'negative', message: `Reached max stock (${max}) for ${localItem.name || 'item'}`, icon: 'error' })
       return
     }
-    localItem.quantity = (localItem.quantity || 0) + 1
+    localItem.quantity = Number(localItem.quantity || 0) + 1
     persistLocalCart()
     rebuildMergedView()
+    scheduleSyncLocalToServer()
     if ($q) $q.notify({ type: 'info', message: 'Quantity updated', icon: 'shopping_cart' })
     return
   }
@@ -596,6 +684,7 @@ async function increase(productIdOrKey, $q = null) {
   state.local_cart.items.push(minimal)
   persistLocalCart()
   rebuildMergedView()
+  scheduleSyncLocalToServer()
   if ($q) $q.notify({ type: 'info', message: 'Quantity updated', icon: 'shopping_cart' })
 }
 
@@ -613,6 +702,7 @@ async function decrease(cartItemKey, /*$q = null*/) {
     }
     persistLocalCart()
     rebuildMergedView()
+    scheduleSyncLocalToServer()
     return
   }
 
@@ -630,6 +720,7 @@ async function decrease(cartItemKey, /*$q = null*/) {
     }
     persistLocalCart()
     rebuildMergedView()
+    scheduleSyncLocalToServer()
     return
   }
 
@@ -650,7 +741,10 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
     rebuildMergedView()
     state.loading.cart = false
     if ($q) $q.notify({ type: 'positive', message: 'Removed from cart', icon: 'shopping_cart' })
-    //return
+    // We removed locally — schedule a background sync to reconcile later (if online)
+    // but only if we are online; mergeLocalIntoApi / syncLocalCartWithServer will handle validation.
+    if (!state.offline) scheduleSyncLocalToServer()
+    return
   }
 
   // try to find API item by key
@@ -673,9 +767,12 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
       rebuildMergedView()
       state.loading.cart = false
       if ($q) $q.notify({ type: 'info', message: 'Removed from cart (local)', icon: 'cloud_off' })
+      // schedule background sync only when we created a local override
+      if (!state.offline) scheduleSyncLocalToServer()
     } else {
       state.loading.cart = false
     }
+    return
   }
 
   // online + apiItem present -> remove remotely and then update server snapshot
@@ -689,19 +786,24 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
     const data = await res.json().catch(() => null)
     if (!res.ok) throw new Error((data && data.message) || 'Failed to remove item')
 
-    // remove any local items that match sig
+    // remove any local items that match sig (we removed server-side)
     const sig = itemSignature(apiItem)
     state.local_cart.items = state.local_cart.items.filter(i => itemSignature(i) !== sig)
 
     // update server snapshot (no replace of local)
     await updateCartState(data)
     if ($q) $q.notify({ type: 'positive', message: 'Removed from cart.', icon: 'shopping_cart' })
+
+    // Persist local changes but DO NOT call scheduleSyncLocalToServer()
+    // because the server remove is authoritative and updateCartState() refreshed cart_array.
+    persistLocalCart()
+    rebuildMergedView()
   } catch (err) {
     state.error = err.message
     if ($q) $q.notify({ type: 'negative', message: 'Failed to remove.', icon: 'error' })
+    // On failure, schedule a full sync attempt (this helps recover transient errors)
+    if (!state.offline) scheduleSyncLocalToServer()
   } finally {
-    persistLocalCart()
-    rebuildMergedView()
     state.loading.cart = false
   }
 }
@@ -713,6 +815,7 @@ async function clear() {
   state.local_cart.items = []
   persistLocalCart()
   rebuildMergedView()
+  scheduleSyncLocalToServer()
   state.loading.cart = false
 }
 
@@ -764,6 +867,33 @@ async function placeOrder(payload) {
 
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Checkout failed')
+
+    // ---------------------------
+    // Clear local cart SAFELY
+    // ---------------------------
+    try {
+      // cancel any pending scheduled sync
+      if (typeof __syncDebounceTimer !== 'undefined' && __syncDebounceTimer) {
+        clearTimeout(__syncDebounceTimer)
+        __syncDebounceTimer = null
+      }
+    } catch (e) { console.log(e) }
+
+    // Clear reactive local cart and persist
+    state.local_cart.items = []
+    persistLocalCart()
+    // Update merged view & counts
+    rebuildMergedView()
+
+    // Update server snapshot with returned checkout result if it includes cart info.
+    // If your backend returns an empty cart on success, replace cart_array too.
+    try {
+      state.cart_array = data || null
+      // Mark synced true so we don't immediately re-sync
+      state.synced = true
+    } catch (e) { console.log(e) }
+    // ---------------------------
+
     return data
   } catch (err) {
     console.error('Checkout error:', err.message)
@@ -1015,6 +1145,7 @@ const hasItems = computed(() => state.items.length > 0)
    Exports
 ------------------------- */
 export default {
+  fetchCartOnce,
   state,
   hasItems,
   add,

@@ -1,6 +1,5 @@
 <template>
   <div>
-
     <!-- Hero Section -->
 <section class="hero-section-sec">
   <div class="hero-section container q-mb-xl row">
@@ -56,6 +55,7 @@
       height="100%"
       control-color="primary"
       class="rounded-borders"
+      v-if="isHydrated"
     >
       <q-carousel-slide
         v-for="(slideGroup, index) in slideChunks"
@@ -228,36 +228,32 @@
   </div>
 </template>
 
-<script setup>
+<script async setup>
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
-import { useQuasar } from 'quasar'
+import { useQuasar, useMeta } from 'quasar'
 import cart from 'src/stores/cart'
-import { useSeo, fetchSeoForPath } from 'src/composables/useSeo'
+import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 
-
-let initialSeo = { title: '', description: '' }
-let fallbackSeo = { title: 'Loading...', description: '...' }
-
-// --- defineOptions preFetch (hoisted) ---
-defineOptions({
-  async preFetch(ctx) {
-    // SSR-only modules
-
-    // Fetch SEO
-    const seo = await fetchSeoForPath('homepage');
-    // SSR context
-    if (ctx?.ssrContext) {
-      ctx.ssrContext.__PRE_FETCH_SEO__ = ctx.ssrContext.__PRE_FETCH_SEO__ || {}
-      ctx.ssrContext.__PRE_FETCH_SEO__['homepage'] = seo
+const seo = await fetchSeoForPath('homepage')
+useMeta(() => ({
+  title: seo.title || 'NaturaBloom',
+  meta: {
+    description: {
+      name: 'description',
+      content: seo.description || "Let's Bloom Together"
+    },
+    'og:title': {
+      property: 'og:title',
+      content: seo.title || 'NaturaBloom'
+    },
+    'og:description': {
+      property: 'og:description',
+      content: seo.description || "Let's Bloom Together"
     }
-
-
-
   }
-})
+}))
 
-const {seoData, fetchSeoData } = useSeo('homepage', initialSeo, fallbackSeo)
 const products = productsStore.products
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref([])
@@ -319,7 +315,9 @@ const recomputeSlides = async (forceRemount = false) => {
   slideChunks.value = getChunks(featuredProducts.value, chunkSize)
   if (slide.value >= slideChunks.value.length) slide.value = 0
 
-  if (forceRemount) carouselKey.value += 1
+  if (isHydrated.value && forceRemount) {
+    carouselKey.value += 1
+  }
   slidesReady.value = true
 }
 
@@ -379,9 +377,9 @@ onMounted(async () => {
   recomputeSlides(false)
 
   // Ensure SEO is up-to-date on client
-  if (!seoData.value.title || !seoData.value.description) {
+  /*if (!seoData.value.title || !seoData.value.description) {
     fetchSeoData('homepage')
-  }
+  }*/
 
   isHydrated.value = true
 })

@@ -252,7 +252,7 @@ watch(() => cart.state.drawerOpen, val => {
   if(val === true) {
     cartDrawer.value = val;
     cart.state.drawerOpen = false;
-    cart.fetchCart()
+    //cart.fetchCart()
   }
 })
 

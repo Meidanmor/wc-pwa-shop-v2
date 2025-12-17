@@ -138,7 +138,7 @@
         <q-btn
           label="Quick Checkout"
           v-if="product.is_in_stock"
-          color="accent"
+          color="black"
           :disable="shouldDisableCartButtons"
           @click="addToCartHandler"
           :loading="cart.state.loading.quickbuy"
@@ -151,8 +151,8 @@
         <div v-else> Out of stock </div>
 
        <div class="full-width">
-        <q-btn class="q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation ? selectedVariation.id : product.id === obj.id)" @click="addToWishlist" color="accent" label="Remove from wishlist" icon="favorite" />
-        <q-btn class="q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist" color="accent" label="Add to wishlist" icon="favorite_border" />
+        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation ? selectedVariation.id : product.id === obj.id)" @click="addToWishlist" color="accent" label="Remove from wishlist" icon="favorite" />
+        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist" color="accent" label="Add to wishlist" icon="favorite_border" />
         </div>
       </div>
     </div>
