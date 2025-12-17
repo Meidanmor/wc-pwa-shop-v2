@@ -17,9 +17,36 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
             "frame-src https://accounts.google.com;"
         )
 
-        render({req, res})
-            .then(html => res.send(html))
-            .catch(err => {
+const ssrContext = {
+  req,
+  res,
+  _meta: {} // Quasar often expects this
+}
+
+render(ssrContext)
+  .then(html => {
+    // DEBUG: See what Quasar did to our object
+    console.log('--- Context Keys:', Object.keys(ssrContext))
+
+    // If seoData is missing here, preFetch didn't run or didn't receive this object
+    const data = ssrContext.seoData || { debug: 'Data missing from context' }
+
+    // Inject REAL meta tags for the Server (Bots/Google)
+const seoTags = `
+      <title>${data.title}</title>
+      <meta name="description" content="${data.description}">
+      <meta property="og:type" content="website">
+      <meta property="og:title" content="${data.title}">
+      <meta property="og:description" content="${data.description}">
+      ${data.image ? `<meta property="og:image" content="${data.image}">` : ''}
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:title" content="${data.title}">
+      <meta name="twitter:description" content="${data.description}">
+      <script>window.__SEO_DATA__ = ${JSON.stringify(data)}</script>
+    `
+      res.send(html.replace('</head>', `${seoTags}</head>`))
+  })
+    .catch(err => {
                 if (err.url) {
                     if (err.code) res.redirect(err.code, err.url)
                     else res.redirect(err.url)

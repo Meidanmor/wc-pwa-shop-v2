@@ -40,9 +40,7 @@
 <section ref="productSection" class="featured-products">
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
-    <div v-if="!isHydrated" style="min-height: 500px" class="carousel-skeleton">
 
-    </div>
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
       :key="carouselKey"
@@ -57,7 +55,7 @@
       height="100%"
       control-color="primary"
       class="rounded-borders"
-      v-else
+      v-if="carouselReady"
     >
       <q-carousel-slide
         v-for="(slideGroup, index) in slideChunks"
@@ -230,7 +228,7 @@
   </div>
 </template>
 
-<script async setup>
+<script setup>
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
 import cart from 'src/stores/cart'
@@ -241,32 +239,48 @@ import productsStore from 'src/stores/products'
 const scrollToProducts = () => {}
 defineExpose({ scrollToProducts })
 
-const seo = await fetchSeoForPath('homepage')
-useMeta(() => ({
-  title: seo.title || 'NaturaBloom',
-  meta: {
-    description: {
-      name: 'description',
-      content: seo.description || "Let's Bloom Together"
-    },
-    'og:title': {
-      property: 'og:title',
-      content: seo.title || 'NaturaBloom'
-    },
-    'og:description': {
-      property: 'og:description',
-      content: seo.description || "Let's Bloom Together"
+// ----------------- SEO -----------------
+
+// Inside your Page or Layout
+defineOptions({
+  async preFetch ({ ssrContext, currentRoute }) {
+    console.log('--- PreFetch Running for:', currentRoute.path)
+    const seo = await fetchSeoForPath('homepage')
+    if (ssrContext) {
+      ssrContext.seoData = seo
     }
   }
-}))
+})
 
-const products = productsStore.products
+// This only runs in the browser
+if (process.env.CLIENT) {
+  const seo = window.__SEO_DATA__
+  useMeta(() => ({
+    title: seo.title || 'NaturaBloom',
+    meta: {
+      description: {
+        name: 'description',
+        content: seo.description || "Let's Bloom Together"
+      },
+      'og:title': {
+        property: 'og:title',
+        content: seo.title || 'NaturaBloom'
+      },
+      'og:description': {
+        property: 'og:description',
+        content: seo.description || "Let's Bloom Together"
+      }
+    }
+  }))
+}
+//const products = productsStore.products
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref([])
 // --- computed version (reactive) ---
 const featuredProductsComputed = computed(() => {
-  if (!Array.isArray(products.value)) return []
-  return products.value.filter(p => p.id).slice(0, 6)
+  const list = productsStore.products.value
+  if (!Array.isArray(list)) return []
+  return list.filter(p => p.id).slice(0, 6)
 })
 
 // --- fill SSR payload first (if exists) ---
@@ -276,11 +290,11 @@ if (import.meta.env.SSR) {
 
 // --- helper to ensure SPA navigation works ---
 const hydrateFeaturedProducts = async () => {
-  if (productsStore.initialized.value && products.value.length) {
-    featuredProducts.value = products.value.filter(p => p.id).slice(0,6)
+  if (productsStore.initialized.value && productsStore.products.value.length) {
+    featuredProducts.value = productsStore.products.value.filter(p => p.id).slice(0, 6)
   } else {
     await productsStore.preFetchProducts()
-    featuredProducts.value = products.value.filter(p => p.id).slice(0,6)
+    featuredProducts.value = productsStore.products.value.filter(p => p.id).slice(0, 6)
   }
 }
 
@@ -326,6 +340,9 @@ const recomputeSlides = async (forceRemount = false) => {
   }
   slidesReady.value = true
 }
+
+const carouselReady = computed(() => slideChunks.value.length > 0)
+
 
 // ----------------- Testimonials & Instagram -----------------
 const avatarSVG =
@@ -377,7 +394,7 @@ onMounted(async () => {
   }
 
   await hydrateFeaturedProducts()
-  recomputeSlides(false)
+  await recomputeSlides(false)
 
   // Ensure SEO is up-to-date on client
   /*if (!seoData.value.title || !seoData.value.description) {

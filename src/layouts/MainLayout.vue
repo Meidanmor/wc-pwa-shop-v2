@@ -177,7 +177,7 @@
         <router-view :key="$route.fullPath" />
       </main>
     </q-page-container>
-    
+
   </q-layout>
 </template>
 
