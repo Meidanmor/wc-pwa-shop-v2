@@ -222,10 +222,6 @@ const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
 
-const initialSeo = {
-  title: 'Product',
-  description: 'product page'
-}
 
 // 🟢 Run on SSR only
 if (process.env.SERVER) {
@@ -243,19 +239,19 @@ if (process.env.SERVER) {
 
 const seo = await fetchSeoForPath(route.params.slug)
 useMeta(() => ({
-  title: seo.title || 'NaturaBloom',
+  title: seo.title || 'Product',
   meta: {
     description: {
       name: 'description',
-      content: seo.description || "Let's Bloom Together"
+      content: seo.description || "product page"
     },
     'og:title': {
       property: 'og:title',
-      content: seo.title || 'NaturaBloom'
+      content: seo.title || 'Product'
     },
     'og:description': {
       property: 'og:description',
-      content: seo.description || "Let's Bloom Together"
+      content: seo.description || "product page"
     }
   }
 }))
