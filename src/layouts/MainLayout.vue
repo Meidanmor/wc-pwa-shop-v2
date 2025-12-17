@@ -173,18 +173,11 @@
     <ai-assistant></ai-assistant>
 
     <q-page-container v-touch-pan.horizontal="onPan" v-touch-pan.mouse.horizontal="onPan">
-        <main>
-          <Suspense>
-            <template #default>
-              <router-view :key="$route.fullPath" />
-            </template>
-            <template #fallback>
-              <div class="q-pa-md">Loading...</div>
-            </template>
-          </Suspense>
-        </main>
+      <main>
+        <router-view :key="$route.fullPath" />
+      </main>
     </q-page-container>
-
+    
   </q-layout>
 </template>
 
