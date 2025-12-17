@@ -28,8 +28,8 @@
         src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
         srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
         sizes="(min-width: 768px) 50vw, 100vw"
-        width="950"
-        height="350"
+        width="300"
+        height="300"
         class="hero-img"
       />
     </div>
@@ -40,7 +40,9 @@
 <section ref="productSection" class="featured-products">
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
+    <div v-if="!isHydrated" style="min-height: 500px" class="carousel-skeleton">
 
+    </div>
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
       :key="carouselKey"
@@ -55,7 +57,7 @@
       height="100%"
       control-color="primary"
       class="rounded-borders"
-      v-if="isHydrated"
+      v-else
     >
       <q-carousel-slide
         v-for="(slideGroup, index) in slideChunks"

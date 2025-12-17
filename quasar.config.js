@@ -21,10 +21,15 @@ export default defineConfig((/* ctx */) => {
         connect-src 'self' https://nuxt.meidanm.com;
         font-src 'self' https://fonts.gstatic.com;
         frame-src https://accounts.google.com;
-      `
+  `,
+      head: `
+    <link rel="preconnect" href="https://nuxt.meidanm.com" crossorigin>
+    <link rel="dns-prefetch" href="https://nuxt.meidanm.com">
+     `
     },
     htmlVariablesRender: {
-      csp: (val) => val.replace(/\s+/g, ' ').trim()
+      csp: (val) => val.replace(/\s+/g, ' ').trim(),
+      head: (val) => val.trim()
     },
     boot: [
         { path: 'push', client: true } ,
