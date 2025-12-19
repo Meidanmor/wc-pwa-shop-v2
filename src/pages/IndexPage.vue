@@ -353,8 +353,6 @@ const recomputeSlides = async (forceRemount = false) => {
   slidesReady.value = true
 }
 
-const carouselReady = computed(() => slideChunks.value.length > 0)
-
 
 // ----------------- Testimonials & Instagram -----------------
 const avatarSVG =
