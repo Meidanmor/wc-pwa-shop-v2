@@ -9,7 +9,7 @@
         :key="order.id"
         :label="`Order #${order.number}`"
         :caption="`${order.date_created} | Status: ${order.status}`"
-        icon="shopping_bag"
+        :icon="matShoppingBag"
         header-class="text-primary text-bold"
         class="q-mb-sm"
         group="somegroup"
@@ -55,6 +55,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { matShoppingBag } from '@quasar/extras/material-icons'
 
 const orders = ref(null)
 const token = localStorage.getItem('jwt_token');

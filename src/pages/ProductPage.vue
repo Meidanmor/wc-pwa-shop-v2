@@ -110,7 +110,7 @@
 
         <!-- Quantity Selector -->
         <div v-if="product.is_in_stock" class="row items-center q-mb-md">
-          <q-btn flat round icon="remove" @click="decreaseQty" />
+          <q-btn flat round :icon="matRemove" @click="decreaseQty" />
           <q-input
             v-model.number="quantity"
             type="number"
@@ -118,7 +118,7 @@
             dense
             style="width: 60px; text-align: center"
           />
-          <q-btn flat round icon="add" @click="increaseQty" />
+          <q-btn flat round :icon="matAdd" @click="increaseQty" />
         </div>
 
         <q-btn
@@ -151,8 +151,8 @@
         <div v-else> Out of stock </div>
 
        <div class="full-width">
-        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation ? selectedVariation.id : product.id === obj.id)" @click="addToWishlist" color="accent" label="Remove from wishlist" icon="favorite" />
-        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist" color="accent" label="Add to wishlist" icon="favorite_border" />
+        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation ? selectedVariation.id : product.id === obj.id)" @click="addToWishlist" color="accent" label="Remove from wishlist" :icon="matFavorite" />
+        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist" color="accent" label="Add to wishlist" :icon="matFavoriteBorder" />
         </div>
       </div>
     </div>
@@ -185,7 +185,7 @@
           <q-btn
             round
             dense
-            icon="close"
+            :icon="matClose"
             color="white"
             text-color="black"
             class="absolute-top-right q-ma-sm z-top"
@@ -215,6 +215,7 @@ import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
+import { matFavoriteBorder, matFavorite, matAdd, matClose, matRemove } from '@quasar/extras/material-icons'
 
 const $q = useQuasar()
 const route = useRoute()

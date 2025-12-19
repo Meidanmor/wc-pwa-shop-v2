@@ -121,7 +121,7 @@
       <template #control>
         <q-carousel-control position="left" class="flex items-center">
           <q-btn
-            icon="chevron_left"
+            :icon="matChevronLeft"
             aria-label="Previous"
             flat
             round
@@ -132,7 +132,7 @@
         </q-carousel-control>
         <q-carousel-control position="right" class="flex items-center">
           <q-btn
-            icon="chevron_right"
+            :icon="matChevronRight"
             aria-label="Next"
             flat
             round
@@ -151,6 +151,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import cart from 'src/stores/cart'
 //import { fetchAllProducts } from 'src/boot/woocommerce'
+import { matChevronLeft, matChevronRight } from '@quasar/extras/material-icons'
+
 
 const props = defineProps({
   productId: Number,

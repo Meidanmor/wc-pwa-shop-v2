@@ -117,7 +117,7 @@
   <template #control>
     <q-carousel-control position="left" class="flex items-center">
       <q-btn
-        icon="chevron_left"
+        :icon="matChevronLeft"
         aria-label="Previous slide"
         flat
         round
@@ -129,7 +129,7 @@
 
     <q-carousel-control position="right" class="flex items-center">
       <q-btn
-        icon="chevron_right"
+        :icon="matChevronRight"
         aria-label="Next slide"
         flat
         round
@@ -177,7 +177,7 @@
               </svg>
             </q-avatar>
             <div class="text-subtitle1 q-mb-sm">{{ testimonial.name }}</div>
-            <q-icon name="format_quote" size="sm" class="text-grey-5" />
+            <q-icon :name="matFormatQuote" size="sm" class="text-grey-5" />
             <p class="text-body2">{{ testimonial.feedback }}</p>
           </q-card>
         </div>
@@ -234,6 +234,7 @@ import { useQuasar, useMeta } from 'quasar'
 import cart from 'src/stores/cart'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
+import { matChevronLeft, matChevronRight, matFormatQuote } from '@quasar/extras/material-icons'
 
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}

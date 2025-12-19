@@ -1,7 +1,7 @@
 <template>
   <q-btn
     label="Sign in with Google"
-    icon="login"
+    :icon="matLogin"
     color="primary"
     :loading="loading"
     @click="handleLogin"
@@ -11,6 +11,7 @@
 <script setup>
 import { ref, /*nextTick*/ } from "vue";
 //import { useRouter, useRoute } from "vue-router";
+import { matLogin } from '@quasar/extras/material-icons'
 
 // 🔒 Use environment variable in production
 const GOOGLE_CLIENT_ID =
