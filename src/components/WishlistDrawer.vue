@@ -19,7 +19,7 @@
             <q-btn label="Add to Cart" color="primary" @click="addToCart(product)" />
           </div>
         </router-link>
-        <q-btn class="absolute absolute-top-right" icon="close" flat @click.stop.prevent="removeFromWishlist(product.id)" />
+        <q-btn class="absolute absolute-top-right" :icon="matClose" flat @click.stop.prevent="removeFromWishlist(product.id)" />
 
       </div>
 
@@ -31,6 +31,7 @@
 <script setup>
 import { computed } from 'vue';
 import cart from 'src/stores/cart.js'
+import { matClose } from '@quasar/extras/material-icons'
 
 const wishlist = computed(() => cart.state.wishlist_items)
 const loading = computed(() => cart.state.loading.wishlist);

@@ -6,7 +6,7 @@
        <div class="flex">
      <!-- Desktop Navigation -->
           <q-toolbar-title class="nav-bar" v-if="$q.screen.gt.sm">
-            <router-link v-if="isSuperAdmin" to="/admin" class="text-h6 no-decoration"><q-icon name="admin_panel_settings" /> Go to Admin Panel</router-link>
+            <router-link v-if="isSuperAdmin" to="/admin" class="text-h6 no-decoration"><q-icon :name="matAdminPanelSettings" /> Go to Admin Panel</router-link>
             <router-link to="/" class="text-h6 no-decoration">My Shop</router-link>
             <router-link to="/products/" class="text-h6 no-decoration">Products</router-link>
             <router-link to="/cart/" class="text-h6 no-decoration">Cart</router-link>
@@ -15,19 +15,19 @@
           </q-toolbar-title>
 
           <!-- Mobile Menu Toggle -->
-          <q-btn flat dense icon="menu" aria-label="Open menu" v-if="$q.screen.lt.md" @click="mobileMenuDrawer = true" />
+          <q-btn flat dense :icon="matMenu" aria-label="Open menu" v-if="$q.screen.lt.md" @click="mobileMenuDrawer = true" />
 
        </div>
         <router-link to="/" aria-label="Navigate to home page" class="flex items-center q-mr-auto order-first">
           <svg width="180px" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 206.73 48"><text transform="translate(55 23.71)" style="fill:var(--q-secondary);font-family:ArialMT, Arial; font-size:26px; isolation:isolate;"><tspan x="0" y="0">NaturaBloom</tspan></text><text transform="translate(56 41.71)" style="fill:var(--q-secondary);font-family:ArialMT, Arial; font-size:12px; isolation:isolate;"><tspan x="0" y="0">Let</tspan><tspan x="16.68" y="0" style="letter-spacing:-.02em;">’</tspan><tspan x="19.13" y="0">s Bloom</tspan><tspan x="62.48" y="0" style="letter-spacing:-.02em;"> </tspan><tspan x="65.6" y="0" style="letter-spacing:-.11em;">T</tspan><tspan x="71.6" y="0">ogether</tspan></text><circle cx="24" cy="24" r="24" style="fill:#f3ece2;"/><path d="M24,10c6,10,6,18,0,28-6-10-6-18,0-28Z" style="fill:#a3c9a8;"/></svg>
         </router-link>
           <div>
-          <q-btn flat dense icon="favorite_border" aria-label="Add to wishlist" @click="toggleWishlistDrawer" class="q-ml-sm q-mr-sm">
+          <q-btn flat dense :icon="matFavoriteBorder" aria-label="Add to wishlist" @click="toggleWishlistDrawer" class="q-ml-sm q-mr-sm">
           <q-badge v-if="cart.state.wishlist_items && Object.keys(cart.state.wishlist_items).length > 0" floating color="red">{{ Object.keys(cart.state.wishlist_items).length }}</q-badge>
         </q-btn>
 
             <q-no-ssr>
-        <q-btn flat dense icon="shopping_cart" aria-label="View cart" @click="toggleCart">
+        <q-btn flat dense :icon="matShoppingCart" aria-label="View cart" @click="toggleCart">
           <q-badge v-if="cart.state.items_count > 0" floating color="red">{{ cart.state.items_count }}</q-badge>
         </q-btn>
               </q-no-ssr>
@@ -65,27 +65,27 @@
     </q-item>
 
             <q-item clickable v-ripple to="/" @click="mobileMenuDrawer = false">
-              <q-item-section avatar><q-icon name="home" /></q-item-section>
+              <q-item-section avatar><q-icon :name="matHome" /></q-item-section>
               <q-item-section>Home</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple to="/products/" @click="mobileMenuDrawer = false">
-              <q-item-section avatar><q-icon name="storefront" /></q-item-section>
+              <q-item-section avatar><q-icon :name="matStorefront" /></q-item-section>
               <q-item-section>Products</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple to="/cart/" @click="mobileMenuDrawer = false">
-              <q-item-section avatar><q-icon name="shopping_cart" /></q-item-section>
+              <q-item-section avatar><q-icon :name="matShoppingCart" /></q-item-section>
               <q-item-section>Cart</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple to="/checkout/" @click="mobileMenuDrawer = false">
-              <q-item-section avatar><q-icon name="receipt" /></q-item-section>
+              <q-item-section avatar><q-icon :name="matReceipt" /></q-item-section>
               <q-item-section>Checkout</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple to="/my-account/" @click="mobileMenuDrawer = false">
-              <q-item-section avatar><q-icon name="person" /></q-item-section>
+              <q-item-section avatar><q-icon :name="matPerson" /></q-item-section>
               <q-item-section>My Account</q-item-section>
             </q-item>
           </q-list>
@@ -140,10 +140,10 @@
           </div>
             <div v-if="item.prices">{{ item.prices.price }} {{ item.prices.currency_code }}</div>
             <div class="row items-center q-mt-xs">
-              <q-btn dense round icon="remove" @click="decrease(item.key)" :disable="item.quantity === 1" />
+              <q-btn dense round :icon="matRemove" @click="decrease(item.key)" :disable="item.quantity === 1" />
               <span class="q-mx-sm">{{ item.quantity }}</span>
-              <q-btn dense round icon="add" @click="increase(item.id)" />
-              <q-btn dense flat icon="close" @click="remove(item.key, item.remote_key)" class="q-ml-sm" />
+              <q-btn dense round :icon="matAdd" @click="increase(item.id)" />
+              <q-btn dense flat :icon="matClose" @click="remove(item.key, item.remote_key)" class="q-ml-sm" />
             </div>
           </div>
         </div>
@@ -174,7 +174,14 @@
 
     <q-page-container v-touch-pan.horizontal="onPan" v-touch-pan.mouse.horizontal="onPan">
       <main>
-        <router-view :key="$route.fullPath" />
+          <Suspense>
+            <template #default>
+              <router-view :key="$route.fullPath" />
+            </template>
+            <template #fallback>
+              <div class="q-pa-md">Loading...</div>
+            </template>
+          </Suspense>
       </main>
     </q-page-container>
 
@@ -188,6 +195,17 @@ import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
 import AiAssistant from "src/components/AiAssistant.vue";
 import { subscribeToWebPush } from 'src/boot/push'
+import { matShoppingCart,
+  matFavoriteBorder,
+  matMenu,
+  matHome,
+  matStorefront,
+  matReceipt,
+  matPerson,
+  matAdminPanelSettings,
+  matAdd,
+  matClose,
+  matRemove} from '@quasar/extras/material-icons'
 
 const permission = ref('default')
 const supported = ref(false)

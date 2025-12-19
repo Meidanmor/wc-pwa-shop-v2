@@ -237,7 +237,7 @@ if (process.env.SERVER) {
 }
 
 
-const seo = await fetchSeoForPath(route.params.slug)
+const seo = await fetchSeoForPath(`product/${route.params.slug}`)
 useMeta(() => ({
   title: seo.title || 'Product',
   meta: {

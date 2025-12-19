@@ -396,11 +396,6 @@ onMounted(async () => {
   await hydrateFeaturedProducts()
   await recomputeSlides(false)
 
-  // Ensure SEO is up-to-date on client
-  /*if (!seoData.value.title || !seoData.value.description) {
-    fetchSeoData('homepage')
-  }*/
-
   isHydrated.value = true
 })
 

@@ -9,7 +9,7 @@
   @click="visible = !visible"
 >
   <transition name="rotate-fade">
-    <q-icon class="absolute" :key="visible" :name="visible ? 'close' : 'chat'" />
+    <q-icon class="absolute" :key="visible" :name="visible ? matClose : matChat" />
   </transition>
 </q-btn>
     <!-- Chat Box -->
@@ -21,7 +21,7 @@
       <q-bar class="bg-primary text-white">
         <div class="text-subtitle2">AI Assistant</div>
         <q-space />
-        <q-btn dense flat icon="close" aria-label="Close chat" @click="visible = false;fab1 = false" />
+        <q-btn dense flat :icon="matClose" aria-label="Close chat" @click="visible = false;fab1 = false" />
       </q-bar>
 
 <q-scroll-area class="chat-scroll-area" ref="scrollRef" style="height: 250px;">
@@ -36,7 +36,7 @@
               class="q-mr-sm"
               v-if="msg.from === 'bot'"
             >
-              <q-icon name="smart_toy" />
+              <q-icon :name="matSmartToy" />
             </q-avatar>
             <div class="bubble">{{ msg.text }}</div>
           </div>
@@ -54,7 +54,7 @@
         class="q-pa-sm"
       >
         <template v-slot:append>
-          <q-btn flat round icon="send" @click="sendMessage" />
+          <q-btn flat round :icon="matSend" @click="sendMessage" />
         </template>
       </q-input>
     </q-card>
@@ -63,6 +63,7 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
+import { matClose, matChat, matSend, matSmartToy } from '@quasar/extras/material-icons'
 
 const messages = ref([])
 const input = ref('')
