@@ -41,6 +41,17 @@
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
 
+    <div v-if="!isHydrated" class="row justify-between q-col-gutter-md">
+       <div v-for="fp in featuredProducts.slice(0, 3)" :key="'static-'+fp.id" class="col-12 col-sm-6 col-md-4">
+          <q-card class="my-card">
+            <img :src="fp.images?.[0]?.src" width="300" height="300" />
+            <q-card-section>
+               <div class="text-h6">{{ fp.name }}</div>
+            </q-card-section>
+          </q-card>
+       </div>
+    </div>
+
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
       :key="carouselKey"
@@ -55,7 +66,7 @@
       height="100%"
       control-color="primary"
       class="rounded-borders"
-      v-if="carouselReady"
+      v-else
     >
       <q-carousel-slide
         v-for="(slideGroup, index) in slideChunks"
@@ -395,9 +406,23 @@ onMounted(async () => {
   }
 
   await hydrateFeaturedProducts()
-  await recomputeSlides(false)
+  // 3. DEFER the carousel initialization
+  // This is the magic part for PageSpeed
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(async () => {
+      await recomputeSlides(false);
+      isHydrated.value = true;
+    });
+  } else {
+    // Fallback for older browsers
+    setTimeout(async () => {
+      await recomputeSlides(false);
+      isHydrated.value = true;
+    }, 200);
+  }
+  //await recomputeSlides(false)
 
-  isHydrated.value = true
+  //isHydrated.value = true
 })
 
 watch(featuredProducts, () => recomputeSlides(true))
