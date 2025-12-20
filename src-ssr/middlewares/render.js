@@ -1,6 +1,15 @@
 // ssr-src/middlewares/render.js
 import { defineSsrMiddleware } from '#q-app/wrappers'
-
+// 1. Define the helper at the top of the file
+const escapeHTML = (str) => {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
 export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
     app.get(resolve.urlPath('*'), (req, res) => {
         res.setHeader('Content-Type', 'text/html')
@@ -25,25 +34,27 @@ const ssrContext = {
 
 render(ssrContext)
   .then(html => {
-    // DEBUG: See what Quasar did to our object
-    console.log('--- Context Keys:', Object.keys(ssrContext))
-
     // If seoData is missing here, preFetch didn't run or didn't receive this object
-    const data = ssrContext.seoData || { debug: 'Data missing from context' }
+    const data = ssrContext.state.seoData || { debug: 'Data missing from context' }
+
+      // Escape for tags
+    const safeTitle = escapeHTML(data.title || 'NaturaBloom');
+    const safeDesc = escapeHTML(data.description || "Let's Bloom Together");
+
+    // Escape for JSON (prevents </script> injection)
+    const safeJson = JSON.stringify(data).replace(/</g, '\\u003c');
 
     // Inject REAL meta tags for the Server (Bots/Google)
 const seoTags = `
-      <title>${data.title}</title>
-      <meta name="description" content="${data.description}">
+      <title>${safeTitle}</title>
+      <meta name="description" content="${safeDesc}">
       <meta property="og:type" content="website">
-      <meta property="og:title" content="${data.title}">
-      <meta property="og:description" content="${data.description}">
+      <meta property="og:title" content="${safeTitle}">
+      <meta property="og:description" content="${safeDesc}">
       ${data.image ? `<meta property="og:image" content="${data.image}">` : ''}
       <meta name="twitter:card" content="summary_large_image">
-      <meta name="twitter:title" content="${data.title}">
-      <meta name="twitter:description" content="${data.description}">
-      <script>window.__SEO_DATA__ = ${JSON.stringify(data)}</script>
-    `
+      <meta name="twitter:title" content="${safeTitle}">
+      <meta name="twitter:description" content="${safeDesc}">    `
       res.send(html.replace('</head>', `${seoTags}</head>`))
   })
     .catch(err => {

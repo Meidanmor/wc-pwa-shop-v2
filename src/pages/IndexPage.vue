@@ -247,19 +247,22 @@ defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.path)
     const seo = await fetchSeoForPath('homepage')
-    if (ssrContext) {
+    /*if (ssrContext) {
       ssrContext.seoData = seo
+    }*/
+    // 2. THIS creates window.__INITIAL_STATE__
+    // We attach it BEFORE render() completes
+    ssrContext.state = {
+      seoData: seo
     }
-    return { seo }
   }
 })
 
 // This only runs in the browser
 if (process.env.CLIENT) {
+  const seo = window.__INITIAL_STATE__.seoData
+
   useMeta(() => {
-    const seo = window.__SEO_DATA__
-    // If this is STILL undefined here, it means the Service Worker
-    // served a shell that is missing the script tag entirely.
     if (!seo) {
       console.warn('SSR Data missing from Window context');
       return {}
