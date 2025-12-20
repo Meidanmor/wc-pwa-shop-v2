@@ -55,9 +55,29 @@
       height="100%"
       control-color="primary"
       class="rounded-borders"
-      v-if="carouselReady"
     >
+      <q-carousel-slide v-if="featuredProducts.length === 0" name="loading" class="q-pa-none">
+        <div class="row justify-between q-col-gutter-md">
+          <div v-for="n in 3" :key="n"
+               class="col-12 col-sm-6 col-md-4"
+               :class="{ 'gt-xs': n === 2, 'gt-sm': n === 3 }">
+            <q-card class="my-card full-height">
+              <q-skeleton height="300px" square animation="fade" />
+              <q-card-section>
+                <q-skeleton type="text" height="32px" class="q-mb-sm" />
+                <q-skeleton type="text" width="40%" />
+              </q-card-section>
+              <q-card-actions>
+                <q-skeleton type="QBtn" width="100px" class="q-mr-sm" />
+                <q-skeleton type="QBtn" width="60px" />
+              </q-card-actions>
+            </q-card>
+          </div>
+        </div>
+      </q-carousel-slide>
+
       <q-carousel-slide
+          v-else
         v-for="(slideGroup, index) in slideChunks"
         :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p => p.id).join('-')}`"
         :name="index"
@@ -342,9 +362,6 @@ const recomputeSlides = async (forceRemount = false) => {
   slidesReady.value = true
 }
 
-const carouselReady = computed(() => slideChunks.value.length > 0)
-
-
 // ----------------- Testimonials & Instagram -----------------
 const avatarSVG =
   '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>'
@@ -470,6 +487,34 @@ watch(() => $q.screen.name, () => recomputeSlides(true))
 
 section.featured-products {
     min-height: 664px;
+}
+
+/* Match the Carousel height to your card dimensions across devices */
+:deep(.custom-height-carousel) {
+  /* Mobile: 1 card visible, taller because of stacked elements */
+  height: 540px !important;
+}
+
+@media (min-width: 600px) {
+  :deep(.custom-height-carousel) {
+    /* Tablet: 2 cards visible */
+    height: 520px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  :deep(.custom-height-carousel) {
+    /* Desktop: 3 cards visible */
+    height: 510px !important;
+  }
+}
+
+/* Hide extra skeletons on mobile/tablet to match your grid chunks */
+@media (max-width: 599px) {
+  .gt-xs { display: none !important; }
+}
+@media (max-width: 1023px) {
+  .gt-sm { display: none !important; }
 }
 
 .my-card img {
