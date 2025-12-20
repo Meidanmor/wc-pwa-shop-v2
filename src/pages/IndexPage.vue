@@ -286,6 +286,8 @@ defineOptions({
       // Initialize the state object if it doesn't exist
       ssrContext.state = ssrContext.state || {}
       ssrContext.state.seoData = seo
+      // INJECT PRODUCTS HERE:
+      ssrContext.state.productsData = productsStore.products.value
       ssrContext.state.seoData.image = 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png';
     }
   }
@@ -430,6 +432,12 @@ const getSlugFromPermalink = (permalink) =>
 
 // ----------------- Mounted -----------------
 onMounted(async () => {
+  // Check if we have injected data from the server
+  if (process.env.CLIENT && window.__INITIAL_STATE__?.productsData) {
+    productsStore.products.value = window.__INITIAL_STATE__.productsData
+    productsStore.initialized.value = true
+  }
+
   if (process.env.CLIENT && !seoData.value) {
     console.log('PWA Shell detected: Fetching SEO data from API...')
     try {
