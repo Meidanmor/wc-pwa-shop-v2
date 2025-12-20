@@ -41,27 +41,36 @@
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
 
-    <div v-if="!isHydrated" class="static-grid">
-      <div v-for="(item, index) in visibleStaticItems" :key="item.id" class="static-card-wrapper">
-        <a :href="'/product/' + getSlugFromPermalink(item.permalink)" class="static-card shadow-1">
-          <div class="image-container">
-            <img
-                :src="item.images?.[0]?.src"
-                :fetchpriority="index === 0 ? 'high' : 'auto'"
-                :loading="index === 0 ? 'eager' : 'lazy'"
-                class="static-img"
-                width="300"
-                height="300"
-            />
+    <div v-if="!isHydrated" class="static-grid container">
+      <div
+          v-for="(item, index) in visibleStaticItems"
+          :key="item.id"
+          class="static-card-wrapper"
+      >
+        <a :href="'/product/' + getSlugFromPermalink(item.permalink)" class="q-card my-card full-height shadow-2">
+          <img
+              :src="item.images?.[0]?.src"
+              width="300"
+              height="300"
+              :fetchpriority="index === 0 ? 'high' : 'auto'"
+              :loading="index === 0 ? 'eager' : 'lazy'"
+              style="object-fit: cover; width: 100%; height: 300px; display: block;"
+              :alt="item.name"
+          />
+
+          <div class="q-card__section q-card__section--vert">
+            <div class="text-h6 text-dark">{{ item.name }}</div>
+            <div class="text-subtitle2" v-html="item.price_html"></div>
           </div>
-          <div class="static-info q-pa-sm">
-            <div class="text-h6">{{ item.name }}</div>
-            <div class="text-subtitle2 text-primary" v-html="item.price_html"></div>
+
+          <div class="q-card__actions q-card__actions--horiz row q-pa-sm">
+            <div class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable q-focusable q-hoverable q-btn--dense">
+              <span class="q-btn__content">View</span>
+            </div>
           </div>
         </a>
       </div>
     </div>
-
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
         v-else
@@ -521,45 +530,60 @@ section.featured-products {
     min-height: 664px;
 }
 
-/* Container setup */
+/* Container must match the carousel's internal row padding */
 .static-grid {
   display: flex;
   flex-wrap: nowrap;
   gap: 16px;
-  width: 100%;
+  padding: 16px 0;
+  justify-content: center;
+  text-decoration: none;
 }
 
-/* Base Card Style (Mobile: 100% width) */
+/* Base wrapper - default Mobile (100% width) */
 .static-card-wrapper {
-  flex: 0 0 100%; /* Only 1 item fits the width */
+  flex: 0 0 100%;
+  max-width: 100%;
 }
 
-/* Hide 2nd and 3rd items on Mobile only */
+.static-card-wrapper a {
+  text-decoration: none; /* Removes underline from product name */
+  display: flex;
+  flex-direction: column;
+}
+
+/* MOBILE RULE: Only show 1 item */
 @media (max-width: 599px) {
   .static-card-wrapper:nth-child(n+2) {
     display: none;
   }
 }
 
-/* Tablet: Show 2 items (50% width each) */
+/* TABLET RULE: Show 2 items */
 @media (min-width: 600px) and (max-width: 1023px) {
   .static-card-wrapper {
-    flex: 0 0 calc(50% - 8px); /* 8px is half the gap */
+    flex: 0 0 calc(50% - 8px);
   }
-  /* Hide 3rd item on Tablet */
   .static-card-wrapper:nth-child(n+3) {
     display: none;
   }
 }
 
-/* Desktop: Show 3 items (33.3% width each) */
+/* DESKTOP RULE: Show 3 items */
 @media (min-width: 1024px) {
   .static-card-wrapper {
-    flex: 0 0 calc(33.33% - 11px); /* 11px accounts for gaps */
+    flex: 0 0 calc(33.333% - 11px);
   }
   .static-card-wrapper:nth-child(n+3) {
-    display: block; /* Ensure it's visible on desktop */
+    display: block;
   }
+}
+
+/* Match the QCard styling exactly */
+.static-grid .my-card {
+  border-radius: 4px;
+  background: #fff;
+  transition: box-shadow .28s cubic-bezier(.4,0,.2,1);
 }
 
 .my-card img {

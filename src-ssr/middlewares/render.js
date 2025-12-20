@@ -33,10 +33,18 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
 
         render(ssrContext)
             .then(html => {
-                // If seoData is missing here, preFetch didn't run or didn't receive this object
-                const data = ssrContext.state.seoData || {debug: 'Data missing from context'}
 
+                // 1. Safely extract state and seoData using fallbacks
+                const state = ssrContext.state || {};
+                const data = state.seoData || {}; // Fallback to empty object if missing
                 // 1. Check if the image exists and is a valid string
+                // 1. Stringify the guarded state object (which is at least {})
+
+                let stateScript = '';
+                if (Object.keys(state).length > 0) {
+                    const stringifiedState = JSON.stringify(state).replace(/</g, '\\u003c');
+                    stateScript = `<script>window.__INITIAL_STATE__ = ${stringifiedState}</script>`;
+                }
                 const hasHeroImage = data.image && typeof data.image === 'string' && data.image.length > 0;
 
                 // 2. Build the preload tag only if the condition is met
@@ -44,8 +52,6 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
                 const preloadTag = hasHeroImage
                     ? `<link rel="preload" as="image" href="${data.image}" fetchpriority="high">`
                     : '';
-                // Create a safe string for the INITIAL_STATE
-                const stateScript = `<script>window.__INITIAL_STATE__ = ${JSON.stringify(ssrContext.state).replace(/</g, '\\u003c')}</script>`
                 // Escape for tags
                 const safeTitle = escapeHTML(data.title || 'NaturaBloom');
                 const safeDesc = escapeHTML(data.description || "Let's Bloom Together");
