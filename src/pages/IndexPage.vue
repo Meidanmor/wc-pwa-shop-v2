@@ -250,6 +250,7 @@ defineOptions({
     if (ssrContext) {
       ssrContext.seoData = seo
     }
+    return { seo }
   }
 })
 
