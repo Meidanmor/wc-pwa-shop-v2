@@ -56,28 +56,8 @@
       control-color="primary"
       class="rounded-borders"
     >
-      <q-carousel-slide v-if="featuredProducts.length === 0" name="loading" class="q-pa-none">
-        <div class="row justify-between q-col-gutter-md">
-          <div v-for="n in 3" :key="n"
-               class="col-12 col-sm-6 col-md-4"
-               :class="{ 'gt-xs': n === 2, 'gt-sm': n === 3 }">
-            <q-card class="my-card full-height">
-              <q-skeleton height="300px" square animation="fade" />
-              <q-card-section>
-                <q-skeleton type="text" height="32px" class="q-mb-sm" />
-                <q-skeleton type="text" width="40%" />
-              </q-card-section>
-              <q-card-actions>
-                <q-skeleton type="QBtn" width="100px" class="q-mr-sm" />
-                <q-skeleton type="QBtn" width="60px" />
-              </q-card-actions>
-            </q-card>
-          </div>
-        </div>
-      </q-carousel-slide>
 
       <q-carousel-slide
-          v-else
         v-for="(slideGroup, index) in slideChunks"
         :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p => p.id).join('-')}`"
         :name="index"
@@ -275,28 +255,36 @@ defineOptions({
 
 // This only runs in the browser
 if (process.env.CLIENT) {
-  const seo = window.__SEO_DATA__
-  useMeta(() => ({
-    title: seo.title || 'NaturaBloom',
-    meta: {
-      description: {
-        name: 'description',
-        content: seo.description || "Let's Bloom Together"
-      },
-      'og:title': {
-        property: 'og:title',
-        content: seo.title || 'NaturaBloom'
-      },
-      'og:description': {
-        property: 'og:description',
-        content: seo.description || "Let's Bloom Together"
+  useMeta(() => {
+    const seo = window.__SEO_DATA__
+    // If this is STILL undefined here, it means the Service Worker
+    // served a shell that is missing the script tag entirely.
+    if (!seo) {
+      console.warn('SSR Data missing from Window context');
+      return {}
+    }
+    return {
+      title: seo.title || 'NaturaBloom',
+      meta: {
+        description: {
+          name: 'description',
+          content: seo.description || "Let's Bloom Together"
+        },
+        'og:title': {
+          property: 'og:title',
+          content: seo.title || 'NaturaBloom'
+        },
+        'og:description': {
+          property: 'og:description',
+          content: seo.description || "Let's Bloom Together"
+        }
       }
     }
-  }))
+  })
 }
 //const products = productsStore.products
 // --- featuredProducts prefilled SSR-safe ---
-const featuredProducts = ref([])
+const featuredProducts = ref(productsStore.products.value.slice(0, 6))
 // --- computed version (reactive) ---
 const featuredProductsComputed = computed(() => {
   const list = productsStore.products.value
