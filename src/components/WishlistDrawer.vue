@@ -1,5 +1,5 @@
 <template>
-    <q-scroll-area class="fit q-pa-sm">
+    <q-scroll-area v-if="isHydrated" class="fit q-pa-sm">
     <div v-if="loading" class="text-center q-my-md">
       <q-spinner />
     </div>
@@ -29,12 +29,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import cart from 'src/stores/cart.js'
 import { matClose } from '@quasar/extras/material-icons'
 
 const wishlist = computed(() => cart.state.wishlist_items)
 const loading = computed(() => cart.state.loading.wishlist);
+const isHydrated = ref(false)
 
 async function addToCart(p){
 cart.add(p.id, 1);
@@ -48,5 +49,8 @@ async function removeFromWishlist(id) {
     console.error('Error removing from wishlist:', err)
   }
 }
+onMounted(() => {
+  isHydrated.value = true // Vue is now fully in control of the DOM
+})
 
 </script>
