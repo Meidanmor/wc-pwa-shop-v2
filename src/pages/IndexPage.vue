@@ -41,8 +41,30 @@
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
 
+    <div v-if="!isHydrated" class="static-grid">
+      <div v-for="(item, index) in visibleStaticItems" :key="item.id" class="static-card-wrapper">
+        <a :href="'/product/' + getSlugFromPermalink(item.permalink)" class="static-card shadow-1">
+          <div class="image-container">
+            <img
+                :src="item.images?.[0]?.src"
+                :fetchpriority="index === 0 ? 'high' : 'auto'"
+                :loading="index === 0 ? 'eager' : 'lazy'"
+                class="static-img"
+                width="300"
+                height="300"
+            />
+          </div>
+          <div class="static-info q-pa-sm">
+            <div class="text-h6">{{ item.name }}</div>
+            <div class="text-subtitle2 text-primary" v-html="item.price_html"></div>
+          </div>
+        </a>
+      </div>
+    </div>
+
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
+        v-else
       :key="carouselKey"
       @touchstart.stop
       @mousedown.stop
@@ -247,6 +269,10 @@ defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.path)
     const seo = await fetchSeoForPath('homepage')
+
+    // 2. FETCH PRODUCTS (This was missing!)
+    await productsStore.preFetchProducts()
+
     if (ssrContext) {
       // Initialize the state object if it doesn't exist
       ssrContext.state = ssrContext.state || {}
@@ -309,6 +335,11 @@ const hydrateFeaturedProducts = async () => {
     featuredProducts.value = productsStore.products.value.filter(p => p.id).slice(0, 6)
   }
 }
+
+const visibleStaticItems = computed(() => {
+  // Pulls directly from the store we just populated in preFetch
+  return productsStore.products.value.slice(0, 3)
+})
 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
@@ -490,32 +521,45 @@ section.featured-products {
     min-height: 664px;
 }
 
-/* Match the Carousel height to your card dimensions across devices */
-:deep(.custom-height-carousel) {
-  /* Mobile: 1 card visible, taller because of stacked elements */
-  height: 540px !important;
+/* Container setup */
+.static-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  width: 100%;
 }
 
-@media (min-width: 600px) {
-  :deep(.custom-height-carousel) {
-    /* Tablet: 2 cards visible */
-    height: 520px !important;
-  }
+/* Base Card Style (Mobile: 100% width) */
+.static-card-wrapper {
+  flex: 0 0 100%; /* Only 1 item fits the width */
 }
 
-@media (min-width: 1024px) {
-  :deep(.custom-height-carousel) {
-    /* Desktop: 3 cards visible */
-    height: 510px !important;
-  }
-}
-
-/* Hide extra skeletons on mobile/tablet to match your grid chunks */
+/* Hide 2nd and 3rd items on Mobile only */
 @media (max-width: 599px) {
-  .gt-xs { display: none !important; }
+  .static-card-wrapper:nth-child(n+2) {
+    display: none;
+  }
 }
-@media (max-width: 1023px) {
-  .gt-sm { display: none !important; }
+
+/* Tablet: Show 2 items (50% width each) */
+@media (min-width: 600px) and (max-width: 1023px) {
+  .static-card-wrapper {
+    flex: 0 0 calc(50% - 8px); /* 8px is half the gap */
+  }
+  /* Hide 3rd item on Tablet */
+  .static-card-wrapper:nth-child(n+3) {
+    display: none;
+  }
+}
+
+/* Desktop: Show 3 items (33.3% width each) */
+@media (min-width: 1024px) {
+  .static-card-wrapper {
+    flex: 0 0 calc(33.33% - 11px); /* 11px accounts for gaps */
+  }
+  .static-card-wrapper:nth-child(n+3) {
+    display: block; /* Ensure it's visible on desktop */
+  }
 }
 
 .my-card img {
