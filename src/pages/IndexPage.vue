@@ -258,12 +258,15 @@ defineOptions({
 // This only runs in the browser
 if (process.env.CLIENT) {
   useMeta(() => {
-    const seo = window.__INITIAL_STATE__.seoData
+// 1. Safely check for the state inside the reactive function
+    const state = window.__INITIAL_STATE__;
 
-    if (!seo) {
-      console.warn('SSR Data missing from Window context');
-      return {}
+    // 2. If state is missing, return nothing yet (prevents the crash)
+    if (!state || !state.seoData) {
+      return {};
     }
+
+    const seo = state.seoData;
     return {
       title: seo.title || 'NaturaBloom',
       meta: {
