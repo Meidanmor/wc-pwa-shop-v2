@@ -247,22 +247,19 @@ defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.path)
     const seo = await fetchSeoForPath('homepage')
-    /*if (ssrContext) {
-      ssrContext.seoData = seo
-    }*/
-    // 2. THIS creates window.__INITIAL_STATE__
-    // We attach it BEFORE render() completes
-    ssrContext.state = {
-      seoData: seo
+    if (ssrContext) {
+      // Initialize the state object if it doesn't exist
+      ssrContext.state = ssrContext.state || {}
+      ssrContext.state.seoData = seo
     }
   }
 })
 
 // This only runs in the browser
 if (process.env.CLIENT) {
-  const seo = window.__INITIAL_STATE__.seoData
-
   useMeta(() => {
+    const seo = window.__INITIAL_STATE__.seoData
+
     if (!seo) {
       console.warn('SSR Data missing from Window context');
       return {}
