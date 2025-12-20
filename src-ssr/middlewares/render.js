@@ -40,10 +40,6 @@ render(ssrContext)
       // Escape for tags
     const safeTitle = escapeHTML(data.title || 'NaturaBloom');
     const safeDesc = escapeHTML(data.description || "Let's Bloom Together");
-
-    // Escape for JSON (prevents </script> injection)
-    const safeJson = JSON.stringify(data).replace(/</g, '\\u003c');
-
     // Inject REAL meta tags for the Server (Bots/Google)
 const seoTags = `
       <title>${safeTitle}</title>
