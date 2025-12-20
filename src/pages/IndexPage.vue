@@ -251,6 +251,7 @@ defineOptions({
       // Initialize the state object if it doesn't exist
       ssrContext.state = ssrContext.state || {}
       ssrContext.state.seoData = seo
+      ssrContext.state.seoData.image = 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png';
     }
   }
 })

@@ -36,6 +36,14 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
                 // If seoData is missing here, preFetch didn't run or didn't receive this object
                 const data = ssrContext.state.seoData || {debug: 'Data missing from context'}
 
+                // 1. Check if the image exists and is a valid string
+                const hasHeroImage = data.image && typeof data.image === 'string' && data.image.length > 0;
+
+                // 2. Build the preload tag only if the condition is met
+                // We use fetchpriority="high" to match your <img> tag hints
+                const preloadTag = hasHeroImage
+                    ? `<link rel="preload" as="image" href="${data.image}" fetchpriority="high">`
+                    : '';
                 // Create a safe string for the INITIAL_STATE
                 const stateScript = `<script>window.__INITIAL_STATE__ = ${JSON.stringify(ssrContext.state).replace(/</g, '\\u003c')}</script>`
                 // Escape for tags
@@ -45,6 +53,7 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
                 const seoTags = `
       <title>${safeTitle}</title>
       <meta name="description" content="${safeDesc}">
+      ${preloadTag}
       <meta property="og:type" content="website">
       <meta property="og:title" content="${safeTitle}">
       <meta property="og:description" content="${safeDesc}">
