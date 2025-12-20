@@ -26,22 +26,23 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
             "frame-src https://accounts.google.com;"
         )
 
-const ssrContext = {
-  req,
-  res,
-  _meta: {} // Quasar often expects this
-}
+        const ssrContext = {
+            req,
+            res,
+        }
 
-render(ssrContext)
-  .then(html => {
-    // If seoData is missing here, preFetch didn't run or didn't receive this object
-    const data = ssrContext.state.seoData || { debug: 'Data missing from context' }
+        render(ssrContext)
+            .then(html => {
+                // If seoData is missing here, preFetch didn't run or didn't receive this object
+                const data = ssrContext.state.seoData || {debug: 'Data missing from context'}
 
-      // Escape for tags
-    const safeTitle = escapeHTML(data.title || 'NaturaBloom');
-    const safeDesc = escapeHTML(data.description || "Let's Bloom Together");
-    // Inject REAL meta tags for the Server (Bots/Google)
-const seoTags = `
+                // Create a safe string for the INITIAL_STATE
+                const stateScript = `<script>window.__INITIAL_STATE__ = ${JSON.stringify(ssrContext.state).replace(/</g, '\\u003c')}</script>`
+                // Escape for tags
+                const safeTitle = escapeHTML(data.title || 'NaturaBloom');
+                const safeDesc = escapeHTML(data.description || "Let's Bloom Together");
+                // Inject REAL meta tags for the Server (Bots/Google)
+                const seoTags = `
       <title>${safeTitle}</title>
       <meta name="description" content="${safeDesc}">
       <meta property="og:type" content="website">
@@ -51,9 +52,9 @@ const seoTags = `
       <meta name="twitter:card" content="summary_large_image">
       <meta name="twitter:title" content="${safeTitle}">
       <meta name="twitter:description" content="${safeDesc}">    `
-      res.send(html.replace('</head>', `${seoTags}</head>`))
-  })
-    .catch(err => {
+                res.send(html.replace('</head>', `${seoTags}${stateScript}</head>`))
+            })
+            .catch(err => {
                 if (err.url) {
                     if (err.code) res.redirect(err.code, err.url)
                     else res.redirect(err.url)
