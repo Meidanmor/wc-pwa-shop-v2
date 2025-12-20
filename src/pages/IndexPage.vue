@@ -255,32 +255,30 @@ defineOptions({
   }
 })
 
+const seoData = ref(null)
+
 // This only runs in the browser
 if (process.env.CLIENT) {
+  if (window.__INITIAL_STATE__?.seoData) {
+    seoData.value = window.__INITIAL_STATE__.seoData
+  }
+
   useMeta(() => {
-// 1. Safely check for the state inside the reactive function
-    const state = window.__INITIAL_STATE__;
-
-    // 2. If state is missing, return nothing yet (prevents the crash)
-    if (!state || !state.seoData) {
-      return {};
-    }
-
-    const seo = state.seoData;
+    const seo = seoData.value;
     return {
-      title: seo.title || 'NaturaBloom',
+      title: seo?.title || 'NaturaBloom',
       meta: {
         description: {
           name: 'description',
-          content: seo.description || "Let's Bloom Together"
+          content: seo?.description || "Let's Bloom Together"
         },
         'og:title': {
           property: 'og:title',
-          content: seo.title || 'NaturaBloom'
+          content: seo?.title || 'NaturaBloom'
         },
         'og:description': {
           property: 'og:description',
-          content: seo.description || "Let's Bloom Together"
+          content: seo?.description || "Let's Bloom Together"
         }
       }
     }
@@ -391,6 +389,16 @@ const getSlugFromPermalink = (permalink) =>
 
 // ----------------- Mounted -----------------
 onMounted(async () => {
+  if (process.env.CLIENT && !seoData.value) {
+    console.log('PWA Shell detected: Fetching SEO data from API...')
+    try {
+      // Use your existing fetch function
+      const data = await fetchSeoForPath('homepage')
+      seoData.value = data
+    } catch (e) {
+      console.error('PWA SEO fetch failed', e)
+    }
+  }
   // reveal hero immediately
   const img = document.querySelector('.hero-img');
   if (img.complete) {
