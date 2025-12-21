@@ -299,11 +299,10 @@ defineOptions({
 
     if (ssrContext) {
       // Initialize the state object if it doesn't exist
-      ssrContext.state = ssrContext.state || {}
-      ssrContext.state.seoData = seo
+      ssrContext.seoData = seo
       // INJECT PRODUCTS HERE:
-      ssrContext.state.productsData = productsStore.products.value
-      ssrContext.state.seoData.image = 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png';
+      ssrContext.productsData = productsStore.products.value
+      ssrContext.seoData.image = 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png';
     }
   }
 })
@@ -312,8 +311,8 @@ const seoData = ref(null)
 
 // This only runs in the browser
 if (process.env.CLIENT) {
-  if (window.__INITIAL_STATE__?.seoData) {
-    seoData.value = window.__INITIAL_STATE__.seoData
+  if (window.__SEO_DATA__) {
+    seoData.value = window.__SEO_DATA__
   }
 
   useMeta(() => {
@@ -448,8 +447,8 @@ const getSlugFromPermalink = (permalink) =>
 // ----------------- Mounted -----------------
 onMounted(async () => {
   // Check if we have injected data from the server
-  if (process.env.CLIENT && window.__INITIAL_STATE__?.productsData) {
-    productsStore.products.value = window.__INITIAL_STATE__.productsData
+  if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
+    productsStore.products.value = window.__PRODUCTS_DATA__
     productsStore.initialized.value = true
   }
 
