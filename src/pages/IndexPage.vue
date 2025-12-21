@@ -713,6 +713,70 @@ div.q-img__loading > svg{
   visibility: hidden;
 }
 
+/* HOMEPAGE DEFFERED CSS */
+.cta-section {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  height: 400px;
+  margin-bottom: 40px;
+  /*padding: 0;*/
+}
+.cta-section .container {
+  height: 100%;
+}
+
+.cta-overlay {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  background: linear-gradient(-45deg, #4c6e5d96, var(--q-primary), #4c6e5d96);
+  background-size: 600% 600%;
+  animation: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  padding: 40px 20px;
+  overflow: hidden;
+}
+
+.cta-overlay:after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: unset;
+    left: auto;
+    width: 400px;
+    height: 500px;
+    background: url(https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 50px;
+    bottom: -30%;
+    z-index: -1;
+    opacity: 0.5;
+    transform: translateY(50%);
+}
+.cta-overlay:before {
+  content: '';
+  background: var(--q-primary);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: auto;
+  max-width: 200px;
+  z-index: -1;
+  transition: 1s;
+}
+.cta-content {
+  max-width: 600px;
+  margin: 0 auto auto;
+  text-align: center;
+}
+
 .sustainability-section img {
   aspect-ratio: 946 / 473;
 }
