@@ -13,7 +13,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
-import { useQuasar } from 'quasar';
+import { useQuasar, useMeta } from 'quasar';
 import cart from "src/stores/cart.js";
 const $q = useQuasar();
 const isOnline = ref(true); // Assume online by default
@@ -21,6 +21,12 @@ watch(() => cart.state.offline, (off) => {
   isOnline.value = !off; // update banner
 });
 
+useMeta({
+  link: {
+    preconnect: {rel: 'preconnect', href: 'https://nuxt.meidanm.com', crossorigin: ''},
+    dnsPrefetch: {rel: 'dns-prefetch', href: 'https://nuxt.meidanm.com'}
+  }
+})
 
 onMounted(async () => {
   if (typeof navigator !== 'undefined') {

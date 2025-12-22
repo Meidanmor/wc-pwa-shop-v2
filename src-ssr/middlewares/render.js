@@ -26,51 +26,39 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
             "frame-src https://accounts.google.com;"
         )
 
-        const ssrContext = {
-            req,
-            res,
-        }
+const ssrContext = { req, res }
 
-        render(ssrContext)
-            .then(html => {
+render(ssrContext)
+  .then(html => {
+    const seoData = ssrContext.seoData || {};
+    const productsData = ssrContext.productsData || {};
 
-                // 1. Safely extract state and seoData using fallbacks
-                const state = ssrContext.state || {};
-                const data = state.seoData || {}; // Fallback to empty object if missing
-                // 1. Check if the image exists and is a valid string
-                // 1. Stringify the guarded state object (which is at least {})
+    const stateScripts = `
+      <script>window.__SEO_DATA__ = ${JSON.stringify(seoData).replace(/</g, '\\u003c')}</script>
+      <script>window.__PRODUCTS_DATA__ = ${JSON.stringify(productsData).replace(/</g, '\\u003c')}</script>
+    `;
 
-                let stateScript = '';
-      if (Object.keys(state).length > 0) {
-          const stringifiedState = JSON.stringify(state).replace(/</g, '\\u003c');
-          stateScript = `<script>window.__INITIAL_STATE__ = ${stringifiedState}</script>`;
-      }
-                const hasHeroImage = data.image && typeof data.image === 'string' && data.image.length > 0;
+    const safeTitle = escapeHTML(seoData.title || 'NaturaBloom');
+    const safeDesc = escapeHTML(seoData.description || "Let's Bloom Together");
 
-                // 2. Build the preload tag only if the condition is met
-                // We use fetchpriority="high" to match your <img> tag hints
-                const preloadTag = hasHeroImage
-                    ? `<link rel="preload" as="image" href="${data.image}" fetchpriority="high">`
-                    : '';
-                // Create a safe string for the INITIAL_STATE
-                // Escape for tags
-                const safeTitle = escapeHTML(data.title || 'NaturaBloom');
-                const safeDesc = escapeHTML(data.description || "Let's Bloom Together");
-                // Inject REAL meta tags for the Server (Bots/Google)
-                const seoTags = `
+    // Notice we do NOT include preconnects here.
+    // They will now come from Quasar via {{{ head }}}
+    const dynamicSeo = `
       <title>${safeTitle}</title>
       <meta name="description" content="${safeDesc}">
-      ${preloadTag}
-      <meta property="og:type" content="website">
-      <meta property="og:title" content="${safeTitle}">
-      <meta property="og:description" content="${safeDesc}">
-      ${data.image ? `<meta property="og:image" content="${data.image}">` : ''}
-      <meta name="twitter:card" content="summary_large_image">
-      <meta name="twitter:title" content="${safeTitle}">
-      <meta name="twitter:description" content="${safeDesc}">    `
-                res.send(html.replace('</head>', `${seoTags}${stateScript}</head>`))
-            })
-            .catch(err => {
+      ${seoData.image ? `<link rel="preload" as="image" href="${seoData.image}" fetchpriority="high">` : ''}
+      ${stateScripts}
+    `;
+
+    // SURGICAL REPLACEMENT:
+    // We remove the default title (to avoid duplicates) and inject our SEO.
+    const output = html
+      .replace(/<title>.*?<\/title>/i, '')
+      .replace('</head>', `${dynamicSeo}</head>`);
+
+    res.send(output);
+  })
+    .catch(err => {
                 if (err.url) {
                     if (err.code) res.redirect(err.code, err.url)
                     else res.redirect(err.url)
