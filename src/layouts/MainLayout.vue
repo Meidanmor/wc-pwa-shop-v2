@@ -172,9 +172,9 @@
     </q-drawer>
     <ai-assistant></ai-assistant>
 
-    <q-page-container v-touch-pan.horizontal="onPan" v-touch-pan.mouse.horizontal="onPan">
+    <q-page-container>
       <main>
-        <router-view :key="$route.fullPath" />
+        <router-view />
       </main>
     </q-page-container>
 
@@ -182,7 +182,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
@@ -210,6 +210,49 @@ const mobileMenuDrawer = ref(false)
 
 const wishlistDrawerOpen = ref(false)
 const cartDrawer = ref(false)
+
+let startX = 0
+let startY = 0
+let isDragging = false
+
+// 1. Logic for START (Touch or Mouse)
+const onStart = (x, y) => {
+  if (mobileMenuDrawer.value || cartDrawer.value || wishlistDrawerOpen.value) {
+    isDragging = false
+    return
+  }
+  startX = x
+  startY = y
+  isDragging = true
+}
+
+// 2. Logic for END (Touch or Mouse)
+const onEnd = (endX, endY) => {
+  if (!isDragging) return
+  isDragging = false
+
+  const dx = endX - startX
+  const absX = Math.abs(dx)
+
+  if (absX > 70) {
+    if (dx > 0) {
+      mobileMenuDrawer.value = true // Swipe Right
+    } else {
+      cartDrawer.value = true // Swipe Left
+    }
+  }
+}
+
+// --- EVENT WRAPPERS ---
+
+// Mobile Handlers
+const handleTouchStart = (e) => onStart(e.touches[0].clientX, e.touches[0].clientY)
+const handleTouchEnd = (e) => onEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY)
+
+// Desktop Handlers (Mouse)
+const handleMouseDown = (e) => onStart(e.clientX, e.clientY)
+const handleMouseUp = (e) => onEnd(e.clientX, e.clientY)
+
 const toggleCart = () => (cartDrawer.value = !cartDrawer.value)
 const toggleWishlistDrawer = () => (wishlistDrawerOpen.value = !wishlistDrawerOpen.value)
 
@@ -218,7 +261,7 @@ const increase = (id) => cart.increase(id, $q)
 const decrease = (id) => cart.decrease(id, $q)
 const remove = (itemKey=null, itemAPIkey=null) => cart.remove(itemKey,itemAPIkey, $q)
 
-function onPan(evt) {
+/*function onPan(evt) {
   if (evt.isFinal) {
     //if (evt.direction === 'right') cartDrawer.value = true
     const screenWidth = window.innerWidth
@@ -238,7 +281,7 @@ function onPan(evt) {
     }
     // Do NOT call evt.preventDefault() unless you want to block child interactions
   }
-}
+}*/
 
 async function handleSubscribe () {
   await subscribeToWebPush()
@@ -251,8 +294,19 @@ onMounted(() => {
     supported.value = true
     permission.value = Notification.permission
   }
+  window.addEventListener('touchstart', handleTouchStart)
+  window.addEventListener('touchend', handleTouchEnd)
+  // Desktop listeners
+  window.addEventListener('mousedown', handleMouseDown)
+  window.addEventListener('mouseup', handleMouseUp)
 })
-
+onUnmounted(() => {
+  // Critical cleanup
+  window.removeEventListener('touchstart', handleTouchStart)
+  window.removeEventListener('touchend', handleTouchEnd)
+  window.removeEventListener('mousedown', handleMouseDown)
+  window.removeEventListener('mouseup', handleMouseUp)
+})
 watch(() => cart.state.drawerOpen, val => {
   if(val === true) {
     cartDrawer.value = val;
