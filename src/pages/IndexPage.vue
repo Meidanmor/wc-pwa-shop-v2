@@ -41,8 +41,54 @@
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
 
+<div v-if="!isHydrated" class="static-carousel-container">
+  <div class="static-arrow-left">
+    <div class="q-btn q-btn--flat q-btn--round text-primary opacity-50">
+      <q-icon :name="matChevronLeft" />
+    </div>
+  </div>
+
+  <div class="static-grid-content q-pa-md">
+    <div class="row justify-between">
+      <div
+        v-for="(item, index) in visibleStaticItems"
+        :key="item.id"
+        class="q-card col-12 col-sm-6 col-md-4 static-card-wrapper"
+      >
+          <img
+            :src="item.images?.[0]?.src"
+            width="300"
+            height="300"
+            class="ssr-card-img"
+            :fetchpriority="index === 0 ? 'high' : 'auto'"
+          />
+          <div class="q-card__section q-card__section--vert">
+            <div class="text-h6 text-clamp-2">{{ item.name }}</div>
+            <div class="text-subtitle2" v-html="item.price_html"></div>
+          </div>
+          <div class="q-card__actions justify-start q-card__actions--horiz row">
+            <button @click="addToCart(item)" v-if="item.is_in_stock" class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-primary text-white q-btn--actionable q-focusable q-hoverable" tabindex="0" type="button"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">Add to Cart</span></span></button>
+            <div v-else>Out of stock</div>
+<a class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable q-focusable q-hoverable" tabindex="0" :href="'/product/' + getSlugFromPermalink(item.permalink)"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">View</span></span></a>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="static-arrow-right">
+    <div class="q-btn q-btn--flat q-btn--round text-primary opacity-50">
+      <q-icon :name="matChevronRight" />
+    </div>
+  </div>
+
+  <div class="static-nav-dots flex flex-center">
+    <div class="dummy-dot active"></div>
+    <div class="dummy-dot" v-for="n in 1" :key="n"></div>
+  </div>
+</div>
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
+        v-else
       :key="carouselKey"
       @touchstart.stop
       @mousedown.stop
@@ -293,11 +339,6 @@ if (process.env.CLIENT) {
 //const products = productsStore.products
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref(productsStore.products.value.slice(0, 6))
-if (process.env.CLIENT) {
-  if (window.__PRODUCTS_DATA__) {
-    featuredProducts.value = window.__PRODUCTS_DATA__
-  }
-}
 // --- computed version (reactive) ---
 const featuredProductsComputed = computed(() => {
   const list = productsStore.products.value
@@ -320,7 +361,10 @@ const hydrateFeaturedProducts = async () => {
   }
 }
 
-
+const visibleStaticItems = computed(() => {
+  // Pulls directly from the store we just populated in preFetch
+  return productsStore.products.value.slice(0, 3)
+})
 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
