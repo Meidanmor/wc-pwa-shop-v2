@@ -212,22 +212,20 @@ const wishlistDrawerOpen = ref(false)
 const cartDrawer = ref(false)
 
 let startX = 0
-let startY = 0
 let isDragging = false
 
 // 1. Logic for START (Touch or Mouse)
-const onStart = (x, y) => {
+const onStart = (x) => {
   if (mobileMenuDrawer.value || cartDrawer.value || wishlistDrawerOpen.value) {
     isDragging = false
     return
   }
   startX = x
-  startY = y
   isDragging = true
 }
 
 // 2. Logic for END (Touch or Mouse)
-const onEnd = (endX, endY) => {
+const onEnd = (endX) => {
   if (!isDragging) return
   isDragging = false
 
