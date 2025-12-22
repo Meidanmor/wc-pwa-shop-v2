@@ -33,7 +33,7 @@ export default defineConfig((/* ctx */) => {
     },
     boot: [
         { path: 'push', client: true } ,
-        { path: 'woocommerce', client: true } ,
+        //{ path: 'woocommerce', client: true } ,
         { path: 'products' } ,
       { path: 'deferred-css', client: true } ,
     ],
@@ -84,7 +84,7 @@ export default defineConfig((/* ctx */) => {
       // viteVuePluginOptions: {},
 
       cssCodeSplit: true,
-      //preloadChunks: true,   // ensures critical JS is preloaded
+      preloadChunks: true,   // ensures critical JS is preloaded
       polyfills: {
         coreJs: false        // PWA modern browsers don't need heavy polyfills
       },
