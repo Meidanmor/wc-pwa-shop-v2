@@ -1,12 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/server.js",
-      "use": "@vercel/node"
+  "functions": {
+    "api/server.js": {
+      "runtime": "nodejs20.x",
+      "includeFiles": "dist/ssr/**"
     }
-  ],
+  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "api/server.js" }
+    { "source": "/(.*)", "destination": "/api/server.js" }
   ]
 }
