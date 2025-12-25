@@ -1,5 +1,5 @@
 <template>
-  <div class="container" v-if="product">
+  <div class="container" v-if="product != null && product != ''">
     <div class="q-pa-md row q-col-gutter-lg">
       <!-- Product Images -->
       <div class="col-12 col-md-6">
@@ -17,6 +17,7 @@
             infinite
             transition-prev="slide-right"
             transition-next="slide-left"
+              :navigation-icon="matLens"
           >
             <q-carousel-slide
               v-for="(img, index) in product.images"
@@ -207,7 +208,7 @@
   </div>
 </template>
 
-<script setup async>
+<script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
@@ -215,7 +216,8 @@ import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
-import { matFavoriteBorder, matFavorite, matAdd, matClose, matRemove } from '@quasar/extras/material-icons'
+import productsStore from 'src/stores/products'
+import { matFavoriteBorder, matFavorite, matAdd, matClose, matRemove, matLens } from '@quasar/extras/material-icons'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -225,37 +227,47 @@ const quantity = ref(1)
 
 
 // 🟢 Run on SSR only
-if (process.env.SERVER) {
-  try {
-    const res = await fetch('/data/products.json')
-    const products = await res.json()
-    product.value = products.find(p => getSlugFromPermalink(p.permalink) === route.params.slug)
-
-  } catch (err) {
-    console.error('[SEO Fetch Error]', err)
-  }
-
-}
-
-
-const seo = await fetchSeoForPath(`product/${route.params.slug}`)
-useMeta(() => ({
-  title: seo.title || 'Product',
-  meta: {
-    description: {
-      name: 'description',
-      content: seo.description || "product page"
-    },
-    'og:title': {
-      property: 'og:title',
-      content: seo.title || 'Product'
-    },
-    'og:description': {
-      property: 'og:description',
-      content: seo.description || "product page"
+// Inside your Page or Layout
+defineOptions({
+  async preFetch ({ ssrContext, currentRoute }) {
+    console.log('--- PreFetch Running for:', currentRoute.path)
+    const seo = await fetchSeoForPath(currentRoute.path)
+    if (ssrContext) {
+      // Initialize the state object if it doesn't exist
+      ssrContext.seoData = seo
     }
   }
-}))
+})
+
+const seoData = ref(null)
+
+// This only runs in the browser
+if (process.env.CLIENT) {
+  if (window.__SEO_DATA__) {
+    seoData.value = window.__SEO_DATA__
+  }
+
+  useMeta(() => {
+    const seo = seoData.value;
+    return {
+      title: seo?.title || 'NaturaBloom',
+      meta: {
+        description: {
+          name: 'description',
+          content: seo?.description || "Let's Bloom Together"
+        },
+        'og:title': {
+          property: 'og:title',
+          content: seo?.title || 'NaturaBloom'
+        },
+        'og:description': {
+          property: 'og:description',
+          content: seo?.description || "Let's Bloom Together"
+        }
+      }
+    }
+  })
+}
 
 // Log for debugging
 if (process.env.SERVER) {
@@ -386,9 +398,13 @@ const getSlugFromPermalink = (permalink) => {
 }
 
 async function fetchProduct(slug) {
-  const res = await fetch('/data/products.json')
-  const products = await res.json()
+  if(!productsStore.products.value.length) {
+    await productsStore.preFetchProducts()
+  }
+  const products = productsStore.products.value;
   product.value = products.find(p => getSlugFromPermalink(p.permalink) === slug)
+  console.log(products)
+  console.log(product.value)
   console.log('Product Value Before', product.value);
 
   if(!product.value?.categories.length) {
@@ -524,18 +540,38 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
   console.log(wishlistAdded.value);
 }
 onMounted(async() => {
-    if (process.env.CLIENT) {
-      await fetchProduct(route.params.slug);
-      await fetchWishlistData()
+  if (process.env.CLIENT) {
+    console.log('PWA Shell detected: Fetching SEO data from API...')
+    try {
+      // Use your existing fetch function
+      const data = await fetchSeoForPath(`product/${route.params.slug}`)
+      seoData.value = data
+    } catch (e) {
+      console.error('PWA SEO fetch failed', e)
     }
+  }
+
+  if (process.env.CLIENT) {
+    await fetchProduct(route.params.slug);
+    await fetchWishlistData()
+  }
 })
 
 watch(
   () => route.params.slug,
   async (newSlug, oldSLug) => {
-  if(newSlug != oldSLug){
-    product.value = '';
-    await fetchProduct(newSlug)
+    if (newSlug != oldSLug) {
+      product.value = '';
+
+      try {
+        // Use your existing fetch function
+        const data = await fetchSeoForPath(`product/${newSlug}`)
+        seoData.value = data
+      } catch (e) {
+        console.error('PWA SEO fetch failed', e)
+      }
+
+      await fetchProduct(newSlug)
     }
   }
 )

@@ -41,51 +41,7 @@
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
 
-<div v-if="!isHydrated" class="static-carousel-container">
-  <div class="static-arrow-left">
-    <div class="q-btn q-btn--flat q-btn--round text-primary opacity-50">
-      <q-icon :name="matChevronLeft" />
-    </div>
-  </div>
-
-  <div class="static-grid-content q-pa-md">
-    <div class="row justify-between">
-      <div
-        v-for="(item, index) in visibleStaticItems"
-        :key="item.id"
-        class="q-card col-12 col-sm-6 col-md-4 static-card-wrapper"
-      >
-          <img
-            :src="item.images?.[0]?.src"
-            width="300"
-            height="300"
-            class="ssr-card-img"
-            :fetchpriority="index === 0 ? 'high' : 'auto'"
-          />
-          <div class="q-card__section q-card__section--vert">
-            <div class="text-h6 text-clamp-2">{{ item.name }}</div>
-            <div class="text-subtitle2" v-html="item.price_html"></div>
-          </div>
-          <div class="q-card__actions justify-start q-card__actions--horiz row">
-            <button @click="addToCart(item)" v-if="item.is_in_stock" class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-primary text-white q-btn--actionable q-focusable q-hoverable" tabindex="0" type="button"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">Add to Cart</span></span></button>
-            <div v-else>Out of stock</div>
-<a class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable q-focusable q-hoverable" tabindex="0" :href="'/product/' + getSlugFromPermalink(item.permalink)"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">View</span></span></a>
-          </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="static-arrow-right">
-    <div class="q-btn q-btn--flat q-btn--round text-primary opacity-50">
-      <q-icon :name="matChevronRight" />
-    </div>
-  </div>
-
-  <div class="static-nav-dots flex flex-center">
-    <div class="dummy-dot active"></div>
-    <div class="dummy-dot" v-for="n in 1" :key="n"></div>
-  </div>
-</div>
+    <div v-if="!isHydrated" class="q-carousel q-panel-parent q-carousel--without-padding q-carousel--navigation-bottom rounded-borders" style="height: 100%;"><div class="q-carousel__slides-container"><div class="q-panel scroll" role="tabpanel" style="--q-transition-duration: 300ms;"><div data-v-2373a833="" class="q-carousel__slide"><div data-v-2373a833="" class="row justify-between"><div data-v-2373a833="" class="col-12 col-sm-6 col-md-4"><div data-v-2373a833="" class="q-card my-card full-height"><img data-v-2373a833="" width="300" height="300" src="https://nuxt.meidanm.com/wp-content/uploads/2025/05/organic-rosehip-facial-serum.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/05/organic-rosehip-facial-serum.png 500w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/organic-rosehip-facial-serum-200x300.png 200w" sizes="(max-width: 500px) 100vw, 500px" alt="Organic Rosehip Facial Serum"><div data-v-2373a833="" class="q-card__section q-card__section--vert"><div data-v-2373a833="" class="text-h6">Organic Rosehip Facial Serum</div><div data-v-2373a833="" class="text-subtitle2"><del aria-hidden="true"><span class="woocommerce-Price-amount amount">120.00<span class="woocommerce-Price-currencySymbol">₪</span></span></del> <span class="screen-reader-text">Original price was: 120.00₪.</span><ins aria-hidden="true"><span class="woocommerce-Price-amount amount">85.00<span class="woocommerce-Price-currencySymbol">₪</span></span></ins><span class="screen-reader-text">Current price is: 85.00₪.</span></div></div><div data-v-2373a833="" class="q-card__actions justify-start q-card__actions--horiz row"><div data-v-2373a833="">Out of stock</div><a data-v-2373a833="" class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable q-focusable q-hoverable" tabindex="0" href="/product/organic-rosehip-facial-serum"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">View</span></span></a></div></div></div><div data-v-2373a833="" class="col-12 col-sm-6 col-md-4"><div data-v-2373a833="" class="q-card my-card full-height"><img data-v-2373a833="" width="300" height="300" src="https://nuxt.meidanm.com/wp-content/uploads/2025/05/bamboo-charcoal-detox-soap.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/05/bamboo-charcoal-detox-soap.png 1024w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/bamboo-charcoal-detox-soap-300x300.png 300w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/bamboo-charcoal-detox-soap-150x150.png 150w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/bamboo-charcoal-detox-soap-768x768.png 768w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/bamboo-charcoal-detox-soap-600x600.png 600w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/bamboo-charcoal-detox-soap-100x100.png 100w" sizes="(max-width: 1024px) 100vw, 1024px" alt="Bamboo Charcoal Detox Soap"><div data-v-2373a833="" class="q-card__section q-card__section--vert"><div data-v-2373a833="" class="text-h6">Bamboo Charcoal Detox Soap</div><div data-v-2373a833="" class="text-subtitle2"><del aria-hidden="true"><span class="woocommerce-Price-amount amount">35.00<span class="woocommerce-Price-currencySymbol">₪</span></span></del> <span class="screen-reader-text">Original price was: 35.00₪.</span><ins aria-hidden="true"><span class="woocommerce-Price-amount amount">29.90<span class="woocommerce-Price-currencySymbol">₪</span></span></ins><span class="screen-reader-text">Current price is: 29.90₪.</span></div></div><div data-v-2373a833="" class="q-card__actions justify-start q-card__actions--horiz row"><button data-v-2373a833="" class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-primary text-white q-btn--actionable q-focusable q-hoverable" tabindex="0" type="button"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">Add to Cart</span></span></button><a data-v-2373a833="" class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable q-focusable q-hoverable" tabindex="0" href="/product/bamboo-charcoal-detox-soap"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">View</span></span></a></div></div></div><div data-v-2373a833="" class="col-12 col-sm-6 col-md-4"><div data-v-2373a833="" class="q-card my-card full-height"><img data-v-2373a833="" width="300" height="300" src="https://nuxt.meidanm.com/wp-content/uploads/2025/05/reusable-organic-cotton-facial-rounds.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/05/reusable-organic-cotton-facial-rounds.png 1024w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/reusable-organic-cotton-facial-rounds-300x300.png 300w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/reusable-organic-cotton-facial-rounds-150x150.png 150w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/reusable-organic-cotton-facial-rounds-768x768.png 768w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/reusable-organic-cotton-facial-rounds-600x600.png 600w, https://nuxt.meidanm.com/wp-content/uploads/2025/05/reusable-organic-cotton-facial-rounds-100x100.png 100w" sizes="(max-width: 1024px) 100vw, 1024px" alt="Reusable Organic Cotton Facial Rounds"><div data-v-2373a833="" class="q-card__section q-card__section--vert"><div data-v-2373a833="" class="text-h6">Reusable Organic Cotton Facial Rounds</div><div data-v-2373a833="" class="text-subtitle2"><del aria-hidden="true"><span class="woocommerce-Price-amount amount">50.00<span class="woocommerce-Price-currencySymbol">₪</span></span></del> <span class="screen-reader-text">Original price was: 50.00₪.</span><ins aria-hidden="true"><span class="woocommerce-Price-amount amount">44.00<span class="woocommerce-Price-currencySymbol">₪</span></span></ins><span class="screen-reader-text">Current price is: 44.00₪.</span></div></div><div data-v-2373a833="" class="q-card__actions justify-start q-card__actions--horiz row"><div data-v-2373a833="">Out of stock</div><a data-v-2373a833="" class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable q-focusable q-hoverable" tabindex="0" href="/product/reusable-organic-cotton-facial-rounds"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">View</span></span></a></div></div></div></div></div></div></div><div class="q-carousel__control q-carousel__navigation no-wrap absolute flex q-carousel__navigation--buttons q-carousel__navigation--bottom text-primary"><div class="q-carousel__navigation-inner flex flex-center no-wrap"><button data-v-2373a833="" class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--round bg-primary text-white q-btn--actionable q-focusable q-hoverable q-btn--dense" tabindex="0" type="button" aria-label="Go to slide 1" style="font-size: 5px; padding: 0px;"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><i class="q-icon" aria-hidden="true" role="img"></i></span></button><button data-v-2373a833="" class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--round bg-primary text-white q-btn--actionable q-focusable q-hoverable q-btn--dense" tabindex="0" type="button" aria-label="Go to slide 2" style="font-size: 5px; padding: 0px;"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><i class="q-icon" aria-hidden="true" role="img"></i></span></button></div></div><div data-v-2373a833="" class="q-carousel__control absolute absolute-left flex items-center" style="margin: 18px;"><button data-v-2373a833="" class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--actionable q-focusable q-hoverable q-btn--dense" tabindex="0" type="button" aria-label="Previous slide"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><i class="q-icon" aria-hidden="true" role="img"><svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" style="fill: none;"></path><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg></i></span></button></div><div data-v-2373a833="" class="q-carousel__control absolute absolute-right flex items-center" style="margin: 18px;"><button data-v-2373a833="" class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--actionable q-focusable q-hoverable q-btn--dense" tabindex="0" type="button" aria-label="Next slide"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><i class="q-icon" aria-hidden="true" role="img"><svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" style="fill: none;"></path><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></i></span></button></div></div>
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
         v-else
@@ -362,8 +318,9 @@ const hydrateFeaturedProducts = async () => {
 }
 
 const visibleStaticItems = computed(() => {
+  const allProducts = productsStore.products.value;
   // Pulls directly from the store we just populated in preFetch
-  return productsStore.products.value.slice(0, 3)
+  return allProducts.slice(0, 3)
 })
 
 // ----------------- Setup -----------------
@@ -452,7 +409,7 @@ onMounted(async () => {
     productsStore.initialized.value = true
   }
 
-  if (process.env.CLIENT && !seoData.value) {
+  if (process.env.CLIENT) {
     console.log('PWA Shell detected: Fetching SEO data from API...')
     try {
       // Use your existing fetch function

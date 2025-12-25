@@ -17,25 +17,28 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     : (process.env.VUE_ROUTER_MODE === 'history' ? createWebHistory : createWebHashHistory)
 
   const Router = createRouter({
-    scrollBehavior:(to, from, savedPosition) => {
-      // If there's a saved position (like back/forward button), restore it
+    scrollBehavior: (to, from, savedPosition) => {
+      // 1. If user clicked "Back" or "Forward", restore exactly where they were
       if (savedPosition) {
         return savedPosition
       }
 
-      // If this is the first load (from.name is null/undefined), don't force scroll
-      if (!from.name) {
+      // 2. If we are navigating to the EXACT same path (e.g., just changing a query ?color=red)
+      // do not scroll to the top.
+      if (to.path === from.path) {
         return false
       }
 
-      // For regular navigations, scroll to top
-      return {left: 0, top: 0, behavior: 'smooth'}
+      // 3. For all other navigations (new links), scroll to top smoothly
+      // We use a Promise with a tiny timeout to ensure the new content
+      // has started rendering before we move the scrollbar.
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({ left: 0, top: 0, behavior: 'smooth' })
+        }, 50) // 50ms is usually enough to let Vue swap the component content
+      })
     },
     routes,
-
-    // Leave this as is and make changes in quasar.conf.js instead!
-    // quasar.conf.js -> build -> vueRouterMode
-    // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE)
   })
 

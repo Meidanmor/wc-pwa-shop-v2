@@ -30,6 +30,9 @@
             emit-value
             map-options
             clearable
+            :dropdown-icon="matArrowDropDown"
+            :loading-icon="matAutorenew"
+            :clear-icon="matClose"
           />
         </div>
 
@@ -107,7 +110,10 @@
             max-pages="6"
             boundary-numbers
             direction-links
+            :icon-prev="matKeyboardArrowLeft"
+            :icon-next="matKeyboardArrowRight"
             color="primary"
+            @update:model-value="scrollToTop"
         />
       </div>
 
@@ -115,13 +121,25 @@
   </div>
 </template>
 
-<script setup async>
+<script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
-import { useMeta } from 'quasar'
+import { useMeta, scroll } from 'quasar'
+import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
+import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose } from '@quasar/extras/material-icons'
 
+const { setVerticalScrollPosition } = scroll
+
+function scrollToTop() {
+  // Option A: Smooth scroll using Quasar utility (Best feel)
+  // window is the target, 0 is the position, 300 is the duration in ms
+  setVerticalScrollPosition(window, 187, 300)
+
+  // Option B: Instant jump (Fastest feel)
+  // window.scrollTo(0, 0)
+}
 // Refs and state
 const categories = ref([])
 const selectedCategory = ref(null)
@@ -129,25 +147,50 @@ const search = ref('')
 const currentPage = ref(1)
 const perPage = 6
 
-const seoData = ref({
-  title: 'Home page',
-  description: 'Home page description'
-});
-
 // Fetch SEO data during SSR
-async function fetchSeoData() {
-  try {
-    const res = await fetch(`https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent('shop')}`)
-    const json = await res.json()
-    console.log(json);
-    seoData.value = {
-      title: json.title,
-      description: json.description
+// 🟢 Run on SSR only
+// Inside your Page or Layout
+defineOptions({
+  async preFetch ({ ssrContext, currentRoute }) {
+    console.log('--- PreFetch Running for:', currentRoute.path)
+    const seo = await fetchSeoForPath('shop')
+    if (ssrContext) {
+      // Initialize the state object if it doesn't exist
+      ssrContext.seoData = seo
     }
-    console.log('[SSR] Fetched SEO:', json.title)
-  } catch (err) {
-    console.error('[SSR] SEO Fetch Error:', err)
   }
+})
+
+const seoData = ref({
+  title: 'Products',
+  description: 'Products description'
+});
+// This only runs in the browser
+if (process.env.CLIENT) {
+  if (window.__SEO_DATA__) {
+    seoData.value = window.__SEO_DATA__
+  }
+
+  useMeta(() => {
+    const seo = seoData.value;
+    return {
+      title: seo?.title || 'NaturaBloom',
+      meta: {
+        description: {
+          name: 'description',
+          content: seo?.description || "Let's Bloom Together"
+        },
+        'og:title': {
+          property: 'og:title',
+          content: seo?.title || 'NaturaBloom'
+        },
+        'og:description': {
+          property: 'og:description',
+          content: seo?.description || "Let's Bloom Together"
+        }
+      }
+    }
+  })
 }
 
 // Fetch categories
@@ -158,27 +201,8 @@ const isServer = import.meta.env.SSR
 const isClient = ref(false)
 
 if (isServer) {
-  await fetchSeoData()
-  await fetchCategories()
+  fetchCategories()
 }
-
-useMeta(() => ({
-  title: seoData.value.title,
-  meta: {
-    description: {
-      name: 'description',
-      content: seoData.value.description
-    },
-    'og:title': {
-      property: 'og:title',
-      content: seoData.value.title
-    },
-    'og:description': {
-      property: 'og:description',
-      content: seoData.value.description
-    }
-  }
-}))
 
 // Price filter
 const priceMin = ref(0)
@@ -199,27 +223,30 @@ const categoryOptions = computed(() =>
     }))
 )
 
-// Computed: filtered products
+// Computed: filtered products (Synchronous!)
 const filteredProducts = computed(() => {
-  return productsStore.products.value.filter((p) => {
+  // Access the value directly from the store
+  const allProducts = productsStore.products.value || []
+
+  return allProducts.filter((p) => {
+    // 1. Search Match
     const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
+
+    // 2. Category Match
     const matchCategory =
         !selectedCategory.value ||
-        p.categories.some((c) => c.id === selectedCategory.value) ||
-        p.extensions["mpress"].default_category?.id === selectedCategory.value ||
-        p.extensions["mpress"].default_category?.slug === selectedCategory.value
+        p.categories?.some((c) => c.id === selectedCategory.value) ||
+        p.extensions?.["mpress"]?.default_category?.id === selectedCategory.value ||
+        p.extensions?.["mpress"]?.default_category?.slug === selectedCategory.value
 
-    // 🚨 FIX: Determine the TRUE MIN and TRUE MAX price for the product
-    const pMin = parseFloat(p.prices.price_range?.min_amount || p.prices.price) / 100
-    const pMax = parseFloat(p.prices.price_range?.max_amount || p.prices.price) / 100
+    // 3. Price Logic
+    const pMin = parseFloat(p.prices?.price_range?.min_amount || p.prices?.price || 0) / 100
+    const pMax = parseFloat(p.prices?.price_range?.max_amount || p.prices?.price || 0) / 100
 
-    // The product price range (pMin to pMax) must OVERLAP with the selected range (priceRange.min to priceRange.max)
     const filterMin = priceRange.value.min
     const filterMax = priceRange.value.max
 
-    // An overlap exists if:
-    // 1. The product's lowest price is LESS THAN or equal to the filter's MAX, AND
-    // 2. The product's highest price is GREATER THAN or equal to the filter's MIN
+    // Overlap check
     const matchPrice = pMin <= filterMax && pMax >= filterMin
 
     return matchSearch && matchCategory && matchPrice
@@ -233,6 +260,8 @@ const totalPages = computed(() => {
 
 
 const paginatedProducts = computed(() => {
+  // Safety check: if filteredProducts isn't ready, return empty array
+  if (!filteredProducts.value) return []
   const start = (currentPage.value - 1) * perPage
   return filteredProducts.value.slice(start, start + perPage)
 })
@@ -257,6 +286,17 @@ watch(priceRange, (val) => {
 
 // Lifecycle
 onMounted(async() => {
+  if (process.env.CLIENT) {
+    console.log('PWA Shell detected: Fetching SEO data from API...')
+    try {
+      // Use your existing fetch function
+      const data = await fetchSeoForPath(`shop`)
+      seoData.value = data
+    } catch (e) {
+      console.error('PWA SEO fetch failed', e)
+    }
+  }
+
   await productsStore.fetchProductsIfNeeded()
 // 🚨 NEW FIX: Call the update function immediately after fetching data
   // This sets the correct min/max values for the initial page load.
@@ -264,80 +304,43 @@ onMounted(async() => {
 
   if (process.env.CLIENT) {
     isClient.value = true;
-    await fetchSeoData()
     await fetchCategories()
   }
 })
 
 // Function to recalculate price limits based on a product list
 const updatePriceLimits = (productsList) => {
-    if (!productsList || productsList.length === 0) {
-        priceMin.value = 0;
-        priceMax.value = 1000;
-        priceRange.value = { min: 0, max: 1000 };
-        return;
-    }
+    if (!productsList || productsList.length === 0) return;
 
-    // 1. Filter products based on category and search
-    const productsInCurrentCategory = productsList.filter(p => {
-        const matchCategory =
-            !selectedCategory.value ||
-            p.categories.some((c) => c.id === selectedCategory.value) ||
-            p.extensions["mpress"].default_category?.id === selectedCategory.value ||
-            p.extensions["mpress"].default_category?.slug === selectedCategory.value
-
-        const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
-
-        return matchCategory && matchSearch
+    // Filter to see what products are available in this cat/search
+    const available = productsList.filter(p => {
+        const matchCat = !selectedCategory.value || p.categories.some(c => c.id === selectedCategory.value);
+        const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase());
+        return matchCat && matchSearch;
     });
 
-    if (productsInCurrentCategory.length === 0) {
-        return;
-    }
+    if (available.length === 0) return;
 
-    // Map prices to raw float values
-    const pricesMaxList = productsInCurrentCategory.map((p) =>
-        parseFloat(
-            p.prices.price_range != null
-                ? p.prices.price_range.max_amount
-                : p.prices.price
-        ) / 100
-    )
+    const prices = available.flatMap(p => [
+        parseFloat(p.prices.price_range?.min_amount || p.prices.price) / 100,
+        parseFloat(p.prices.price_range?.max_amount || p.prices.price) / 100
+    ]);
 
-    const pricesMinList = productsInCurrentCategory.map((p) =>
-        parseFloat(
-            p.prices.price_range != null
-                ? p.prices.price_range.min_amount
-                : p.prices.price
-        ) / 100
-    )
+    const trueMin = Math.floor(Math.min(...prices));
+    const trueMax = Math.ceil(Math.max(...prices));
 
-    // Find the true minimum and maximum prices
-    const trueMin = Math.min(...pricesMinList);
-    const trueMax = Math.max(...pricesMaxList);
-
-    // 2. Set the displayed limits to the EXACT min/max price
-    // This addresses your requirement to display 30.00 if the lowest price is 30.00.
+    // Update the slider boundaries
     priceMin.value = trueMin;
     priceMax.value = trueMax;
 
-    // 3. Conditional Internal Buffer for Single Price Points
-
-    // If the range is zero or near-zero (due to floating point artifacts)
-    if (Math.abs(trueMax - trueMin) < 0.0000001) {
-        const buffer = 0.000001; // A buffer small enough to not affect display
-
-        // Apply the buffer to the slider's limits. This ensures the slider is usable.
-        priceMin.value = trueMin - buffer;
-        priceMax.value = trueMax + buffer;
-    }
-
-    // 4. Reset the priceRange model to the new bounds
-    priceRange.value = {min: priceMin.value, max: priceMax.value}
+    // Reset the handle positions to the full width
+    priceRange.value = { min: trueMin, max: trueMax };
 }
 
 // Watch the selected category and update limits
-watch(selectedCategory, () => {
+watch(selectedCategory, async() => {
+    await productsStore.fetchProductsIfNeeded()
+
     // When the category changes, recalculate limits based on the full product set
     updatePriceLimits(productsStore.products.value)
     // Also reset the current page to 1
@@ -345,7 +348,9 @@ watch(selectedCategory, () => {
 }, { immediate: true }) // immediate: true ensures it runs on initial load if selectedCategory has a default value
 
 // Watch the search filter as well, since it also narrows the possible price range
-watch(search, () => {
+watch(search, async() => {
+    await productsStore.fetchProductsIfNeeded()
+
     updatePriceLimits(productsStore.products.value)
     currentPage.value = 1
 })

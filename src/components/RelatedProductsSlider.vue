@@ -50,7 +50,7 @@
       animated
       infinite
       swipeable
-      arrows
+      :arrows="false"
       navigation
       control-color="primary"
       height="auto"
