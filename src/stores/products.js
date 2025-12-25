@@ -94,7 +94,7 @@ function initFromSSR() {
 
   // client hydration
   if (typeof window !== 'undefined') {
-    pre = window.__PRE_FETCH_PRODUCTS__ || []
+    pre = window.__PRODUCTS_DATA__ || []
   }
 
   if (Array.isArray(pre) && pre.length) {

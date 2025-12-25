@@ -57,17 +57,17 @@
               <img
                 width="300"
                 height="300"
-                :src="product.images[0]?.src"
-                :srcset="product.images[0]?.srcset"
-                :sizes="product.images[0]?.sizes"
-                :alt="product.name"
+                :src="product.images?.[0]?.src|| ''"
+                :srcset="product.images?.[0]?.srcset || ''"
+                :sizes="product.images?.[0]?.sizes || ''"
+                :alt="product?.name || ''"
               >
               <div class="q-card__section q-card__section--vert">
-                <div class="text-h6">{{ product.name }}</div>
-                <div class="text-subtitle2" v-html="product.price_html"></div>
+                <div class="text-h6">{{ product?.name }}</div>
+                <div class="text-subtitle2" v-html="product?.price_html"></div>
               </div>
               <div class="q-card__actions justify-start q-card__actions--horiz row">
-                <div v-if="!product.is_in_stock">Out of stock</div>
+                <div v-if="!product?.is_in_stock">Out of stock</div>
                 <button
                   v-else
                   class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-primary text-white q-btn--actionable"
@@ -80,7 +80,7 @@
 
                 <a
                   class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable"
-                  :href="`/product/${getSlugFromPermalink(product.permalink)}`"
+                  :href="`/product/${getSlugFromPermalink(product?.permalink || '')}`"
                 >
                   <span class="q-btn__content text-center col items-center justify-center row">
                     <span class="block">View</span>
@@ -397,8 +397,9 @@ const hydrateFeaturedProducts = async () => {
 
 const visibleStaticItems = computed(() => {
   const allProducts = productsStore.products.value || [];
-  // Take at least 3 to cover the largest desktop view
-  return allProducts.slice(0, 3);
+  // If we have products, take 3.
+  // If not, return 3 empty objects (we handle the missing properties in the template)
+  return allProducts.length >= 3 ? allProducts.slice(0, 3) : [{}, {}, {}];
 });
 
 // ----------------- Setup -----------------
