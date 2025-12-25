@@ -317,11 +317,11 @@ const hydrateFeaturedProducts = async () => {
   }
 }
 
-const visibleStaticItems = computed(() => {
+/*const visibleStaticItems = computed(() => {
   const allProducts = productsStore.products.value;
   // Pulls directly from the store we just populated in preFetch
   return allProducts.slice(0, 3)
-})
+})*/
 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
