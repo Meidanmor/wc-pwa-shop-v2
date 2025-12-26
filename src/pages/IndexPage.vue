@@ -94,17 +94,6 @@
     </div>
   </div>
 
-  <div class="q-carousel__control q-carousel__navigation no-wrap absolute flex q-carousel__navigation--buttons q-carousel__navigation--bottom text-primary">
-    <div class="q-carousel__navigation-inner flex flex-center no-wrap">
-      <button class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--round bg-primary text-white q-btn--dense" style="font-size: 5px; padding: 0px;">
-        <span class="q-btn__content text-center col items-center justify-center row"><i class="q-icon"></i></span>
-      </button>
-      <button class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--round bg-primary text-white q-btn--dense" style="font-size: 5px; padding: 0px; opacity: 0.3;">
-        <span class="q-btn__content text-center col items-center justify-center row"><i class="q-icon"></i></span>
-      </button>
-    </div>
-  </div>
-
   <div class="q-carousel__control absolute absolute-left flex items-center" style="margin: 18px;">
     <button class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--dense" type="button">
       <span class="q-btn__content text-center col items-center justify-center row">
