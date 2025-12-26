@@ -41,13 +41,7 @@ render(ssrContext)
       const safeTitle = escapeHTML(seoData.title || 'NaturaBloom');
       const safeDesc = escapeHTML(seoData.description || "Let's Bloom Together");
 
-      // Re-adding the resource hints for your API/Backend domain
-      const resourceHints = `
-          <link rel="preconnect" href="https://nuxt.meidanm.com">
-          <link rel="dns-prefetch" href="https://nuxt.meidanm.com">
-        `;
-
-      const dynamicSeo = `${resourceHints}
+      const dynamicSeo = `
       <title>${safeTitle}</title>
       <meta name="description" content="${safeDesc}">
       ${seoData.image ? `<link rel="preload" as="image" href="${seoData.image}" fetchpriority="high">` : ''}
