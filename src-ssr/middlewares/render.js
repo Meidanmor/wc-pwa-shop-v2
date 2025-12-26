@@ -30,33 +30,37 @@ const ssrContext = { req, res }
 
 render(ssrContext)
   .then(html => {
-    const seoData = ssrContext.seoData || {};
-    const productsData = ssrContext.productsData || {};
+      const seoData = ssrContext.seoData || {};
+      const productsData = ssrContext.productsData || {};
 
-    const stateScripts = `
+      const stateScripts = `
       <script>window.__SEO_DATA__ = ${JSON.stringify(seoData).replace(/</g, '\\u003c')}</script>
       <script>window.__PRODUCTS_DATA__ = ${JSON.stringify(productsData).replace(/</g, '\\u003c')}</script>
     `;
 
-    const safeTitle = escapeHTML(seoData.title || 'NaturaBloom');
-    const safeDesc = escapeHTML(seoData.description || "Let's Bloom Together");
+      const safeTitle = escapeHTML(seoData.title || 'NaturaBloom');
+      const safeDesc = escapeHTML(seoData.description || "Let's Bloom Together");
 
-    // Notice we do NOT include preconnects here.
-    // They will now come from Quasar via {{{ head }}}
-    const dynamicSeo = `
+      // Re-adding the resource hints for your API/Backend domain
+      const resourceHints = `
+          <link rel="preconnect" href="https://nuxt.meidanm.com">
+          <link rel="dns-prefetch" href="https://nuxt.meidanm.com">
+        `;
+
+      const dynamicSeo = `${resourceHints}
       <title>${safeTitle}</title>
       <meta name="description" content="${safeDesc}">
       ${seoData.image ? `<link rel="preload" as="image" href="${seoData.image}" fetchpriority="high">` : ''}
       ${stateScripts}
     `;
 
-    // SURGICAL REPLACEMENT:
-    // We remove the default title (to avoid duplicates) and inject our SEO.
-    const output = html
-      .replace(/<title>.*?<\/title>/i, '')
-      .replace('</head>', `${dynamicSeo}</head>`);
+      // SURGICAL REPLACEMENT:
+      // We remove the default title (to avoid duplicates) and inject our SEO.
+      const output = html
+          .replace(/<title>.*?<\/title>/i, '')
+          .replace('</head>', `${dynamicSeo}</head>`);
 
-    res.send(output);
+      res.send(output);
   })
     .catch(err => {
                 if (err.url) {
