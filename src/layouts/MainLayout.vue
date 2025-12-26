@@ -172,7 +172,7 @@
     </q-drawer>
     <ai-assistant></ai-assistant>
 
-    <q-page-container>
+    <q-page-container :style="isHydrated ? {} : { paddingTop: '58px' }">
       <main>
         <router-view />
       </main>
