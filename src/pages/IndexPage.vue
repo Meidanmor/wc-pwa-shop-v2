@@ -118,7 +118,7 @@
       v-model="slide"
       animated
       infinite
-      navigation
+      :navigation="false"
       swipeable
       :arrows="false"
       height="100%"
