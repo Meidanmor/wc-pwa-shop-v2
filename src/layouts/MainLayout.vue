@@ -26,11 +26,11 @@
           <q-badge v-if="isHydrated && cart.state.wishlist_items && Object.keys(cart.state.wishlist_items).length > 0" floating color="red">{{ Object.keys(cart.state.wishlist_items).length }}</q-badge>
         </q-btn>
 
-            <q-no-ssr>
         <q-btn flat dense :icon="matShoppingCart" aria-label="View cart" @click="toggleCart">
+          <q-no-ssr>
           <q-badge v-if="isHydrated && cart.state.items_count > 0" floating color="red">{{ cart.state.items_count }}</q-badge>
+          </q-no-ssr>
         </q-btn>
-              </q-no-ssr>
         </div>
       </q-toolbar>
      </div>
