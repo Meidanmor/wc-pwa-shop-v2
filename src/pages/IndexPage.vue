@@ -502,11 +502,11 @@ onMounted(async () => {
   const img = document.querySelector('.hero-img');
   if (img.complete) {
     document.querySelector('.hero-section-sec').classList.add('animate-bg');
-    document.querySelector('.cta-overlay').classList.add('animate-bg');
+    //document.querySelector('.cta-overlay').classList.add('animate-bg');
   } else {
     img.addEventListener('load', () => {
       document.querySelector('.hero-section-sec').classList.add('animate-bg');
-      document.querySelector('.cta-overlay').classList.add('animate-bg');
+      //document.querySelector('.cta-overlay').classList.add('animate-bg');
     });
   }
 
