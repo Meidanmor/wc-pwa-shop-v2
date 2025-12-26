@@ -19,7 +19,7 @@
     </div>
 
     <!-- LCP Image -->
-    <div class="lcp-wrapper col-12 col-md-6">
+    <div class="lcp-wrapper col-12 col-md-6 lcp-lock">
       <img
         fetchpriority="high"
         loading="eager"
@@ -29,7 +29,7 @@
         srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
         sizes="(min-width: 768px) 50vw, 100vw"
         width="300"
-        height="300"
+        height="200"
         class="hero-img"
       />
     </div>
@@ -477,16 +477,9 @@ onMounted(async () => {
     productsStore.initialized.value = true
   }
 
-  if (process.env.CLIENT) {
-    console.log('PWA Shell detected: Fetching SEO data from API...')
-    try {
-      // Use your existing fetch function
-      const data = await fetchSeoForPath('homepage')
-      seoData.value = data
-    } catch (e) {
-      console.error('PWA SEO fetch failed', e)
-    }
-  }
+  await nextTick();
+  isHydrated.value = true;
+
   // reveal hero immediately
   const img = document.querySelector('.hero-img');
   if (img.complete) {
@@ -502,7 +495,17 @@ onMounted(async () => {
   await hydrateFeaturedProducts()
   await recomputeSlides(false)
 
-  isHydrated.value = true
+  if (process.env.CLIENT) {
+    console.log('PWA Shell detected: Fetching SEO data from API...')
+    try {
+      // Use your existing fetch function
+      const data = await fetchSeoForPath('homepage')
+      seoData.value = data
+    } catch (e) {
+      console.error('PWA SEO fetch failed', e)
+    }
+  }
+
 })
 
 watch(featuredProducts, () => recomputeSlides(true))
