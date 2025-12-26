@@ -20,18 +20,18 @@
 
     <!-- LCP Image -->
     <div class="lcp-wrapper col-12 col-md-6 lcp-lock">
-      <img
-        fetchpriority="high"
-        loading="eager"
-        decoding="async"
-        alt="Homepage hero image"
-        src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
-        srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
-        sizes="(min-width: 768px) 50vw, 100vw"
-        width="300"
-        height="200"
-        class="hero-img"
-      />
+<img
+  fetchpriority="high"
+  loading="eager"
+  decoding="sync"
+  alt="Homepage hero image"
+  src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
+  srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
+  sizes="(min-width: 768px) 50vw, 100vw"
+  width="300"
+  height="200"
+  class="hero-img"
+/>
     </div>
   </div>
 </section>
@@ -325,7 +325,11 @@ defineOptions({
       ssrContext.seoData = seo
       // INJECT PRODUCTS HERE:
       ssrContext.productsData = productsStore.products.value
-      ssrContext.seoData.image = 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png';
+      ssrContext.heroData = {
+        src: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png',
+        srcset: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w',
+        sizes: '(min-width: 768px) 50vw, 100vw'
+      }
     }
   }
 })
@@ -492,18 +496,14 @@ onMounted(async () => {
     });
   }
 
-  await hydrateFeaturedProducts()
-  await recomputeSlides(false)
 
+  hydrateFeaturedProducts().then(() => recomputeSlides(false));
+
+  // Move SEO fetch here - NO AWAIT
   if (process.env.CLIENT) {
-    console.log('PWA Shell detected: Fetching SEO data from API...')
-    try {
-      // Use your existing fetch function
-      const data = await fetchSeoForPath('homepage')
-      seoData.value = data
-    } catch (e) {
-      console.error('PWA SEO fetch failed', e)
-    }
+    fetchSeoForPath('homepage').then(data => {
+      seoData.value = data;
+    }).catch(e => console.error(e));
   }
 
 })

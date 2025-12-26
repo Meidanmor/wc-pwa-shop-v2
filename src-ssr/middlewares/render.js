@@ -32,6 +32,7 @@ render(ssrContext)
   .then(html => {
       const seoData = ssrContext.seoData || {};
       const productsData = ssrContext.productsData || {};
+      const heroData = ssrContext.heroData || {}; // ✅ Catch the hero data
 
       const stateScripts = `
       <script>window.__SEO_DATA__ = ${JSON.stringify(seoData).replace(/</g, '\\u003c')}</script>
@@ -41,10 +42,21 @@ render(ssrContext)
       const safeTitle = escapeHTML(seoData.title || 'NaturaBloom');
       const safeDesc = escapeHTML(seoData.description || "Let's Bloom Together");
 
+      // ✅ Use the passed heroData for the preload tag
+      const heroPreload = heroData.src ? `
+        <link 
+          rel="preload" 
+          as="image" 
+          href="${heroData.src}" 
+          imagesrcset="${heroData.srcset}" 
+          imagesizes="${heroData.sizes}" 
+          fetchpriority="high"
+        >` : '';
+
       const dynamicSeo = `
       <title>${safeTitle}</title>
       <meta name="description" content="${safeDesc}">
-      ${seoData.image ? `<link rel="preload" as="image" href="${seoData.image}" fetchpriority="high">` : ''}
+      ${heroPreload}      
       ${stateScripts}
     `;
 
