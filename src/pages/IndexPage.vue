@@ -118,7 +118,7 @@
       v-model="slide"
       animated
       infinite
-      :navigation="false"
+      navigation
       swipeable
       :arrows="false"
       height="100%"
@@ -575,6 +575,10 @@ watch(() => $q.screen.name, () => recomputeSlides(true))
 
 section.featured-products {
     min-height: 664px;
+}
+
+.q-carousel {
+    padding-bottom: 30px;
 }
 
 /* Container Lock */
