@@ -60,7 +60,7 @@ export default defineConfig((/* ctx */) => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#build
     build: {
       target: {
-        browser: [ 'es2022', 'firefox115', 'chrome115', 'safari14' ],
+        browser: ['es2022', 'firefox115', 'chrome115', 'safari14'],
         node: 'node20'
       },
 
@@ -84,7 +84,7 @@ export default defineConfig((/* ctx */) => {
       // viteVuePluginOptions: {},
 
       cssCodeSplit: true,
-      preloadChunks: true,   // ensures critical JS is preloaded
+      preloadChunks: false,   // ensures critical JS is preloaded
       polyfills: {
         coreJs: false        // PWA modern browsers don't need heavy polyfills
       },
@@ -94,8 +94,24 @@ export default defineConfig((/* ctx */) => {
             lintCommand: 'eslint -c ./eslint.config.js "./src*/**/*.{js,mjs,cjs,vue}"',
             useFlatConfig: true
           }
-        }, { server: false }]
-      ]
+        }, {server: false}]
+      ],
+      extendViteConf(viteConf) {
+        viteConf.build.rollupOptions = {
+          output: {
+            manualChunks(id) {
+              // Group all Quasar components into one file instead of 30 tiny ones
+              if (id.includes('node_modules/quasar/')) {
+                return 'quasar-vendor';
+              }
+              // Group other heavy dependencies
+              if (id.includes('node_modules/vue/') || id.includes('node_modules/vue-router/')) {
+                return 'vue-vendor';
+              }
+            }
+          }
+        }
+      }
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver

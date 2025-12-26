@@ -23,7 +23,7 @@ watch(() => cart.state.offline, (off) => {
 
 useMeta({
   link: {
-    preconnect: {rel: 'preconnect', href: 'https://nuxt.meidanm.com'},
+    preconnect: {rel: 'preconnect', href: 'https://nuxt.meidanm.com', crossorigin: ''},
     dnsPrefetch: {rel: 'dns-prefetch', href: 'https://nuxt.meidanm.com'}
   }
 })
