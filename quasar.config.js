@@ -96,20 +96,25 @@ export default defineConfig((/* ctx */) => {
           }
         }, {server: false}]
       ],
-      extendViteConf(viteConf) {
-        viteConf.build.rollupOptions = {
-          output: {
-            manualChunks(id) {
-              // Group all Quasar components into one file instead of 30 tiny ones
-              if (id.includes('node_modules/quasar/')) {
-                return 'quasar-vendor';
-              }
-              // Group other heavy dependencies
-              if (id.includes('node_modules/vue/') || id.includes('node_modules/vue-router/')) {
-                return 'vue-vendor';
+      extendViteConf(viteConf, {isClient, isServer}) {
+        // ONLY apply manualChunks to the client build
+        if (isClient) {
+          viteConf.build.rollupOptions = {
+            ...viteConf.build.rollupOptions,
+            output: {
+              ...viteConf.build.rollupOptions?.output,
+              manualChunks(id) {
+                // Group all Quasar components into one file
+                if (id.includes('node_modules/quasar/')) {
+                  return 'quasar-vendor';
+                }
+                // Group Vue core libraries
+                if (id.includes('node_modules/vue/') || id.includes('node_modules/vue-router/')) {
+                  return 'vue-vendor';
+                }
               }
             }
-          }
+          };
         }
       }
     },
