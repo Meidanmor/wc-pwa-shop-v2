@@ -577,7 +577,8 @@ watch(() => $q.screen.name, () => recomputeSlides(true))
 }
 
 section.featured-products {
-    min-height: 664px;
+    /*min-height: 664px;*/
+    min-height: 900px;
 }
 
 .q-carousel {
