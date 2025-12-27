@@ -20,6 +20,18 @@
 
     <!-- LCP Image -->
     <div class="lcp-wrapper col-12 col-md-6 lcp-lock">
+<img
+  fetchpriority="high"
+  loading="eager"
+  decoding="sync"
+  alt="Homepage hero image"
+  src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
+  srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
+  sizes="(min-width: 768px) 50vw, 100vw"
+  width="300"
+  height="200"
+  class="hero-img"
+/>
     </div>
   </div>
 </section>
@@ -29,7 +41,7 @@
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
 
-<div class="q-carousel q-panel-parent q-carousel--without-padding q-carousel--navigation-bottom rounded-borders" style="height: 100%;">
+<div v-if="!isHydrated" class="q-carousel q-panel-parent q-carousel--without-padding q-carousel--navigation-bottom rounded-borders" style="height: 100%;">
   <div class="q-carousel__slides-container">
     <div class="q-panel scroll" role="tabpanel" style="--q-transition-duration: 300ms;">
       <div class="q-carousel__slide">
@@ -97,6 +109,108 @@
     </button>
   </div>
 </div>
+    <!-- Interactive carousel AFTER hydration -->
+    <q-carousel
+        v-else
+      :key="carouselKey"
+      @touchstart.stop
+      @mousedown.stop
+      v-model="slide"
+      animated
+      infinite
+      navigation
+      swipeable
+      :arrows="false"
+      height="100%"
+      control-color="primary"
+      class="rounded-borders"
+    >
+
+      <q-carousel-slide
+        v-for="(slideGroup, index) in slideChunks"
+        :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p => p.id).join('-')}`"
+        :name="index"
+      >
+        <div class="row justify-between">
+          <div
+            v-for="fp in slideGroup"
+            :key="fp.id"
+            class="col-12 col-sm-6 col-md-4"
+          >
+            <q-card class="my-card full-height">
+              <img
+                :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
+                width="300"
+                height="300"
+                :src="fp.images?.[0]?.src"
+                :srcset="fp.images?.[0]?.srcset"
+                :sizes="fp.images?.[0]?.sizes"
+                :alt="fp.name"
+              />
+              <q-card-section>
+                <div class="text-h6">{{ fp.name }}</div>
+                <div class="text-subtitle2" v-html="fp.price_html" />
+              </q-card-section>
+              <q-card-actions>
+                <q-btn v-if="fp.is_in_stock" label="Add to Cart" color="primary" @click="addToCart(fp)" />
+                <div v-else>Out of stock</div>
+                <q-btn
+                  label="View"
+                  color="secondary"
+                  :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
+                  flat
+                />
+              </q-card-actions>
+            </q-card>
+          </div>
+        </div>
+      </q-carousel-slide>
+
+  <!-- Keep the look: bind btnProps, add aria-label, keep visual style -->
+  <template #navigation-icon="{ active, btnProps, onClick, index }">
+    <q-btn
+      v-bind="btnProps"
+      :flat="false"
+      :color="active ? 'primary' : (btnProps.color || 'grey-5')"
+      size="sm"
+      :icon="null"
+      style="font-size: 5px;padding: 0"
+      round
+      dense
+      :aria-label="`Go to slide ${index + 1}`"
+      @click="onClick"
+    />
+  </template>
+
+  <!-- Custom arrows using q-carousel-control (positions match default) -->
+  <template #control>
+    <q-carousel-control position="left" class="flex items-center">
+      <q-btn
+        :icon="matChevronLeft"
+        aria-label="Previous slide"
+        flat
+        round
+        dense
+        color="primary"
+        @click="slide = (Number(slide) - 1 + slideChunks.length) % slideChunks.length"
+      />
+    </q-carousel-control>
+
+    <q-carousel-control position="right" class="flex items-center">
+      <q-btn
+        :icon="matChevronRight"
+        aria-label="Next slide"
+        flat
+        round
+        dense
+        color="primary"
+        @click="slide = (Number(slide) + 1) % slideChunks.length"
+      />
+    </q-carousel-control>
+  </template>
+
+    </q-carousel>
+
   </div>
 </section>
 
@@ -186,10 +300,10 @@
 <script setup>
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
-//import cart from 'src/stores/cart'
+import cart from 'src/stores/cart'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { /*matChevronLeft, matChevronRight,*/ matFormatQuote } from '@quasar/extras/material-icons'
+import { matChevronLeft, matChevronRight, matFormatQuote } from '@quasar/extras/material-icons'
 
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
@@ -351,9 +465,9 @@ const subscribeNewsletter = () => {
   }
 }
 
-/*const addToCart = (product) => {
+const addToCart = (product) => {
   cart.add(product.id, 1)
-}*/
+}
 
 const getSlugFromPermalink = (permalink) =>
   permalink.split('/').filter(Boolean).pop()
