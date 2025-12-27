@@ -580,6 +580,27 @@ section.featured-products {
     /*min-height: 664px;*/
     min-height: 900px;
 }
+/* 1. Lock the Hero Image Ratio */
+.hero-img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 300 / 200; /* Use your exact width/height ratio */
+  display: block;
+}
+
+/* 2. Prevent Header Jumping */
+.q-header {
+  min-height: 64px; /* Set this to your exact header height */
+}
+
+/* 3. Smooth Font Loading */
+body {
+  text-rendering: optimizeLegibility;
+}
+h1, .text-h1 {
+  /* Prevents text from shifting when the font swaps */
+  font-display: optional;
+}
 
 .q-carousel {
     padding-bottom: 30px;
