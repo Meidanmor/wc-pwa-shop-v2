@@ -663,7 +663,7 @@ section.featured-products {
   width: 100%;
   height: auto;
   display: block;
-  aspect-ratio: 4.5/3;
+  aspect-ratio: 3/2;
 }
 div.q-img__loading > svg{
   display: none;
