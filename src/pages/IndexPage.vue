@@ -300,11 +300,7 @@ import cart from 'src/stores/cart'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matFormatQuote } from '@quasar/extras/material-icons'
-import { defineAsyncComponent } from 'vue'
 
-const QCarousel = defineAsyncComponent(() =>
-  import('quasar').then(m => m.QCarousel)
-)
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
 defineExpose({ scrollToProducts })
