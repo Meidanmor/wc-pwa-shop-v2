@@ -35,7 +35,7 @@ export default defineConfig((/* ctx */) => {
         { path: 'push', client: true } ,
         //{ path: 'woocommerce', client: true } ,
         { path: 'products' } ,
-      { path: 'deferred-css', client: true } ,
+      //{ path: 'deferred-css', client: true } ,
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
