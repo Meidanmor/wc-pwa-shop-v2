@@ -1,37 +1,33 @@
 <template>
   <div>
-    <!-- Hero Section -->
 <section class="hero-section-sec">
-  <div class="hero-section container q-mb-xl row">
+  <div class="hero-section container hero-margin row">
 
-    <!-- Left side text -->
     <div class="hero-content col-12 col-md-6 q-mb-lg">
-      <h1 class="text-h1 text-secondary q-mb-sm">NaturaBloom</h1>
+      <h1 class="text-h1 text-secondary stable-text">NaturaBloom</h1>
       <p class="text-h6 text-secondary text-weight-light">
         We encompass products that are organic, cruelty-free, and environmentally friendly
       </p>
 
-      <!-- Replace QBtn with regular button for **ZERO hydration delay** -->
       <button class="hero-btn q-btn" @click="scrollToProducts">
         <span class="q-focus-helper" tabindex="-1"></span>
         Browse Products
       </button>
     </div>
 
-    <!-- LCP Image -->
-    <div class="lcp-wrapper col-12 col-md-6 lcp-lock">
-<img
-  fetchpriority="high"
-  loading="eager"
-  decoding="sync"
-  alt="Homepage hero image"
-  src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
-  srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
-  sizes="(min-width: 768px) 50vw, 100vw"
-  width="300"
-  height="200"
-  class="hero-img"
-/>
+    <div class="lcp-wrapper col-12 col-md-6">
+      <img
+        fetchpriority="high"
+        loading="eager"
+        decoding="sync"
+        alt="Homepage hero image"
+        src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
+        srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
+        sizes="(min-width: 768px) 50vw, 100vw"
+        width="300"
+        height="200"
+        class="hero-img"
+      />
     </div>
   </div>
 </section>
@@ -521,23 +517,27 @@ watch(() => $q.screen.name, () => recomputeSlides(true))
   100% {background-position: 0% 50%;}
 }
 
+/* 1. VARIABLE DEFINITIONS (Keep these at the top) */
 .hero-section-sec {
   --text: #1e1e1e;
   --muted: #6f6f6f;
-  /* richer gradient palette */
-  --primary1: #f6f2e7;  /* very light beige */
-  --primary2: #e9ddc4;  /* light warm beige */
-  --primary3: #d0c1a3;  /* medium beige */
-  --primary4: #bfa07c;  /* deeper warm tone */
-  --primary5: #a88360;  /* dark accent */
+  --primary1: #f6f2e7;
+  --primary2: #e9ddc4;
+  --primary3: #d0c1a3;
+  --primary4: #bfa07c;
+  --primary5: #a88360;
   --card-shadow: 0 12px 40px rgba(16,16,16,0.08);
-}
-.hero-section-sec {
+
   position: relative;
-    inset: 0;
-    background: linear-gradient(270deg, var(--primary1), var(--primary2), var(--primary3), var(--primary4), var(--primary5));
-    background-size: 1200% 1200%;
-    animation: none;
+  inset: 0;
+  background: linear-gradient(270deg, var(--primary1), var(--primary2), var(--primary3), var(--primary4), var(--primary5));
+  background-size: 1200% 1200%;
+  animation: none;
+
+  /* CLS FIX: Reserve height so page doesn't jump before hydration */
+  /*min-height: 550px;*/
+  display: flex;
+  align-items: center;
 }
 
 .hero-section-sec:before {
@@ -548,32 +548,94 @@ watch(() => $q.screen.name, () => recomputeSlides(true))
   z-index: 0;
   top: 0;
   left: 0;
-  background: radial-gradient(circle at 20% 30%, rgb(255 255 255) 0%, transparent 60%), radial-gradient(circle at 80% 70%, rgb(255 255 255 / 70%) 0%, transparent 60%), radial-gradient(circle at 50% 50%, rgb(255 255 255 / 38%) 0%, #00000000 60%);
+  background: radial-gradient(circle at 20% 30%, rgb(255 255 255) 0%, transparent 60%),
+              radial-gradient(circle at 80% 70%, rgb(255 255 255 / 70%) 0%, transparent 60%),
+              radial-gradient(circle at 50% 50%, rgb(255 255 255 / 38%) 0%, #00000000 60%);
   background-size: 200% 200%;
 }
+
+/* 2. LAYOUT STABILITY */
 .hero-section {
- /* background: rgb(243, 236, 226);*/
   padding: 0px 20px;
   position: relative;
   overflow: hidden;
   z-index: 1;
+  width: 100%;
 }
 
 .hero-content h1 {
   overflow-wrap: anywhere;
   text-indent: -4px;
   font-weight: 600;
-  font-size: 4rem;
-  line-height: 1;
+  font-size: 14vw;
+  /* CLS FIX: Lock line-height to prevent font-swapping shifts */
+  line-height: 1.1;
   margin-top: 0;
+  margin-bottom: 12px;
+  display: block;
 }
 
 .hero-content .text-h6 {
   max-width: 400px;
+  margin-bottom: 24px !important;
 }
 
-.featured-products-section {
-  margin-top: 40px;
+/* 3. IMAGE STABILITY (The most important part) */
+.lcp-wrapper {
+  /* CLS FIX: Removed content-visibility to prevent height recalculation */
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  position: relative;
+  overflow: hidden;
+  border-radius: 50px;
+  background: rgba(0,0,0,0.03); /* Tiny placeholder */
+}
+
+.hero-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover; /* cover ensures the box is ALWAYS full */
+}
+
+/* 4. BUTTON (Restored and Locked) */
+.hero-content button.hero-btn {
+  border-radius: 50px;
+  padding: 10px 24px;
+  color: #fff;
+  background: var(--primary-gradient);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  font-weight: 600;
+  /* Ensure button doesn't change size when Quasar classes apply */
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-content button:before {
+    content: "";
+    display: block;
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12);
+    transition: box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);
+}
+
+.hero-content button:hover .q-focus-helper { opacity: 1; }
+
+/* 5. RESPONSIVITY */
+@media (min-width: 768px) {
+  .lcp-wrapper {
+    width: 50%;
+  }
+  .hero-content h1 {
+    font-size: 4rem;
+  }
 }
 
 section.featured-products {
@@ -585,159 +647,16 @@ section.featured-products {
     padding-bottom: 30px;
 }
 
-/* Container Lock */
-.static-carousel-container {
-  position: relative;
-  display: flex;
-  padding-bottom: 30px;
-  align-items: center;
+div.q-img__loading > svg{
+  display: none;
 }
-
-/* Dummy Arrows - Positioned exactly like QCarousel controls */
-.static-arrow-left, .static-arrow-right {
-  position: absolute;
-  z-index: 2;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 0 12px;
-}
-.static-arrow-left { left: 0; }
-.static-arrow-right { right: 0; }
-
-/* Product Grid Area */
-.static-grid-content {
-  width: 100%;
-}
-
-/* Image Parity */
-.ssr-card-img {
-  width: 100%;
-  height: 300px;
-  object-fit: cover;
-}
-
-/* Dummy Dots */
-.static-nav-dots {
-  position: absolute;
-  bottom: 16px;
-  width: 100%;
-  left: 0;
-}
-.dummy-dot {
-  width: 0.9em;
-  height: 0.9em;
-  border-radius: 50%;
-  background: #bdbdbd;
-  margin: 0 4px;
-}
-.dummy-dot.active {
-  background: var(--q-primary);
-}
-
-/* Responsive visibility - load only 1 on mobile */
-@media (max-width: 599px) {
-  .static-card-wrapper:nth-child(n+2) { display: none; }
-}
-
 
 .my-card img {
   object-fit: cover;
 }
-.hero-content {
-  /*transition: 0.3s ease;
-  max-width: 1210px;
-  width: 100%;
-  margin: 0 auto;
-  position: relative;
-  z-index: 1;*/
-}
 
-/* Prevent layout shifts and ensure instant paint */
-.lcp-wrapper {
-  content-visibility: auto;
-  contain-intrinsic-size: 700px;
-}
-
-/* Ensure image is painted ASAP */
-.hero-img {
-  width: 100%;
-  height: auto;
-  display: block;
-  aspect-ratio: 3/2;
-}
-div.q-img__loading > svg{
-  display: none;
-}
-/* Replace Quasar button to avoid hydration delay */
-/*.hero-btn {
-  background-color: transparent;
-  border: 2px solid var(--q-accent);
-  color: var(--q-accent);
-  padding: 10px 22px;
-  font-size: 16px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.hero-btn:hover {
-  background-color: var(--q-accent);
-  color: white;
-}*/
-
-.hero-content button {
-  /*font-weight: 800;*/
-  /*text-shadow: 1px 1px #ffffff60;*/
-  border-radius: 50px;
-  padding: 10px 20px;
-  color: #fff;
-  background: var(--primary-gradient);
-  border: none;
-  cursor: pointer;
-  position: relative;
-}
-
-.hero-content button:before {
-    content: "";
-    display: block;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    border-radius: inherit;
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12);
-}
-
-.hero-content button:before {
-  transition: box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);
-}
-
-.hero-content button:hover .q-focus-helper {
-  opacity: 1;
-}
 .hero-content button:hover .q-focus-helper:after {
   opacity: 0.15;
-}
-
-
-
-.hero-content.pre-animate {
-  transform: translateY(40px);
-}
-
-.hero-section .hero-img {
-   /* position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: calc(100% + 70px);
-    object-fit: cover;
-    z-index: 0;
-    object-position: 59%;*/
-  object-fit: contain;
-  margin: 0;
-  border-radius: 50px;
 }
 
 .pre-animate {
