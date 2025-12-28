@@ -493,14 +493,14 @@ onMounted(async () => {
   }*/
 
 
-  hydrateFeaturedProducts().then(() => recomputeSlides(false));
+  /*hydrateFeaturedProducts().then(() => recomputeSlides(false));
 
   // Move SEO fetch here - NO AWAIT
   if (process.env.CLIENT) {
     fetchSeoForPath('homepage').then(data => {
       seoData.value = data;
     }).catch(e => console.error(e));
-  }
+  }*/
 
 })
 
