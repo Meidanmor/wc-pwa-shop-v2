@@ -1,6 +1,40 @@
 <template>
   <div>
+    <!-- Hero Section -->
+<section class="hero-section-sec">
+  <div class="hero-section container q-mb-xl row">
 
+    <!-- Left side text -->
+    <div class="hero-content col-12 col-md-6 q-mb-lg">
+      <h1 class="text-h1 text-secondary q-mb-sm">NaturaBloom</h1>
+      <p class="text-h6 text-secondary text-weight-light">
+        We encompass products that are organic, cruelty-free, and environmentally friendly
+      </p>
+
+      <!-- Replace QBtn with regular button for **ZERO hydration delay** -->
+      <button class="hero-btn q-btn" @click="scrollToProducts">
+        <span class="q-focus-helper" tabindex="-1"></span>
+        Browse Products
+      </button>
+    </div>
+
+    <!-- LCP Image -->
+    <div class="lcp-wrapper col-12 col-md-6 lcp-lock">
+<img
+  fetchpriority="high"
+  loading="eager"
+  decoding="sync"
+  alt="Homepage hero image"
+  src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
+  srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
+  sizes="(min-width: 768px) 50vw, 100vw"
+  width="300"
+  height="200"
+  class="hero-img"
+/>
+    </div>
+  </div>
+</section>
 
 <!-- Featured Products Slider -->
 <section ref="productSection" class="featured-products">
@@ -272,8 +306,8 @@ import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matFormatQuote } from '@quasar/extras/material-icons'
 
 // ----------------- Scroll -----------------
-/*const scrollToProducts = () => {}
-defineExpose({ scrollToProducts })*/
+const scrollToProducts = () => {}
+defineExpose({ scrollToProducts })
 
 // ----------------- SEO -----------------
 
