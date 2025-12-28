@@ -496,11 +496,11 @@ onMounted(async () => {
   hydrateFeaturedProducts().then(() => recomputeSlides(false));
 
   // Move SEO fetch here - NO AWAIT
-  if (process.env.CLIENT) {
+  /*if (process.env.CLIENT) {
     fetchSeoForPath('homepage').then(data => {
       seoData.value = data;
     }).catch(e => console.error(e));
-  }
+  }*/
 
 })
 
@@ -755,79 +755,65 @@ div.q-img__loading > svg{
   }
 }
 
-/* SSR / Carousel parity helpers */
-.featured-products-ssr {
-  /* keep visual parity and allow horizontal overflow so SSR looks like the carousel */
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 10px; /* match carousel padding-bottom */
+/*.cta-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(45deg, black, transparent);
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.6) blur(2px);
+  z-index: 0;
+}*/
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-.ssr-carousel-row {
-  display: flex;
-  gap: 16px;
-  align-items: stretch; /* important — cards fill same height */
-  flex-wrap: nowrap;
+.cta-overlay.animate-bg {
+    animation: gradientShift 10s ease infinite;
 }
 
-.ssr-col {
-  flex: 0 0 calc(100%); /* mobile */
+.hero-section-sec.animate-bg {
+    animation: gradientAnimation 25s ease infinite;
 }
 
-/* responsive: match client chunking (1/2/3 columns widths) */
-@media (min-width: 600px) {
-  .ssr-col { flex: 0 0 calc(50% - 10px); }
+.about-section {
+  max-width: 700px;
 }
-@media (min-width: 1024px) {
-  .ssr-col { flex: 0 0 calc(33.333% - 10px); }
+.testimonials-section q-card {
+  transition: transform 0.3s;
 }
-
-/* Card parity with client q-card */
-.ssr-card {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  border-radius: 10px;
-  background: white;
-  box-shadow: var(--card-shadow, 0 6px 20px rgba(0,0,0,0.04));
-  overflow: hidden;
+.testimonials-section q-card:hover {
+  transform: translateY(-5px);
 }
-
-/* Reserve image area matching q-img height used in carousel */
-.ssr-img-wrap {
+.sustainability-section img {
+  border-radius: 8px;
+  height: auto;
+}
+.newsletter-section {
+  background-color: #f9f9f9;
+  padding: 40px 20px;
+  border-radius: 8px;
+}
+.instagram-section q-img {
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+.instagram-section q-img:hover {
+  transform: scale(1.05);
+}
+.about-section {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.subscribe-email-input {
+  max-width: 500px;
   width: 100%;
-  flex: 0 0 auto;
-  height: 300px; /* MUST match q-img height="300px" */
-  display: block;
-}
-.ssr-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* body and text */
-.ssr-card-body {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 8px;
-  flex: 1 1 auto;
-}
-
-/* ensure titles wrap the same way */
-.ssr-title {
-  line-height: 1.2;
-  max-height: calc(1.2em * 3); /* cap lines visually similar to client */
-  overflow: hidden;
-}
-
-/* ensure overall the SSR row height equals client carousel height */
-.featured-products-ssr {
-  /* Reserve a minimum height for the entire section to avoid any micro-jump */
-  min-height: 340px; /* 300px image + paddings — adjust slightly if needed */
+  margin-right: auto;
+  margin-left: auto;
 }
 
 </style>
