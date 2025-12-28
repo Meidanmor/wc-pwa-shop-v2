@@ -34,7 +34,7 @@ export default defineConfig((/* ctx */) => {
     boot: [
         { path: 'push', client: true } ,
         //{ path: 'woocommerce', client: true } ,
-        { path: 'products' } ,
+        //{ path: 'products' } ,
       //{ path: 'deferred-css', client: true } ,
     ],
 
