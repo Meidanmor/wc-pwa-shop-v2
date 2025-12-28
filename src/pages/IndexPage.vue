@@ -590,6 +590,10 @@ watch(() => $q.screen.name, () => recomputeSlides(true))
   overflow: hidden;
   border-radius: 50px;
   background: rgba(0,0,0,0.03); /* Tiny placeholder */
+  /* THE FIX: Bypass the main-thread jam */
+  contain: paint;
+  /* OPTIONAL: Hardware acceleration to prioritize the paint */
+  transform: translateZ(0);
 }
 
 .hero-img {
