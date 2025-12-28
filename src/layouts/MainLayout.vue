@@ -1,6 +1,6 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header style="display:none !important;" elevated>
+    <q-header elevated>
     <div class="container">
       <q-toolbar class="flex justify-between q-pa-sm">
        <div class="flex">
@@ -172,7 +172,7 @@
     </q-drawer>
     <ai-assistant></ai-assistant>
 
-    <q-page-container :style="isHydrated ? {} : { paddingTop: '0' }">
+    <q-page-container :style="isHydrated ? {} : { paddingTop: '58px' }">
       <main>
         <router-view />
       </main>
