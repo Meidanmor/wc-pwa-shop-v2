@@ -32,6 +32,7 @@
   </div>
 </section>
 
+    <LazySection>
 <!-- Featured Products Slider -->
 <section ref="productSection" class="featured-products">
   <div class="container">
@@ -211,7 +212,7 @@
 </section>
 
     <!-- CTA Section -->
-    <section class="cta-section q-pa-md" v-once>
+    <section class="cta-section q-pa-md">
       <div class="container">
         <div class="cta-overlay">
           <div class="cta-content">
@@ -229,7 +230,7 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section class="testimonials-section container q-pa-md q-my-xl" v-once>
+    <section class="testimonials-section container q-pa-md q-my-xl">
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
@@ -264,7 +265,7 @@
     </section>
 
     <!-- Newsletter Signup Section -->
-    <section class="newsletter-section container q-my-xl text-center" v-once>
+    <section class="newsletter-section container q-my-xl text-center">
       <h2 class="text-h4 text-weight-light q-mb-md">Stay Updated</h2>
       <p class="text-body1 q-mb-lg">Subscribe to our newsletter for the latest products and offers.</p>
       <q-input filled v-model="email" label="Your Email" class="subscribe-email-input q-mb-md" />
@@ -288,7 +289,7 @@
         NaturaBloom blends modern technology with nature's purity, offering organic, cruelty-free, and environmentally friendly products.
       </p>
     </section>
-
+    </LazySection>
 
   </div>
 </template>
@@ -300,6 +301,7 @@ import cart from 'src/stores/cart'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matFormatQuote } from '@quasar/extras/material-icons'
+import LazySection from 'components/LazySection.vue'
 
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
