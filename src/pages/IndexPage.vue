@@ -211,7 +211,7 @@
 </section>
 
     <!-- CTA Section -->
-    <section class="cta-section q-pa-md">
+    <section class="cta-section q-pa-md" v-once>
       <div class="container">
         <div class="cta-overlay">
           <div class="cta-content">
@@ -229,7 +229,7 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section class="testimonials-section container q-pa-md q-my-xl">
+    <section class="testimonials-section container q-pa-md q-my-xl" v-once>
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
@@ -250,7 +250,7 @@
     </section>
 
     <!-- Sustainability Section -->
-    <section class="sustainability-section container q-pa-md q-my-xl">
+    <section class="sustainability-section container q-pa-md q-my-xl" v-once>
       <div class="row items-center">
         <div class="col-12 col-md-6">
           <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png 1000w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-768x384.png 800w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-600x300.png 600w" alt="Sustainability" sizes="100vw" width="946" height="473" loading="lazy" class="full-width" />        </div>
@@ -264,7 +264,7 @@
     </section>
 
     <!-- Newsletter Signup Section -->
-    <section class="newsletter-section container q-my-xl text-center">
+    <section class="newsletter-section container q-my-xl text-center" v-once>
       <h2 class="text-h4 text-weight-light q-mb-md">Stay Updated</h2>
       <p class="text-body1 q-mb-lg">Subscribe to our newsletter for the latest products and offers.</p>
       <q-input filled v-model="email" label="Your Email" class="subscribe-email-input q-mb-md" />
@@ -272,7 +272,7 @@
     </section>
 
     <!-- Instagram Feed Section -->
-    <section class="instagram-section container q-my-xl">
+    <section class="instagram-section container q-my-xl" v-once>
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
       <div class="row q-col-gutter-md">
         <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
@@ -282,7 +282,7 @@
     </section>
 
     <!-- Enhanced About Section -->
-    <section class="about-section container q-pa-md q-my-xl">
+    <section class="about-section container q-pa-md q-my-xl" v-once>
       <h2 class="text-h4 text-weight-light q-mb-md">About NaturaBloom</h2>
       <p class="text-body1">
         NaturaBloom blends modern technology with nature's purity, offering organic, cruelty-free, and environmentally friendly products.
@@ -300,7 +300,11 @@ import cart from 'src/stores/cart'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matFormatQuote } from '@quasar/extras/material-icons'
+import { defineAsyncComponent } from 'vue'
 
+const QCarousel = defineAsyncComponent(() =>
+  import('quasar').then(m => m.QCarousel)
+)
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
 defineExpose({ scrollToProducts })
@@ -540,6 +544,10 @@ div.q-img__loading > svg{
 .pre-animate {
   opacity: 0;
   visibility: hidden;
+}
+
+.newsletter-section, .instagram-section, .about-section {
+  content-visibility: auto;
 }
 
 /* HOMEPAGE DEFFERED CSS */
