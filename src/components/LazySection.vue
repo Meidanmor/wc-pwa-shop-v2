@@ -22,7 +22,7 @@ onMounted(() => {
   } else {
     setTimeout(() => {
       renderMe.value = true
-    }, 300)
+    }, 500)
   }
 })
 </script>
