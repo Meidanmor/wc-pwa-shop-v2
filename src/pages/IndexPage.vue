@@ -295,7 +295,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
 import cart from 'src/stores/cart'
 import { fetchSeoForPath } from 'src/composables/useSeo'
@@ -380,16 +380,6 @@ if (import.meta.env.SSR) {
   featuredProducts.value = featuredProductsComputed.value
 }
 
-// --- helper to ensure SPA navigation works ---
-const hydrateFeaturedProducts = async () => {
-  if (productsStore.initialized.value && productsStore.products.value.length) {
-    featuredProducts.value = productsStore.products.value.filter(p => p.id).slice(0, 6)
-  } else {
-    await productsStore.preFetchProducts()
-    featuredProducts.value = productsStore.products.value.filter(p => p.id).slice(0, 6)
-  }
-}
-
 const visibleStaticItems = computed(() => {
   const allProducts = productsStore.products.value || [];
   // If we have products, take 3.
@@ -403,7 +393,6 @@ const $q = useQuasar()
 
 const slideChunks = ref([])
 const slide = ref(0)
-const slidesReady = ref(false)
 const isHydrated = ref(false)
 const carouselKey = ref(0)
 const productSection = ref(null)
