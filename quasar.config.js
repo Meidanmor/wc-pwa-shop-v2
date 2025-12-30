@@ -32,7 +32,6 @@ export default defineConfig((/* ctx */) => {
       head: (val) => val.trim()
     },
     boot: [
-        { path: 'delay-hydration' } ,
         { path: 'push', client: true } ,
         //{ path: 'woocommerce', client: true } ,
         //{ path: 'products' } ,

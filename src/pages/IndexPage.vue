@@ -472,15 +472,12 @@ const getSlugFromPermalink = (permalink) =>
 
 
 // ----------------- Mounted -----------------
-onMounted(async () => {
+onMounted( () => {
   // Check if we have injected data from the server
   if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
     productsStore.products.value = window.__PRODUCTS_DATA__
     productsStore.initialized.value = true
   }
-
-  await nextTick();
-  isHydrated.value = true;
 
   // reveal hero immediately
   /*const img = document.querySelector('.hero-img');
@@ -494,15 +491,31 @@ onMounted(async () => {
     });
   }*/
 
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(() => {
+      isHydrated.value = true
+      hydrateFeaturedProducts().then(() => recomputeSlides(false));
 
-  hydrateFeaturedProducts().then(() => recomputeSlides(false));
+      // Move SEO fetch here - NO AWAIT
+      if (process.env.CLIENT) {
+        fetchSeoForPath('homepage').then(data => {
+          seoData.value = data;
+        }).catch(e => console.error(e));
+      }
+    })
+  } else {
+    setTimeout(() => {
+      isHydrated.value = true
+      hydrateFeaturedProducts().then(() => recomputeSlides(false));
 
-  // Move SEO fetch here - NO AWAIT
-  /*if (process.env.CLIENT) {
-    fetchSeoForPath('homepage').then(data => {
-      seoData.value = data;
-    }).catch(e => console.error(e));
-  }*/
+      // Move SEO fetch here - NO AWAIT
+      if (process.env.CLIENT) {
+        fetchSeoForPath('homepage').then(data => {
+          seoData.value = data;
+        }).catch(e => console.error(e));
+      }
+    }, 500)
+  }
 
 })
 
