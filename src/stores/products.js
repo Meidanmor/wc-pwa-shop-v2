@@ -12,7 +12,7 @@ const initialized = ref(false)
 const SSR_KEY = '__PRE_FETCH_PRODUCTS__'
 
 // --- core fetchers ---
-export async function preFetchProducts(ctx) {
+export async function preFetchProducts(ctx, force=false) {
   if (import.meta.env.SSR) {
 
     try {
@@ -74,7 +74,7 @@ export async function preFetchProducts(ctx) {
     // CLIENT: do NOT fetch
     initFromSSR()
 
-    if (!initialized.value) {
+    if (!initialized.value || force == true) {
       // fallback only if SSR failed
       try {
         const productsRes = await fetch('/data/products.json').then(res => res.json());

@@ -297,7 +297,7 @@ onMounted(async() => {
     }
   }
 
-  await productsStore.fetchProductsIfNeeded()
+  await productsStore.preFetchProducts('', true)
 // 🚨 NEW FIX: Call the update function immediately after fetching data
   // This sets the correct min/max values for the initial page load.
   updatePriceLimits(productsStore.products.value)
@@ -339,7 +339,7 @@ const updatePriceLimits = (productsList) => {
 
 // Watch the selected category and update limits
 watch(selectedCategory, async() => {
-    await productsStore.fetchProductsIfNeeded()
+    await productsStore.preFetchProducts('', true)
 
     // When the category changes, recalculate limits based on the full product set
     updatePriceLimits(productsStore.products.value)
@@ -349,7 +349,7 @@ watch(selectedCategory, async() => {
 
 // Watch the search filter as well, since it also narrows the possible price range
 watch(search, async() => {
-    await productsStore.fetchProductsIfNeeded()
+    await productsStore.preFetchProducts('', true)
 
     updatePriceLimits(productsStore.products.value)
     currentPage.value = 1

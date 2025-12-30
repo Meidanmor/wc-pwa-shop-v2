@@ -318,11 +318,15 @@ defineOptions({
     // 2. FETCH PRODUCTS (This was missing!)
     await productsStore.preFetchProducts()
 
+    // 2. Prepare the "Lean" data
+    // We only need the first 6 for the homepage carousel
+    const leanProducts = productsStore.products.value.slice(0, 6)
+
     if (ssrContext) {
       // Initialize the state object if it doesn't exist
       ssrContext.seoData = seo
       // INJECT PRODUCTS HERE:
-      ssrContext.productsData = productsStore.products.value
+      ssrContext.productsData = leanProducts
       ssrContext.heroData = {
         src: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png',
         srcset: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w',
@@ -414,26 +418,19 @@ const getChunks = (array, size) => {
   return chunks
 }
 
+// UPDATE THIS FUNCTION:
 const recomputeSlides = async (forceRemount = false) => {
-  if (!featuredProducts.value.length) {
-    slideChunks.value = []
-    slide.value = 0
-    slidesReady.value = true
-    return
-  }
+  // GUARD: If we aren't hydrated, stop. Don't waste CPU cycles.
+  if (!isHydrated.value) return
 
+  const list = productsStore.products.value || []
+  const items = list.slice(0, 6)
   const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
 
-  if (forceRemount) slidesReady.value = false
-  await nextTick()
+  if (forceRemount) carouselKey.value++
 
-  slideChunks.value = getChunks(featuredProducts.value, chunkSize)
-  if (slide.value >= slideChunks.value.length) slide.value = 0
-
-  if (isHydrated.value && forceRemount) {
-    carouselKey.value += 1
-  }
-  slidesReady.value = true
+  // Directly chunk the data here (this replaces the need for hydrateFeaturedProducts)
+  slideChunks.value = getChunks(items, chunkSize)
 }
 
 // ----------------- Testimonials & Instagram -----------------
@@ -473,12 +470,13 @@ const getSlugFromPermalink = (permalink) =>
 
 // ----------------- Mounted -----------------
 onMounted( () => {
-  // Check if we have injected data from the server
-  if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
+// 1. Check if we have SSR data (Cold Start)
+  const hasSsrData = process.env.CLIENT && window.__PRODUCTS_DATA__;
+
+  if (hasSsrData) {
     productsStore.products.value = window.__PRODUCTS_DATA__
     productsStore.initialized.value = true
   }
-
   // reveal hero immediately
   /*const img = document.querySelector('.hero-img');
   if (img.complete) {
@@ -490,37 +488,46 @@ onMounted( () => {
       //document.querySelector('.cta-overlay').classList.add('animate-bg');
     });
   }*/
+// 2. Decide if we should delay (Cold Start) or render immediately (Navigation)
+  // If we already have products in the store, it's a SPA navigation.
+  const isSpaNavigation = productsStore.products.value.length > 0 && !hasSsrData;
 
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(() => {
-      isHydrated.value = true
-      hydrateFeaturedProducts().then(() => recomputeSlides(false));
-
-      // Move SEO fetch here - NO AWAIT
-      if (process.env.CLIENT) {
-        fetchSeoForPath('homepage').then(data => {
-          seoData.value = data;
-        }).catch(e => console.error(e));
-      }
-    })
+  if (isSpaNavigation) {
+    // Immediate render for better user experience during navigation
+    isHydrated.value = true
+    recomputeSlides()
   } else {
-    setTimeout(() => {
-      isHydrated.value = true
-      hydrateFeaturedProducts().then(() => recomputeSlides(false));
+// 1. Wait for first frame
+    requestAnimationFrame(() => {
+      // 2. Wait for second frame (Browser has now definitely painted the Hero)
+      requestAnimationFrame(() => {
+        const scheduler = window.requestIdleCallback || ((cb) => setTimeout(cb, 200))
 
-      // Move SEO fetch here - NO AWAIT
-      if (process.env.CLIENT) {
-        fetchSeoForPath('homepage').then(data => {
-          seoData.value = data;
-        }).catch(e => console.error(e));
-      }
-    }, 500)
+        scheduler(() => {
+          // 3. NOW start the heavy Vue work
+          isHydrated.value = true
+
+          // This replaces 'hydrateFeaturedProducts' by doing the work directly
+          recomputeSlides()
+          fetchSeoForPath('homepage').then(data => {
+            if (data) seoData.value = data
+          })
+
+        })
+      })
+    })
   }
-
 })
 
-watch(featuredProducts, () => recomputeSlides(true))
-watch(() => $q.screen.name, () => recomputeSlides(true))
+// REPLACE YOUR WATCHERS WITH THIS NESTED VERSION:
+watch(() => isHydrated.value, (val) => {
+  if (val) {
+    // Only now do we care about screen size changes or data updates
+    watch([() => productsStore.products.value, () => $q.screen.name], () => {
+      recomputeSlides(true)
+    })
+  }
+}, { immediate: true })
 
 </script>
 
