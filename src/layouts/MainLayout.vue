@@ -186,9 +186,9 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import cart from 'src/stores/cart'
-import WishlistDrawer from 'src/components/WishlistDrawer.vue'
+//import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
-import AiAssistant from "src/components/AiAssistant.vue";
+//import AiAssistant from "src/components/AiAssistant.vue";
 import { subscribeToWebPush } from 'src/boot/push'
 import { matShoppingCart,
   matFavoriteBorder,
@@ -201,6 +201,11 @@ import { matShoppingCart,
   matAdd,
   matClose,
   matRemove} from '@quasar/extras/material-icons'
+import { defineAsyncComponent } from 'vue'
+
+// Move these from standard imports to Async imports
+const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
+const AiAssistant = defineAsyncComponent(() => import('src/components/AiAssistant.vue'))
 
 const permission = ref('default')
 const supported = ref(false)
