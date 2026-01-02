@@ -459,49 +459,49 @@ const getSlugFromPermalink = (permalink) =>
 
 // ----------------- Mounted -----------------
 onMounted(() => {
-  // 1. DATA SYNC (Immediate & Non-blocking)
-  // We sync the store right away so visibleStaticItems has data for the v-if block
+  // 1. Data Sync (Same as before)
   const hasSsrData = process.env.CLIENT && window.__PRODUCTS_DATA__;
   if (hasSsrData) {
     productsStore.products.value = window.__PRODUCTS_DATA__
     productsStore.initialized.value = true
   }
 
-  // 2. THE HYDRATION GATE
   if (process.env.CLIENT) {
     const isSpaNavigation = productsStore.products.value.length > 0 && !hasSsrData;
 
     if (isSpaNavigation) {
-      // If navigating internally, we don't need LCP protection. Just show it.
       isHydrated.value = true
       recomputeSlides()
     } else {
-      // COLD START: This is where we lock the LCP score
-      const img = new Image()
-      img.src = "https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
+      // 2. TARGET THE ACTUAL DOM IMAGE
+      // We use the class '.hero-img' that you already have in your template
+      const lcpImage = document.querySelector('.hero-img');
 
-      // Wait for image decode...
-      img.decode().then(() => {
-        // ...then wait for the browser to be "Idle" (The Lazy Hydration principle)
-        const scheduler = window.requestIdleCallback || ((cb) => setTimeout(cb, 200))
-
+      const triggerHydration = () => {
+        const scheduler = window.requestIdleCallback || ((cb) => setTimeout(cb, 200));
         scheduler(() => {
-          isHydrated.value = true // This flips the v-if to the interactive carousel
-          recomputeSlides()
+          isHydrated.value = true;
+          recomputeSlides();
+          fetchSeoForPath('homepage').then(data => { if (data) seoData.value = data });
+        }, { timeout: 2000 });
+      };
 
-          // Background tasks after UI is stable
-          fetchSeoForPath('homepage').then(data => {
-            if (data) seoData.value = data
-          })
-        }, { timeout: 2000 }) // Force hydration after 2s if browser never gets idle
-      }).catch(() => {
-        // Fallback: If image fails, hydrate anyway so page isn't broken
-        isHydrated.value = true
-        recomputeSlides()
-      })
+      if (lcpImage) {
+        // .decode() on an existing element is responsive-aware!
+        // It waits for whichever source the browser picked from the srcset.
+        lcpImage.decode()
+          .then(triggerHydration)
+          .catch(() => {
+            // If the image error'd out or decoding failed, don't leave the page broken
+            triggerHydration();
+          });
+      } else {
+        // Fallback if the element isn't found for some reason
+        triggerHydration();
+      }
     }
   }
-})
+});
 
 // REPLACE YOUR WATCHERS WITH THIS NESTED VERSION:
 watch(() => isHydrated.value, (val) => {
