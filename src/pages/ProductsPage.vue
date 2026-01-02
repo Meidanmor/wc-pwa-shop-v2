@@ -129,12 +129,6 @@ import { useMeta, scroll } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose } from '@quasar/extras/material-icons'
-import { defineAsyncComponent } from 'vue'
-
-// Instead of standard imports, do this:
-const QCarousel = defineAsyncComponent(() => import('quasar').then(m => m.QCarousel))
-const QCarouselSlide = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselSlide))
-const QCarouselControl = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselControl))
 
 const { setVerticalScrollPosition } = scroll
 
