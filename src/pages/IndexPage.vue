@@ -32,7 +32,6 @@
   </div>
 </section>
 
-    <LazySection>
 <!-- Featured Products Slider -->
 <section ref="productSection" class="featured-products">
   <div class="container">
@@ -289,7 +288,6 @@
         NaturaBloom blends modern technology with nature's purity, offering organic, cruelty-free, and environmentally friendly products.
       </p>
     </section>
-    </LazySection>
 
   </div>
 </template>
@@ -301,7 +299,7 @@ import cart from 'src/stores/cart'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matFormatQuote } from '@quasar/extras/material-icons'
-import LazySection from 'components/LazySection.vue'
+//import LazySection from 'components/LazySection.vue'
 
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
