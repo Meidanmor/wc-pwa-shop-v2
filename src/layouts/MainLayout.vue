@@ -172,8 +172,8 @@
       </div>
         </q-no-ssr>
     </q-drawer>
-    <ai-assistant></ai-assistant>
-
+    <ai-assistant v-if="uiHydrated"></ai-assistant>
+    <button v-else class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle q-btn--rounded bg-primary text-white q-btn--actionable q-focusable q-hoverable q-btn--fab fixed-bottom-left q-mb-md q-ml-md z-max" tabindex="0" type="button" aria-label="Open chat"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><i class="q-icon absolute" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" style="fill: none;"></path><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"></path></svg></i></span></button>
     <q-page-container :style="uiHydrated ? {} : { paddingTop: '58px' }">
       <main>
         <router-view />
@@ -300,8 +300,7 @@ onMounted(() => {
   storeReady.value = true
 
   // Phase 2: Wait for the Hero to paint, then load the heavy stuff
-  const scheduler = window.requestIdleCallback || ((cb) => setTimeout(cb, 200))
-  scheduler(() => {
+  const scheduler = () => {
     uiHydrated.value = true
     if ('Notification' in window) {
       supported.value = true
@@ -312,7 +311,19 @@ onMounted(() => {
     // Desktop listeners
     window.addEventListener('mousedown', handleMouseDown)
     window.addEventListener('mouseup', handleMouseUp)
-  })
+
+    window.removeEventListener('scroll', scheduler)
+    window.removeEventListener('mousemove', scheduler)
+    window.removeEventListener('touchstart', scheduler)
+
+  }
+  window.addEventListener('scroll', scheduler, {passive: true})
+  window.addEventListener('mousemove', scheduler, {passive: true})
+  window.addEventListener('touchstart', scheduler, {passive: true})
+
+  // Safety fallback: Hydrate after 5 seconds if no interaction
+  setTimeout(scheduler, 5000)
+
 })
 onUnmounted(() => {
   // Critical cleanup
