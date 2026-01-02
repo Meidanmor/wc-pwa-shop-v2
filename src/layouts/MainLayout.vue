@@ -110,6 +110,7 @@
     side="right"
     overlay
     behavior="mobile"
+    v-if="uiHydrated"
   >
     <WishlistDrawer />
   </q-drawer>
