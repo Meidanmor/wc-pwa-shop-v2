@@ -459,49 +459,40 @@ const getSlugFromPermalink = (permalink) =>
 
 // ----------------- Mounted -----------------
 onMounted(() => {
-  // 1. Data Sync (Same as before)
-  const hasSsrData = process.env.CLIENT && window.__PRODUCTS_DATA__;
-  if (hasSsrData) {
+  // Sync data immediately so the static HTML is correct
+  if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
     productsStore.products.value = window.__PRODUCTS_DATA__
-    productsStore.initialized.value = true
   }
-
+isHydrated.value = false
   if (process.env.CLIENT) {
-    const isSpaNavigation = productsStore.products.value.length > 0 && !hasSsrData;
-
-    if (isSpaNavigation) {
+    // If it's a SPA navigation, hydrate immediately for UX
+    //const hasSsrData = !!window.__PRODUCTS_DATA__;
+   /* if (productsStore.products.value.length > 0 && !hasSsrData) {
       isHydrated.value = true
       recomputeSlides()
-    } else {
-      // 2. TARGET THE ACTUAL DOM IMAGE
-      // We use the class '.hero-img' that you already have in your template
-      const lcpImage = document.querySelector('.hero-img');
+      return
+    }*/
 
-      const triggerHydration = () => {
-        const scheduler = window.requestIdleCallback || ((cb) => setTimeout(cb, 200));
-        scheduler(() => {
-          isHydrated.value = true;
-          recomputeSlides();
-          fetchSeoForPath('homepage').then(data => { if (data) seoData.value = data });
-        }, { timeout: 2000 });
-      };
+    // COLD START: Wait for user interaction
+    const hydrateOnInteraction = () => {
+      if (isHydrated.value) return
+      isHydrated.value = true
+      recomputeSlides()
 
-      if (lcpImage) {
-        // .decode() on an existing element is responsive-aware!
-        // It waits for whichever source the browser picked from the srcset.
-        lcpImage.decode()
-          .then(triggerHydration)
-          .catch(() => {
-            // If the image error'd out or decoding failed, don't leave the page broken
-            triggerHydration();
-          });
-      } else {
-        // Fallback if the element isn't found for some reason
-        triggerHydration();
-      }
+      // Cleanup listeners
+      window.removeEventListener('scroll', hydrateOnInteraction)
+      window.removeEventListener('mousemove', hydrateOnInteraction)
+      window.removeEventListener('touchstart', hydrateOnInteraction)
     }
+
+    window.addEventListener('scroll', hydrateOnInteraction, { passive: true })
+    window.addEventListener('mousemove', hydrateOnInteraction, { passive: true })
+    window.addEventListener('touchstart', hydrateOnInteraction, { passive: true })
+
+    // Safety fallback: Hydrate after 5 seconds if no interaction
+    setTimeout(hydrateOnInteraction, 5000)
   }
-});
+})
 
 // REPLACE YOUR WATCHERS WITH THIS NESTED VERSION:
 watch(() => isHydrated.value, (val) => {
