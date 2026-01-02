@@ -458,53 +458,48 @@ const getSlugFromPermalink = (permalink) =>
 
 
 // ----------------- Mounted -----------------
-onMounted( () => {
-// 1. Check if we have SSR data (Cold Start)
+onMounted(() => {
+  // 1. DATA SYNC (Immediate & Non-blocking)
+  // We sync the store right away so visibleStaticItems has data for the v-if block
   const hasSsrData = process.env.CLIENT && window.__PRODUCTS_DATA__;
-
   if (hasSsrData) {
     productsStore.products.value = window.__PRODUCTS_DATA__
     productsStore.initialized.value = true
   }
-  // reveal hero immediately
-  /*const img = document.querySelector('.hero-img');
-  if (img.complete) {
-    document.querySelector('.hero-section-sec').classList.add('animate-bg');
-    //document.querySelector('.cta-overlay').classList.add('animate-bg');
-  } else {
-    img.addEventListener('load', () => {
-      document.querySelector('.hero-section-sec').classList.add('animate-bg');
-      //document.querySelector('.cta-overlay').classList.add('animate-bg');
-    });
-  }*/
-// 2. Decide if we should delay (Cold Start) or render immediately (Navigation)
-  // If we already have products in the store, it's a SPA navigation.
-  const isSpaNavigation = productsStore.products.value.length > 0 && !hasSsrData;
 
-  if (isSpaNavigation) {
-    // Immediate render for better user experience during navigation
-    isHydrated.value = true
-    recomputeSlides()
-  } else {
-// 1. Wait for first frame
-    requestAnimationFrame(() => {
-      // 2. Wait for second frame (Browser has now definitely painted the Hero)
-      requestAnimationFrame(() => {
+  // 2. THE HYDRATION GATE
+  if (process.env.CLIENT) {
+    const isSpaNavigation = productsStore.products.value.length > 0 && !hasSsrData;
+
+    if (isSpaNavigation) {
+      // If navigating internally, we don't need LCP protection. Just show it.
+      isHydrated.value = true
+      recomputeSlides()
+    } else {
+      // COLD START: This is where we lock the LCP score
+      const img = new Image()
+      img.src = "https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
+
+      // Wait for image decode...
+      img.decode().then(() => {
+        // ...then wait for the browser to be "Idle" (The Lazy Hydration principle)
         const scheduler = window.requestIdleCallback || ((cb) => setTimeout(cb, 200))
 
         scheduler(() => {
-          // 3. NOW start the heavy Vue work
-          isHydrated.value = true
-
-          // This replaces 'hydrateFeaturedProducts' by doing the work directly
+          isHydrated.value = true // This flips the v-if to the interactive carousel
           recomputeSlides()
+
+          // Background tasks after UI is stable
           fetchSeoForPath('homepage').then(data => {
             if (data) seoData.value = data
           })
-
-        })
+        }, { timeout: 2000 }) // Force hydration after 2s if browser never gets idle
+      }).catch(() => {
+        // Fallback: If image fails, hydrate anyway so page isn't broken
+        isHydrated.value = true
+        recomputeSlides()
       })
-    })
+    }
   }
 })
 
