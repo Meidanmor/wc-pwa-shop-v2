@@ -301,6 +301,11 @@ import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matFormatQuote } from '@quasar/extras/material-icons'
 //import LazySection from 'components/LazySection.vue'
 
+
+  // Sync data immediately so the static HTML is correct
+  if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
+    productsStore.products.value = window.__PRODUCTS_DATA__
+  }
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
 defineExpose({ scrollToProducts })
@@ -457,10 +462,7 @@ const getSlugFromPermalink = (permalink) =>
 
 // ----------------- Mounted -----------------
 onMounted(() => {
-  // Sync data immediately so the static HTML is correct
-  if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
-    productsStore.products.value = window.__PRODUCTS_DATA__
-  }
+
 isHydrated.value = false
   if (process.env.CLIENT) {
     // If it's a SPA navigation, hydrate immediately for UX

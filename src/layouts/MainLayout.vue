@@ -23,12 +23,12 @@
         </router-link>
           <div>
           <q-btn flat dense :icon="matFavoriteBorder" aria-label="Add to wishlist" @click="toggleWishlistDrawer" class="q-ml-sm q-mr-sm">
-          <q-badge v-if="isHydrated && cart.state.wishlist_items && Object.keys(cart.state.wishlist_items).length > 0" floating color="red">{{ Object.keys(cart.state.wishlist_items).length }}</q-badge>
+          <q-badge v-if="storeReady && cart.state.wishlist_items && Object.keys(cart.state.wishlist_items).length > 0" floating color="red">{{ Object.keys(cart.state.wishlist_items).length }}</q-badge>
         </q-btn>
 
         <q-btn flat dense :icon="matShoppingCart" aria-label="View cart" @click="toggleCart">
           <q-no-ssr>
-          <q-badge v-if="isHydrated && cart.state.items_count > 0" floating color="red">{{ cart.state.items_count }}</q-badge>
+          <q-badge v-if="storeReady && cart.state.items_count > 0" floating color="red">{{ cart.state.items_count }}</q-badge>
           </q-no-ssr>
         </q-btn>
         </div>
@@ -46,8 +46,9 @@
       transition-show="slide-right"
       transition-hide="slide-left"
       :touch-area-width="250"
+      v-if="uiHydrated"
     >
-      <q-scroll-area v-if="isHydrated" class="fit">
+      <q-scroll-area class="fit">
         <div class="q-pa-md">
           <div class="text-h6 q-mb-md">Menu</div>
           <q-list bordered padding>
@@ -120,11 +121,12 @@
       behavior="mobile"
       :width="300"
       :touch-area-width="250"
+      v-if="uiHydrated"
     >
 
 
       <q-no-ssr>
-      <q-scroll-area class="fit q-pa-sm" v-if="isHydrated && cart.hasItems.value">
+      <q-scroll-area class="fit q-pa-sm" v-if="cart.hasItems.value">
         <h4> Cart </h4>
         <div v-for="item in cart.state.items" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
           <img v-if="item.images" :src="item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
@@ -172,7 +174,7 @@
     </q-drawer>
     <ai-assistant></ai-assistant>
 
-    <q-page-container :style="isHydrated ? {} : { paddingTop: '58px' }">
+    <q-page-container :style="uiHydrated ? {} : { paddingTop: '58px' }">
       <main>
         <router-view />
       </main>
@@ -202,7 +204,6 @@ import { matShoppingCart,
 
 const permission = ref('default')
 const supported = ref(false)
-const isHydrated = ref(false)
 const isSuperAdmin = computed(() => cart.state.user?.is_super_admin === true)
 
 const $q = useQuasar()
@@ -286,17 +287,27 @@ async function handleSubscribe () {
   permission.value = Notification.permission
 }
 
+const storeReady = ref(process.env.SERVER) // Immediate sync
+const uiHydrated = ref(false)              // Deferred functional UI
+
 onMounted(() => {
-  isHydrated.value = true // Vue is now fully in control of the DOM
-  if ('Notification' in window) {
-    supported.value = true
-    permission.value = Notification.permission
-  }
-  window.addEventListener('touchstart', handleTouchStart)
-  window.addEventListener('touchend', handleTouchEnd)
-  // Desktop listeners
-  window.addEventListener('mousedown', handleMouseDown)
-  window.addEventListener('mouseup', handleMouseUp)
+  // Phase 1: Show the badges immediately
+  storeReady.value = true
+
+  // Phase 2: Wait for the Hero to paint, then load the heavy stuff
+  const scheduler = window.requestIdleCallback || ((cb) => setTimeout(cb, 200))
+  scheduler(() => {
+    uiHydrated.value = true
+    if ('Notification' in window) {
+      supported.value = true
+      permission.value = Notification.permission
+    }
+    window.addEventListener('touchstart', handleTouchStart)
+    window.addEventListener('touchend', handleTouchEnd)
+    // Desktop listeners
+    window.addEventListener('mousedown', handleMouseDown)
+    window.addEventListener('mouseup', handleMouseUp)
+  })
 })
 onUnmounted(() => {
   // Critical cleanup
