@@ -204,6 +204,11 @@ import { matShoppingCart,
   matRemove} from '@quasar/extras/material-icons'
 import { defineAsyncComponent } from 'vue'
 
+// Explicitly define these as Async to remove them from the Critical Path
+const QList = defineAsyncComponent(() => import('quasar').then(m => m.QList))
+const QItem = defineAsyncComponent(() => import('quasar').then(m => m.QItem))
+const QItemSection = defineAsyncComponent(() => import('quasar').then(m => m.QItemSection))
+const QDrawer = defineAsyncComponent(() => import('quasar').then(m => m.QDrawer))
 // Move these from standard imports to Async imports
 const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
 const AiAssistant = defineAsyncComponent(() => import('src/components/AiAssistant.vue'))

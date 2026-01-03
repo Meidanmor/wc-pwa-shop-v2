@@ -315,7 +315,9 @@ import { defineAsyncComponent } from 'vue'
 const QCarousel = defineAsyncComponent(() => import('quasar').then(m => m.QCarousel))
 const QCarouselSlide = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselSlide))
 const QCarouselControl = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselControl))
-
+const QCard = defineAsyncComponent(() => import('quasar').then(m => m.QCard))
+const QCardSection = defineAsyncComponent(() => import('quasar').then(m => m.QCardSection))
+const QInput = defineAsyncComponent(() => import('quasar').then(m => m.QInput))
 
   // Sync data immediately so the static HTML is correct
   if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
