@@ -233,18 +233,25 @@
       <h2 class="text-h4 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
-          <q-card class="q-pa-md">
-            <q-avatar size="56px" class="q-mb-sm">
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="40" cy="40" r="40" fill="#E8F5E9"/>
-                <circle cx="40" cy="30" r="12" fill="#81C784"/>
-                <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/>
-              </svg>
-            </q-avatar>
+          <div class="q-card q-pa-md">
+            <div class="q-avatar q-mb-sm" style="font-size:56px;">
+              <div class="q-avatar__content row flex-center overflow-hidden">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="40" cy="40" r="40" fill="#E8F5E9"></circle>
+                  <circle cx="40" cy="30" r="12" fill="#81C784"></circle>
+                  <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"></path>
+                </svg>
+              </div>
+            </div>
             <div class="text-subtitle1 q-mb-sm">{{ testimonial.name }}</div>
-            <q-icon :name="matFormatQuote" size="sm" class="text-grey-5" />
+            <i class="q-icon text-grey-5" style="font-size:24px;" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path style="fill:none;" d="M0 0h24v24H0z"></path>
+                <path style="" d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"></path>
+              </svg>
+            </i>
             <p class="text-body2">{{ testimonial.feedback }}</p>
-          </q-card>
+          </div>
         </div>
       </div>
     </section>
@@ -267,8 +274,10 @@
     <section class="newsletter-section container q-my-xl text-center">
       <h2 class="text-h4 text-weight-light q-mb-md">Stay Updated</h2>
       <p class="text-body1 q-mb-lg">Subscribe to our newsletter for the latest products and offers.</p>
-      <q-input filled v-model="email" label="Your Email" class="subscribe-email-input q-mb-md" />
-      <q-btn label="Subscribe" color="primary" @click="subscribeNewsletter" />
+      <label v-if="!isHydrated" class="q-field row no-wrap items-start q-field--filled q-input q-field--labeled subscribe-email-input q-mb-md" style=""><!----><div class="q-field__inner relative-position col self-stretch"><div class="q-field__control relative-position row no-wrap" tabindex="-1"><div class="q-field__control-container col relative-position row no-wrap q-anchor--skip"><input class="q-field__native q-placeholder" style="" tabindex="0" aria-label="Your Email" type="text" value=""><div class="q-field__label no-pointer-events absolute ellipsis">Your Email</div><!----></div></div><!----></div><!----></label>
+      <q-input v-else filled v-model="email" label="Your Email" class="subscribe-email-input q-mb-md" />
+      <button v-if="!isHydrated" class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-primary text-white q-btn--actionable q-focusable q-hoverable" style="" tabindex="0" type="button"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">Subscribe</span></span></button>
+      <q-btn v-else label="Subscribe" color="primary" @click="subscribeNewsletter" />
     </section>
 
     <!-- Instagram Feed Section -->
@@ -298,7 +307,7 @@ import { useQuasar, useMeta } from 'quasar'
 import cart from 'src/stores/cart'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { matChevronLeft, matChevronRight, matFormatQuote } from '@quasar/extras/material-icons'
+import { matChevronLeft, matChevronRight } from '@quasar/extras/material-icons'
 //import LazySection from 'components/LazySection.vue'
 import { defineAsyncComponent } from 'vue'
 
