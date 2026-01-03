@@ -317,6 +317,7 @@ const QCarouselSlide = defineAsyncComponent(() => import('quasar').then(m => m.Q
 const QCarouselControl = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselControl))
 const QCard = defineAsyncComponent(() => import('quasar').then(m => m.QCard))
 const QCardSection = defineAsyncComponent(() => import('quasar').then(m => m.QCardSection))
+const QCardActions = defineAsyncComponent(() => import('quasar').then(m => m.QCardActions))
 const QInput = defineAsyncComponent(() => import('quasar').then(m => m.QInput))
 
   // Sync data immediately so the static HTML is correct
