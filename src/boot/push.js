@@ -176,12 +176,15 @@ export default ({ router }) => {
 
       if (Platform.is && Platform.is.capacitor) {
         try {
-          // Dynamic import prevents the plugin from bloating your main bundle
-          const { PushNotifications: NativePush } = await import('@capacitor/push-notifications')
+          // We use a variable for the name so Vite doesn't try to
+          // strictly resolve it during the Web/SSR build process.
+          const packageName = '@capacitor/push-notifications'
+          const {PushNotifications: NativePush} = await import(/* @vite-ignore */ packageName)
+
           PushNotifications = NativePush
           await registerNativePush()
         } catch (e) {
-          console.warn('Push plugin not available:', e)
+          console.warn('Push plugin not available or not on mobile:', e)
         }
       } else if ('serviceWorker' in navigator) {
         // This fetch call no longer blocks the initial paint
@@ -189,7 +192,8 @@ export default ({ router }) => {
 
         navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data?.action === 'navigate' && event.data.url) {
-            window.$router.push(event.data.url).catch(() => {})
+            window.$router.push(event.data.url).catch(() => {
+            })
           }
         })
       }
