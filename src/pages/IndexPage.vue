@@ -320,10 +320,12 @@ const QCardSection = defineAsyncComponent(() => import('quasar').then(m => m.QCa
 const QCardActions = defineAsyncComponent(() => import('quasar').then(m => m.QCardActions))
 const QInput = defineAsyncComponent(() => import('quasar').then(m => m.QInput))
 
-  // Sync data immediately so the static HTML is correct
-  if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
-    productsStore.products.value = window.__PRODUCTS_DATA__
-  }
+const isHydrated = ref(false)
+
+// Sync data immediately so the static HTML is correct
+if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
+  productsStore.products.value = window.__PRODUCTS_DATA__
+}
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
 defineExpose({ scrollToProducts })
@@ -360,32 +362,36 @@ defineOptions({
 const seoData = ref(null)
 
 // This only runs in the browser
-if (process.env.CLIENT) {
-  if (window.__SEO_DATA__) {
-    seoData.value = window.__SEO_DATA__
-  }
+if( process.env.CLIENT ) {
+  watch(isHydrated, (val) => {
+    if (val && window.__SEO_DATA__) {
 
-  useMeta(() => {
-    const seo = seoData.value;
-    return {
-      title: seo?.title || 'NaturaBloom',
-      meta: {
-        description: {
-          name: 'description',
-          content: seo?.description || "Let's Bloom Together"
-        },
-        'og:title': {
-          property: 'og:title',
-          content: seo?.title || 'NaturaBloom'
-        },
-        'og:description': {
-          property: 'og:description',
-          content: seo?.description || "Let's Bloom Together"
+      seoData.value = window.__SEO_DATA__
+
+      useMeta(() => {
+        const seo = seoData.value;
+        return {
+          title: seo?.title || 'NaturaBloom',
+          meta: {
+            description: {
+              name: 'description',
+              content: seo?.description || "Let's Bloom Together"
+            },
+            'og:title': {
+              property: 'og:title',
+              content: seo?.title || 'NaturaBloom'
+            },
+            'og:description': {
+              property: 'og:description',
+              content: seo?.description || "Let's Bloom Together"
+            }
+          }
         }
-      }
+      })
     }
-  })
+  }, {immediate: true})
 }
+
 //const products = productsStore.products
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref(productsStore.products.value.slice(0, 6))
@@ -414,7 +420,6 @@ const $q = useQuasar()
 
 const slideChunks = ref([])
 const slide = ref(0)
-const isHydrated = ref(false)
 const carouselKey = ref(0)
 const productSection = ref(null)
 const ctaBtn = ref(null)
