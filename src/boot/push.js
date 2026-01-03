@@ -160,29 +160,41 @@ async function syncSubscriptionCartToken() {
 /**
  * Init push + cart tracking
  */
-export default async () => {
+export default ({ router }) => {
+  // 1. Prevent server-side execution
   if (typeof window === 'undefined') return
 
-  setupCartTracking()
+  // 2. Attach router to window immediately (very light)
+  window.$router = router
 
-  if (Platform.is && Platform.is.capacitor) {
-    try {
-      PushNotifications = require('@capacitor/push-notifications').PushNotifications
-      await registerNativePush()
-    } catch (e) {
-      console.warn('Push plugin not available:', e)
-    }
-  } else if ('serviceWorker' in navigator) {
-    // 🚨 Now we sync the subscription token on load/resume
-    syncSubscriptionCartToken()
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.action === 'navigate' && event.data.url) {
-        if (window.$router) {
-          window.$router.push(event.data.url).catch(() => {})
-        } else {
-          window.location.href = event.data.url
+  // 3. THE FIX: Wait for the page to be fully loaded and painted
+  window.addEventListener('load', () => {
+    // Wait an extra 3 seconds so the Hero image has 100% priority
+    setTimeout(async () => {
+
+      setupCartTracking()
+
+      if (Platform.is && Platform.is.capacitor) {
+        try {
+          // Dynamic import prevents the plugin from bloating your main bundle
+          const { PushNotifications: NativePush } = await import('@capacitor/push-notifications')
+          PushNotifications = NativePush
+          await registerNativePush()
+        } catch (e) {
+          console.warn('Push plugin not available:', e)
         }
+      } else if ('serviceWorker' in navigator) {
+        // This fetch call no longer blocks the initial paint
+        syncSubscriptionCartToken()
+
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data?.action === 'navigate' && event.data.url) {
+            window.$router.push(event.data.url).catch(() => {})
+          }
+        })
       }
-    })
-  }
+
+      console.log('✅ Push & Tracking initialized after LCP')
+    }, 3000)
+  })
 }
