@@ -30,6 +30,7 @@ const ssrContext = { req, res }
 
 render(ssrContext)
 .then(html => {
+    const noFontsHtml = html.replace(/<link [^>]*rel=["']preload["'][^>]*as=["']font["'][^>]*>/gi, '');
     const seoData = ssrContext.seoData || {};
     const productsData = ssrContext.productsData || {};
     const heroData = ssrContext.heroData || {};
@@ -67,7 +68,7 @@ render(ssrContext)
   `;
 
     // 3. SURGICAL PLACEMENT:
-    const output = html
+    const output = noFontsHtml
         .replace(/<title>.*?<\/title>/i, '') // Remove Quasar's default title
         .replace('<head>', `<head>${criticalHeadTop}`) // Inject critical stuff at the TOP
         .replace('</body>', `${bodyBottom}</body>`); // Inject heavy JSON at the BOTTOM
