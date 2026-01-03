@@ -209,10 +209,6 @@ const QList = defineAsyncComponent(() => import('quasar').then(m => m.QList))
 const QItem = defineAsyncComponent(() => import('quasar').then(m => m.QItem))
 const QItemSection = defineAsyncComponent(() => import('quasar').then(m => m.QItemSection))
 const QDrawer = defineAsyncComponent(() => import('quasar').then(m => m.QDrawer))
-const QBtn = defineAsyncComponent(() => import('quasar').then(m => m.QBtn))
-const QBadge = defineAsyncComponent(() => import('quasar').then(m => m.QBadge))
-const QIcon = defineAsyncComponent(() => import('quasar').then(m => m.QIcon))
-const QToolbarTitle = defineAsyncComponent(() => import('quasar').then(m => m.QToolbarTitle))
 
 // Move these from standard imports to Async imports
 const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
