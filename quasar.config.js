@@ -96,7 +96,7 @@ export default defineConfig((/* ctx */) => {
           }
         }, {server: false}]
       ],
-      /*extendViteConf(viteConf, {isClient, isServer}) {
+      extendViteConf(viteConf, {isClient, isServer}) {
         // ONLY apply manualChunks to the client build
         if (isClient) {
           viteConf.build.rollupOptions = {
@@ -116,7 +116,7 @@ export default defineConfig((/* ctx */) => {
             }
           };
         }
-      }*/
+      }
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
