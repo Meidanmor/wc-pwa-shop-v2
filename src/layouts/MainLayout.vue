@@ -185,7 +185,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, shallowRef } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import cart from 'src/stores/cart'
 //import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
@@ -206,7 +206,6 @@ import { defineAsyncComponent } from 'vue'
 
 // 2. Create a shallowRef for the directive.
 // Starting the name with 'v' (vTouchPan) tells Vue this is a directive.
-const vTouchPan = shallowRef({})
 // Explicitly define these as Async to remove them from the Critical Path
 const QList = defineAsyncComponent(() => import('quasar').then(m => m.QList))
 const QItem = defineAsyncComponent(() => import('quasar').then(m => m.QItem))
@@ -311,8 +310,6 @@ onMounted(() => {
 
   // Phase 2: Wait for the Hero to paint, then load the heavy stuff
   const scheduler = async() => {
-    const { TouchPan } = await import('quasar')
-    vTouchPan.value = TouchPan
     uiHydrated.value = true
     if ('Notification' in window) {
       supported.value = true

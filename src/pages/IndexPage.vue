@@ -371,12 +371,8 @@ if (process.env.CLIENT) {
       useMeta = quasar.useMeta
 
       // Check if we have SSR data, otherwise fetch it (SPA navigation)
-      if (window.__SEO_DATA__) {
-        seoData.value = window.__SEO_DATA__
-      } else {
         const { fetchSeoForPath } = await import('src/composables/useSeo')
         seoData.value = await fetchSeoForPath('homepage')
-      }
 
       // Apply Meta Tags
       useMeta(() => {
