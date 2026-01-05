@@ -208,10 +208,7 @@ import { matShoppingCart,
 import { defineAsyncComponent } from 'vue'
 
 // Add this if it's not already there
-const onPan = (evt) => {
-  // Quasar's TouchPan logic will be handled by the directive
-  // once vTouchPan is populated by the scheduler
-}
+
 const vTouchPan = shallowRef(null);
 // 2. Create a shallowRef for the directive.
 // Starting the name with 'v' (vTouchPan) tells Vue this is a directive.

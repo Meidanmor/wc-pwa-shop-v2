@@ -32,7 +32,7 @@ export default defineConfig((/* ctx */) => {
       head: (val) => val.trim()
     },
     boot: [
-        { path: 'push', client: true } ,
+        //{ path: 'push', client: true } ,
         //{ path: 'woocommerce', client: true } ,
         //{ path: 'products' } ,
       //{ path: 'deferred-css', client: true } ,
@@ -117,6 +117,14 @@ export default defineConfig((/* ctx */) => {
           };
         }
       }*/
+      // quasar.config.js -> build section
+extendViteConf (viteConf) {
+  viteConf.optimizeDeps = viteConf.optimizeDeps || {}
+  viteConf.optimizeDeps.exclude = viteConf.optimizeDeps.exclude || []
+  if (!viteConf.optimizeDeps.exclude.includes('quasar')) {
+    viteConf.optimizeDeps.exclude.push('quasar')
+  }
+}
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
