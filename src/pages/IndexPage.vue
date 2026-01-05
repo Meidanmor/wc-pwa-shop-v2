@@ -303,7 +303,7 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
-import { useQuasar/*, useMeta*/ } from 'quasar'
+import { useQuasar } from 'quasar'
 import cart from 'src/stores/cart'
 //import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
