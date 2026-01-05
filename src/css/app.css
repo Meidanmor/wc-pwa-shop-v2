@@ -1,3 +1,4 @@
+/* purgecss start ignore */
 /* app global css */
 @font-face {
   font-family: Roboto;
@@ -156,9 +157,17 @@ i.q-icon.on-left.notranslate.material-icons {
     margin-right: 3px;
 }
 
+.q-carousel__navigation-inner.flex.flex-center.no-wrap {
+    column-gap: 10px;
+}
+.q-carousel__control.q-carousel__navigation.no-wrap.absolute.flex {
+    width: 100%;
+    justify-content: center;
+}
 @media (max-width: 767px) {
     body section {
         padding-top: 40px;
         padding-bottom: 40px;
     }
 }
+/* purgecss end ignore */
