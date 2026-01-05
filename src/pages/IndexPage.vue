@@ -303,7 +303,7 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
-import { useQuasar } from 'quasar'
+import { useQuasar, useMeta } from 'quasar'
 import cart from 'src/stores/cart'
 //import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
@@ -361,15 +361,10 @@ defineOptions({
 
 const seoData = ref(null)
 // 1. Declare it at the top level (outside any functions)
-let useMeta = null;
 // 2. Updated SEO Watcher
 if (process.env.CLIENT) {
   watch(isHydrated, async (val) => {
     if (val) {
-      // Lazy load useMeta only when hydrated
-      const quasar = await import('quasar')
-      useMeta = quasar.useMeta
-
       // Check if we have SSR data, otherwise fetch it (SPA navigation)
         const { fetchSeoForPath } = await import('src/composables/useSeo')
         seoData.value = await fetchSeoForPath('homepage')

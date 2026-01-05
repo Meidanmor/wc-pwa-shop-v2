@@ -37,7 +37,7 @@
     </q-header>
 
     <!-- Mobile Navigation Drawer -->
-    <component :is="QDrawer"
+    <q-drawer
                v-directive:[vTouchPan]="onPan"
       v-model="mobileMenuDrawer"
       side="left"
@@ -103,10 +103,10 @@
         </template>
       </q-banner>
       </q-scroll-area>
-    </component>
+    </q-drawer>
 
   <!-- Wishlist Drawer -->
-  <component :is="QDrawer"
+  <q-drawer
              v-directive:[vTouchPan]="onPan"
     v-model="wishlistDrawerOpen"
     side="right"
@@ -115,9 +115,9 @@
     v-if="uiHydrated"
   >
     <WishlistDrawer />
-  </component>
+  </q-drawer>
 <!-------------- ------->
-    <component :is="QDrawer"
+    <q-drawer
                v-directive:[vTouchPan]="onPan"
       v-model="cartDrawer"
       side="right"
@@ -175,7 +175,7 @@
 
       </div>
         </q-no-ssr>
-    </component>
+    </q-drawer>
     <ai-assistant v-if="uiHydrated"></ai-assistant>
     <button v-else class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle q-btn--rounded bg-primary text-white q-btn--actionable q-focusable q-hoverable q-btn--fab fixed-bottom-left q-mb-md q-ml-md z-max" tabindex="0" type="button" aria-label="Open chat"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><i class="q-icon absolute" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" style="fill: none;"></path><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"></path></svg></i></span></button>
     <q-page-container :style="uiHydrated ? {} : { paddingTop: '58px' }">
@@ -207,6 +207,11 @@ import { matShoppingCart,
   matRemove} from '@quasar/extras/material-icons'
 import { defineAsyncComponent } from 'vue'
 
+// Add this if it's not already there
+const onPan = (evt) => {
+  // Quasar's TouchPan logic will be handled by the directive
+  // once vTouchPan is populated by the scheduler
+}
 const vTouchPan = shallowRef(null);
 // 2. Create a shallowRef for the directive.
 // Starting the name with 'v' (vTouchPan) tells Vue this is a directive.
@@ -314,9 +319,13 @@ onMounted(() => {
 
   // Phase 2: Wait for the Hero to paint, then load the heavy stuff
   const scheduler = async() => {
+
+// We use the standard import but handle it strictly inside the async block
     const { TouchPan } = await import('quasar')
 
-    vTouchPan.value = TouchPan // Assign it here
+    if (TouchPan) {
+      vTouchPan.value = TouchPan
+    }
     uiHydrated.value = true
     if ('Notification' in window) {
       supported.value = true
