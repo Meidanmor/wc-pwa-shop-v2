@@ -38,6 +38,7 @@
 
     <!-- Mobile Navigation Drawer -->
     <component :is="QDrawer"
+               v-directive:[vTouchPan]="onPan"
       v-model="mobileMenuDrawer"
       side="left"
       overlay
@@ -106,6 +107,7 @@
 
   <!-- Wishlist Drawer -->
   <component :is="QDrawer"
+             v-directive:[vTouchPan]="onPan"
     v-model="wishlistDrawerOpen"
     side="right"
     overlay
@@ -116,6 +118,7 @@
   </component>
 <!-------------- ------->
     <component :is="QDrawer"
+               v-directive:[vTouchPan]="onPan"
       v-model="cartDrawer"
       side="right"
       overlay
@@ -185,7 +188,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, shallowRef } from 'vue'
 import cart from 'src/stores/cart'
 //import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
@@ -204,6 +207,7 @@ import { matShoppingCart,
   matRemove} from '@quasar/extras/material-icons'
 import { defineAsyncComponent } from 'vue'
 
+const vTouchPan = shallowRef(null);
 // 2. Create a shallowRef for the directive.
 // Starting the name with 'v' (vTouchPan) tells Vue this is a directive.
 // Explicitly define these as Async to remove them from the Critical Path
@@ -310,6 +314,9 @@ onMounted(() => {
 
   // Phase 2: Wait for the Hero to paint, then load the heavy stuff
   const scheduler = async() => {
+    const { TouchPan } = await import('quasar')
+
+    vTouchPan.value = TouchPan // Assign it here
     uiHydrated.value = true
     if ('Notification' in window) {
       supported.value = true
