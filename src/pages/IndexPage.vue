@@ -303,9 +303,9 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
-import { useQuasar, useMeta } from 'quasar'
+import { useQuasar/*, useMeta*/ } from 'quasar'
 import cart from 'src/stores/cart'
-import { fetchSeoForPath } from 'src/composables/useSeo'
+//import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight } from '@quasar/extras/material-icons'
 //import LazySection from 'components/LazySection.vue'
@@ -336,8 +336,8 @@ defineExpose({ scrollToProducts })
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.path)
+    const { fetchSeoForPath } = await import('src/composables/useSeo')
     const seo = await fetchSeoForPath('homepage')
-
     // 2. FETCH PRODUCTS (This was missing!)
     await productsStore.preFetchProducts()
 
@@ -360,36 +360,38 @@ defineOptions({
 })
 
 const seoData = ref(null)
+// 1. Declare it at the top level (outside any functions)
+let useMeta = null;
+// 2. Updated SEO Watcher
+if (process.env.CLIENT) {
+  watch(isHydrated, async (val) => {
+    if (val) {
+      // Lazy load useMeta only when hydrated
+      const quasar = await import('quasar')
+      useMeta = quasar.useMeta
 
-// This only runs in the browser
-if( process.env.CLIENT ) {
-  watch(isHydrated, (val) => {
-    if (val && window.__SEO_DATA__) {
+      // Check if we have SSR data, otherwise fetch it (SPA navigation)
+      if (window.__SEO_DATA__) {
+        seoData.value = window.__SEO_DATA__
+      } else {
+        const { fetchSeoForPath } = await import('src/composables/useSeo')
+        seoData.value = await fetchSeoForPath('homepage')
+      }
 
-      seoData.value = window.__SEO_DATA__
-
+      // Apply Meta Tags
       useMeta(() => {
         const seo = seoData.value;
         return {
           title: seo?.title || 'NaturaBloom',
           meta: {
-            description: {
-              name: 'description',
-              content: seo?.description || "Let's Bloom Together"
-            },
-            'og:title': {
-              property: 'og:title',
-              content: seo?.title || 'NaturaBloom'
-            },
-            'og:description': {
-              property: 'og:description',
-              content: seo?.description || "Let's Bloom Together"
-            }
+            description: { name: 'description', content: seo?.description || "Let's Bloom Together" },
+            'og:title': { property: 'og:title', content: seo?.title || 'NaturaBloom' },
+            'og:description': { property: 'og:description', content: seo?.description || "Let's Bloom Together" }
           }
         }
       })
     }
-  }, {immediate: true})
+  }, { immediate: true })
 }
 
 //const products = productsStore.products

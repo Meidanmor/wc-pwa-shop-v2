@@ -185,7 +185,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, shallowRef } from 'vue'
 import cart from 'src/stores/cart'
 //import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useQuasar } from "quasar";
@@ -204,6 +204,9 @@ import { matShoppingCart,
   matRemove} from '@quasar/extras/material-icons'
 import { defineAsyncComponent } from 'vue'
 
+// 2. Create a shallowRef for the directive.
+// Starting the name with 'v' (vTouchPan) tells Vue this is a directive.
+const vTouchPan = shallowRef({})
 // Explicitly define these as Async to remove them from the Critical Path
 const QList = defineAsyncComponent(() => import('quasar').then(m => m.QList))
 const QItem = defineAsyncComponent(() => import('quasar').then(m => m.QItem))
@@ -307,17 +310,19 @@ onMounted(() => {
   storeReady.value = true
 
   // Phase 2: Wait for the Hero to paint, then load the heavy stuff
-  const scheduler = () => {
+  const scheduler = async() => {
+    const { TouchPan } = await import('quasar')
+    vTouchPan.value = TouchPan
     uiHydrated.value = true
     if ('Notification' in window) {
       supported.value = true
       permission.value = Notification.permission
     }
-    window.addEventListener('touchstart', handleTouchStart)
-    window.addEventListener('touchend', handleTouchEnd)
-    // Desktop listeners
-    window.addEventListener('mousedown', handleMouseDown)
-    window.addEventListener('mouseup', handleMouseUp)
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+    window.addEventListener('touchend', handleTouchEnd, { passive: true })
+    window.addEventListener('mousedown', handleMouseDown, { passive: true })
+    window.addEventListener('mouseup', handleMouseUp, { passive: true })
 
     window.removeEventListener('scroll', scheduler)
     window.removeEventListener('mousemove', scheduler)
