@@ -94,7 +94,7 @@ export default defineConfig((/* ctx */) => {
             lintCommand: 'eslint -c ./eslint.config.js "./src*/**/*.{js,mjs,cjs,vue}"',
             useFlatConfig: true
           }
-        }, {server: false}]
+        }, {server: false}],
       ],
       /*extendViteConf(viteConf, {isClient, isServer}) {
         // ONLY apply manualChunks to the client build
@@ -124,15 +124,10 @@ export default defineConfig((/* ctx */) => {
         if (!viteConf.optimizeDeps.exclude.includes('quasar')) {
           viteConf.optimizeDeps.exclude.push('quasar')
         }
-        viteConf.build.rollupOptions = {
-          output: {
-            // Ensure fonts are treated as assets and not entry-points
-            assetFileNames: (assetInfo) => {
-              if (assetInfo.name.endsWith('.woff2')) {
-                return 'assets/fonts/[name][extname]';
-              }
-              return 'assets/[name]-[hash][extname]';
-            }
+        viteConf.build.modulePreload = {
+          resolveDependencies: (filename, deps) => {
+            // Filter out any font dependencies so they aren't added to the preload list
+            return deps.filter(dep => !dep.endsWith('.woff') && !dep.endsWith('.woff2'))
           }
         }
       },
