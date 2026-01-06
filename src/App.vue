@@ -12,17 +12,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
-import { useQuasar } from 'quasar';
+import { ref, onMounted/*, onBeforeUnmount*/, watch } from 'vue';
+//import { useQuasar } from 'quasar';
 import cart from "src/stores/cart.js";
-const $q = useQuasar();
+//const $q = useQuasar();
 const isOnline = ref(true); // Assume online by default
 watch(() => cart.state.offline, (off) => {
   isOnline.value = !off; // update banner
 });
 
 onMounted(async () => {
-  if (typeof navigator !== 'undefined') {
+/*  if (typeof navigator !== 'undefined') {
     isOnline.value = navigator.onLine;
 
 const updateOnlineStatus = () => {
@@ -52,7 +52,7 @@ console.log('[cart.js] online/offline status listener attached');
       window.removeEventListener('online', updateOnlineStatus);
       window.removeEventListener('offline', updateOnlineStatus);
     });
-  }
+  }*/
 });
 </script>
 
