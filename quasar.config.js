@@ -118,13 +118,24 @@ export default defineConfig((/* ctx */) => {
         }
       }*/
       // quasar.config.js -> build section
-extendViteConf (viteConf) {
-  viteConf.optimizeDeps = viteConf.optimizeDeps || {}
-  viteConf.optimizeDeps.exclude = viteConf.optimizeDeps.exclude || []
-  if (!viteConf.optimizeDeps.exclude.includes('quasar')) {
-    viteConf.optimizeDeps.exclude.push('quasar')
-  }
-}
+      extendViteConf(viteConf) {
+        viteConf.optimizeDeps = viteConf.optimizeDeps || {}
+        viteConf.optimizeDeps.exclude = viteConf.optimizeDeps.exclude || []
+        if (!viteConf.optimizeDeps.exclude.includes('quasar')) {
+          viteConf.optimizeDeps.exclude.push('quasar')
+        }
+        viteConf.build.rollupOptions = {
+          output: {
+            // Ensure fonts are treated as assets and not entry-points
+            assetFileNames: (assetInfo) => {
+              if (assetInfo.name.endsWith('.woff2')) {
+                return 'assets/fonts/[name][extname]';
+              }
+              return 'assets/[name]-[hash][extname]';
+            }
+          }
+        }
+      },
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
