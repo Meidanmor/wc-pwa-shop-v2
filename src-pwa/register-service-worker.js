@@ -7,47 +7,26 @@ import { register } from 'register-service-worker'
 // events passes a ServiceWorkerRegistration instance in their arguments.
 // ServiceWorkerRegistration: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration
 
-register(process.env.SERVICE_WORKER_FILE, {
-  // The registrationOptions object will be passed as the second argument
-  // to ServiceWorkerContainer.register()
-  // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register#Parameter
+// We wait for the 'load' event, which fires when the initial
+// resources (like your Hero Image) are finished.
+window.addEventListener('load', () => {
 
-  // registrationOptions: { scope: './' },
+  // We add an extra delay to ensure the "Main Thread" has
+  // finished hydrating the page and painting the LCP.
+  setTimeout(() => {
+    console.log('--- Non-Critical: Registering Service Worker ---')
 
-  ready ( registration ) {
-     console.log('Service worker is active.', registration)
-  },
-
-  registered ( registration ) {
-    console.log('Service worker has been registered.', registration)
-    /*if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', event => {
-        if (event.data?.action === 'navigate' && event.data.url) {
-          console.log('[Client] Navigating to:', event.data.url);
-          router.push(event.data.url);
-        }
-      });
-    }*/
-  },
-
-  cached (/* registration */) {
-    // console.log('Content has been cached for offline use.')
-  },
-
-  updatefound (/* registration */) {
-    // console.log('New content is downloading.')
-  },
-
-  updated (/* registration */) {
-    // console.log('New content is available; please refresh.')
-  },
-
-  offline () {
-    // console.log('No internet connection found. App is running in offline mode.')
-  },
-
-  error ( err ) {
-     console.error('Error during service worker registration:', err)
-  }
+    register(process.env.SERVICE_WORKER_FILE, {
+      ready(registration) {
+        console.log('Service worker is active.')
+      },
+      registered(registration) {
+        console.log('Service worker has been registered.')
+      },
+      error(err) {
+        console.error('Error during service worker registration:', err)
+      }
+      // Keep your other hooks (offline, error, etc.) if you need them
+    })
+  }, 4000) // 4 seconds is the "sweet spot" for slow 4G devices
 })
-//navigator.serviceWorker.register('/custom-service-worker.js') // or custom name if you changed swDest
