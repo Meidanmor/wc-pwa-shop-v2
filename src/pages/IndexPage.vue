@@ -468,10 +468,6 @@ section.featured-products {
     min-height: 664px;
 }
 
-.q-carousel {
-    padding-bottom: 30px;
-}
-
 div.q-img__loading > svg{
   display: none;
 }
