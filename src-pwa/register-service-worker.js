@@ -17,10 +17,10 @@ window.addEventListener('load', () => {
     console.log('--- Non-Critical: Registering Service Worker ---')
 
     register(process.env.SERVICE_WORKER_FILE, {
-      ready(registration) {
+      ready(/*registration*/) {
         console.log('Service worker is active.')
       },
-      registered(registration) {
+      registered(/*registration*/) {
         console.log('Service worker has been registered.')
       },
       error(err) {
