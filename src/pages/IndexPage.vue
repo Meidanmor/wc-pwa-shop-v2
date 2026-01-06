@@ -37,77 +37,9 @@
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
 
-<div v-if="!isHydrated" class="q-carousel q-panel-parent q-carousel--without-padding q-carousel--navigation-bottom rounded-borders" style="height: 100%;">
-  <div class="q-carousel__slides-container">
-    <div class="q-panel scroll" role="tabpanel" style="--q-transition-duration: 300ms;">
-      <div class="q-carousel__slide">
-        <div class="row justify-between">
-
-          <div
-            v-for="(product, index) in visibleStaticItems"
-            :key="product.id"
-            class="col-12 col-sm-6 col-md-4"
-            :class="{ 'gt-xs': index === 1, 'gt-sm': index === 2 }"
-          >
-            <div class="q-card my-card full-height">
-              <img
-                width="300"
-                height="300"
-                :src="product.images?.[0]?.src|| ''"
-                :srcset="product.images?.[0]?.srcset || ''"
-                :sizes="product.images?.[0]?.sizes || ''"
-                :alt="product?.name || ''"
-              >
-              <div class="q-card__section q-card__section--vert">
-                <div class="text-h6">{{ product?.name }}</div>
-                <div class="text-subtitle2" v-html="product?.price_html"></div>
-              </div>
-              <div class="q-card__actions justify-start q-card__actions--horiz row">
-                <div v-if="!product?.is_in_stock">Out of stock</div>
-                <button
-                  v-else
-                  class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-primary text-white q-btn--actionable"
-                  type="button"
-                >
-                  <span class="q-btn__content text-center col items-center justify-center row">
-                    <span class="block">Add to Cart</span>
-                  </span>
-                </button>
-
-                <a
-                  class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable"
-                  :href="`/product/${getSlugFromPermalink(product?.permalink || '')}`"
-                >
-                  <span class="q-btn__content text-center col items-center justify-center row">
-                    <span class="block">View</span>
-                  </span>
-                </a>
-              </div>
-            </div>
-          </div>
-          </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="q-carousel__control absolute absolute-left flex items-center" style="margin: 18px;">
-    <button class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--dense" type="button">
-      <span class="q-btn__content text-center col items-center justify-center row">
-        <i class="q-icon"><svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg></i>
-      </span>
-    </button>
-  </div>
-  <div class="q-carousel__control absolute absolute-right flex items-center" style="margin: 18px;">
-    <button class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--dense" type="button">
-      <span class="q-btn__content text-center col items-center justify-center row">
-        <i class="q-icon"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></i>
-      </span>
-    </button>
-  </div>
-</div>
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
-        v-else
+        v-if="isHydrated"
       :key="carouselKey"
       @touchstart.stop
       @mousedown.stop
