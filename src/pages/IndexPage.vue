@@ -336,8 +336,9 @@ defineExpose({ scrollToProducts })
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.path)
-    const { fetchSeoForPath } = await import('src/composables/useSeo')
-    const seo = await fetchSeoForPath('homepage')
+    //const { fetchSeoForPath } = await import('src/composables/useSeo')
+    //const seo = await fetchSeoForPath('homepage')
+    const seo = null;
     // 2. FETCH PRODUCTS (This was missing!)
     await productsStore.preFetchProducts()
 
