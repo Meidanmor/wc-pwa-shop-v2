@@ -333,12 +333,12 @@ if (import.meta.env.SSR) {
   featuredProducts.value = featuredProductsComputed.value
 }
 
-const visibleStaticItems = computed(() => {
+/*const visibleStaticItems = computed(() => {
   const allProducts = productsStore.products.value || [];
   // If we have products, take 3.
   // If not, return 3 empty objects (we handle the missing properties in the template)
   return allProducts.length >= 3 ? allProducts.slice(0, 3) : [{}, {}, {}];
-});
+});*/
 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
