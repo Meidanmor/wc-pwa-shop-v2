@@ -2,42 +2,42 @@
 /* app global css */
 @font-face {
   font-family: Roboto;
-  font-display: swap;
+  font-display: optional;
   src: url(../assets/fonts/roboto/roboto-v50-latin-regular.woff2);
   font-style: normal;
   font-weight: 400;
 }
 @font-face {
   font-family: Roboto;
-  font-display: swap;
+  font-display: optional;
   src: url(../assets/fonts/roboto/roboto-v50-latin-200.woff2);
   font-style: normal;
   font-weight: 200;
 }
 @font-face {
   font-family: Roboto;
-  font-display: swap;
+  font-display: optional;
   src: url(../assets/fonts/roboto/roboto-v50-latin-500.woff2);
   font-style: normal;
   font-weight: 500;
 }
 @font-face {
   font-family: Roboto;
-  font-display: swap;
+  font-display: optional;
   src: url(../assets/fonts/roboto/roboto-v50-latin-600.woff2);
   font-style: normal;
   font-weight: 600;
 }
 @font-face {
   font-family: Roboto;
-  font-display: swap;
+  font-display: optional;
   src: url(../assets/fonts/roboto/roboto-v50-latin-700.woff2);
   font-style: normal;
   font-weight: 700;
 }
 @font-face {
   font-family: Roboto;
-  font-display: swap;
+  font-display: optional;
   src: url(../assets/fonts/roboto/roboto-v50-latin-800.woff2);
   font-style: normal;
   font-weight: 800;
