@@ -1,6 +1,6 @@
 <template>
   <div>
-<section class="hero-section-sec">
+<section class="hero-section-sec" v-pre>
   <div class="hero-section container hero-margin row">
 
     <div class="hero-content col-12 col-md-6 q-mb-lg">
@@ -9,7 +9,7 @@
         We encompass products that are organic, cruelty-free, and environmentally friendly
       </p>
 
-      <button class="hero-btn q-btn" @click="scrollToProducts">
+      <button class="hero-btn q-btn">
         <span class="q-focus-helper" tabindex="-1"></span>
         Browse Products
       </button>
