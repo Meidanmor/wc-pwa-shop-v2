@@ -493,9 +493,10 @@ isHydrated.value = false
     // COLD START: Wait for user interaction
     const hydrateOnInteraction = () => {
       if (isHydrated.value) return
-      isHydrated.value = true
-      recomputeSlides()
-
+      setTimeout(function(){
+        isHydrated.value = true
+        recomputeSlides()
+      }, 2000)
       // Cleanup listeners
       window.removeEventListener('scroll', hydrateOnInteraction)
       window.removeEventListener('mousemove', hydrateOnInteraction)
