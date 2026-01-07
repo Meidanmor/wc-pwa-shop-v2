@@ -218,7 +218,7 @@ const QList = defineAsyncComponent(() => import('quasar').then(m => m.QList))
 const QItem = defineAsyncComponent(() => import('quasar').then(m => m.QItem))
 const QItemSection = defineAsyncComponent(() => import('quasar').then(m => m.QItemSection))
 const QDrawer = defineAsyncComponent(() => import('quasar').then(m => m.QDrawer))
-const QLayout = defineAsyncComponent(() => import('quasar').then(m => m.QLayout))
+//const QLayout = defineAsyncComponent(() => import('quasar').then(m => m.QLayout))
 const QPageContainer = defineAsyncComponent(() => import('quasar').then(m => m.QPageContainer))
 const QHeader = defineAsyncComponent(() => import('quasar/src/components/header/QHeader.js'))
 
