@@ -220,6 +220,7 @@ const QItem = defineAsyncComponent(() => import('quasar').then(m => m.QItem))
 const QItemSection = defineAsyncComponent(() => import('quasar').then(m => m.QItemSection))
 const QDrawer = defineAsyncComponent(() => import('quasar').then(m => m.QDrawer))
 const QLayout = defineAsyncComponent(() => import('quasar').then(m => m.QLayout))
+const QPageContainer = defineAsyncComponent(() => import('quasar').then(m => m.QPageContainer))
 
 // Move these from standard imports to Async imports
 const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
