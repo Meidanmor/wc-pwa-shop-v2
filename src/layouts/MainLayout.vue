@@ -3,7 +3,7 @@
     <q-header elevated>
     <div class="container">
       <q-toolbar class="flex justify-between q-pa-sm">
-       <div class="flex">
+       <div class="flex" v-if="uiHydrated">
      <!-- Desktop Navigation -->
           <q-toolbar-title class="nav-bar" v-if="$q.screen.gt.sm">
             <router-link v-if="isSuperAdmin" to="/admin" class="text-h6 no-decoration"><q-icon :name="matAdminPanelSettings" /> Go to Admin Panel</router-link>
@@ -233,11 +233,11 @@ const mobileMenuDrawer = ref(false)
 const wishlistDrawerOpen = ref(false)
 const cartDrawer = ref(false)
 
-//let startX = 0
-//let isDragging = false
+let startX = 0
+let isDragging = false
 
 // 1. Logic for START (Touch or Mouse)
-/*const onStart = (x) => {
+const onStart = (x) => {
   if (mobileMenuDrawer.value || cartDrawer.value || wishlistDrawerOpen.value) {
     isDragging = false
     return
@@ -261,17 +261,17 @@ const onEnd = (endX) => {
       cartDrawer.value = true // Swipe Left
     }
   }
-}*/
+}
 
 // --- EVENT WRAPPERS ---
 
 // Mobile Handlers
-//const handleTouchStart = (e) => onStart(e.touches[0].clientX, e.touches[0].clientY)
-//const handleTouchEnd = (e) => onEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY)
+const handleTouchStart = (e) => onStart(e.touches[0].clientX, e.touches[0].clientY)
+const handleTouchEnd = (e) => onEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY)
 
 // Desktop Handlers (Mouse)
-//const handleMouseDown = (e) => onStart(e.clientX, e.clientY)
-//const handleMouseUp = (e) => onEnd(e.clientX, e.clientY)
+const handleMouseDown = (e) => onStart(e.clientX, e.clientY)
+const handleMouseUp = (e) => onEnd(e.clientX, e.clientY)
 
 const toggleCart = () => (cartDrawer.value = !cartDrawer.value)
 const toggleWishlistDrawer = () => (wishlistDrawerOpen.value = !wishlistDrawerOpen.value)
@@ -281,7 +281,7 @@ const increase = (id) => cart.increase(id, $q)
 const decrease = (id) => cart.decrease(id, $q)
 const remove = (itemKey=null, itemAPIkey=null) => cart.remove(itemKey,itemAPIkey, $q)
 
-/*function onPan(evt) {
+function onPan(evt) {
   if (evt.isFinal) {
     //if (evt.direction === 'right') cartDrawer.value = true
     const screenWidth = window.innerWidth
@@ -301,7 +301,7 @@ const remove = (itemKey=null, itemAPIkey=null) => cart.remove(itemKey,itemAPIkey
     }
     // Do NOT call evt.preventDefault() unless you want to block child interactions
   }
-}*/
+}
 
 async function handleSubscribe () {
   await subscribeToWebPush()
@@ -313,10 +313,10 @@ const uiHydrated = ref(false)              // Deferred functional UI
 
 onMounted(() => {
   // Phase 1: Show the badges immediately
-  //storeReady.value = true
+  storeReady.value = true
 
   // Phase 2: Wait for the Hero to paint, then load the heavy stuff
-  /*const scheduler = async() => {
+  const scheduler = async() => {
     uiHydrated.value = true
     if ('Notification' in window) {
       supported.value = true
@@ -338,15 +338,15 @@ onMounted(() => {
   window.addEventListener('touchstart', scheduler, {passive: true})
 
   // Safety fallback: Hydrate after 5 seconds if no interaction
-  setTimeout(scheduler, 5000)*/
+  setTimeout(scheduler, 5000)
 
 })
 onUnmounted(() => {
   // Critical cleanup
-  /*window.removeEventListener('touchstart', handleTouchStart)
+  window.removeEventListener('touchstart', handleTouchStart)
   window.removeEventListener('touchend', handleTouchEnd)
   window.removeEventListener('mousedown', handleMouseDown)
-  window.removeEventListener('mouseup', handleMouseUp)*/
+  window.removeEventListener('mouseup', handleMouseUp)
 })
 watch(() => cart.state.drawerOpen, val => {
   if(val === true) {
