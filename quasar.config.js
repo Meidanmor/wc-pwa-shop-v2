@@ -124,12 +124,20 @@ export default defineConfig((/* ctx */) => {
         if (!viteConf.optimizeDeps.exclude.includes('quasar')) {
           viteConf.optimizeDeps.exclude.push('quasar')
         }
-        viteConf.build.modulePreload = {
-          resolveDependencies: (filename, deps) => {
-            // Filter out any font dependencies so they aren't added to the preload list
-            return deps.filter(dep => !dep.endsWith('.woff') && !dep.endsWith('.woff2'))
+        viteConf.plugins.push({
+          name: 'strip-font-preloads',
+          // This runs during the generation of the SSR manifest
+          generateBundle(_, bundle) {
+            for (const file in bundle) {
+              if (file.endsWith('.woff') || file.endsWith('.woff2')) {
+                // We set 'isEntry' to false to prevent Vite from
+                // thinking this is a critical dependency that needs preloading
+                bundle[file].isEntry = false;
+                bundle[file].isImplicitEntry = false;
+              }
+            }
           }
-        }
+        });
       },
     },
 

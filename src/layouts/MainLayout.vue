@@ -38,6 +38,9 @@
 
     <!-- Mobile Navigation Drawer -->
     <q-drawer
+        no-swipe-open
+        no-swipe-close
+        no-swipe-backdrop
       v-model="mobileMenuDrawer"
       side="left"
       overlay
@@ -106,6 +109,9 @@
 
   <!-- Wishlist Drawer -->
   <q-drawer
+      no-swipe-open
+      no-swipe-close
+      no-swipe-backdrop
     v-model="wishlistDrawerOpen"
     side="right"
     overlay
@@ -116,6 +122,9 @@
   </q-drawer>
 <!-------------- ------->
     <q-drawer
+        no-swipe-open
+        no-swipe-close
+        no-swipe-backdrop
       v-model="cartDrawer"
       side="right"
       overlay
