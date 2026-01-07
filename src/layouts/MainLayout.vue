@@ -221,7 +221,8 @@ const QItemSection = defineAsyncComponent(() => import('quasar').then(m => m.QIt
 const QDrawer = defineAsyncComponent(() => import('quasar').then(m => m.QDrawer))
 const QLayout = defineAsyncComponent(() => import('quasar').then(m => m.QLayout))
 const QPageContainer = defineAsyncComponent(() => import('quasar').then(m => m.QPageContainer))
-const QHeader = defineAsyncComponent(() => import('quasar/src/components/header/QHeader.js'))
+const QScrollObserver = defineAsyncComponent(() => import('quasar').then(m => m.QScrollObserver))
+const QResizeObserver = defineAsyncComponent(() => import('quasar').then(m => m.QResizeObserver))
 
 // Move these from standard imports to Async imports
 const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
@@ -346,10 +347,10 @@ onMounted(() => {
       permission.value = Notification.permission
     }
 
-    window.addEventListener('touchstart', handleTouchStart, { passive: true })
-    window.addEventListener('touchend', handleTouchEnd, { passive: true })
-    window.addEventListener('mousedown', handleMouseDown, { passive: true })
-    window.addEventListener('mouseup', handleMouseUp, { passive: true })
+    window.addEventListener('touchstart', handleTouchStart, {passive: true})
+    window.addEventListener('touchend', handleTouchEnd, {passive: true})
+    window.addEventListener('mousedown', handleMouseDown, {passive: true})
+    window.addEventListener('mouseup', handleMouseUp, {passive: true})
 
     window.removeEventListener('scroll', scheduler)
     window.removeEventListener('mousemove', scheduler)
