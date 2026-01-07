@@ -215,19 +215,18 @@ import { matShoppingCart,
 import { defineAsyncComponent } from 'vue'
 
 // Explicitly define these as Async to remove them from the Critical Path
-const QList = defineAsyncComponent(() => import('quasar').then(m => m.QList))
-const QItem = defineAsyncComponent(() => import('quasar').then(m => m.QItem))
-const QItemSection = defineAsyncComponent(() => import('quasar').then(m => m.QItemSection))
-const QDrawer = defineAsyncComponent(() => import('quasar').then(m => m.QDrawer))
-const QLayout = defineAsyncComponent(() => import('quasar').then(m => m.QLayout))
-const QPageContainer = defineAsyncComponent(() => import('quasar').then(m => m.QPageContainer))
+/* eslint-disable no-unused-vars */
+const QList = defineAsyncComponent(() => import('quasar/src/components/item/QList.js'))
+const QItem = defineAsyncComponent(() => import('quasar/src/components/item/QItem.js'))
+const QItemSection = defineAsyncComponent(() => import('quasar/src/components/item/QItemSection.js'))
+const QHeader = defineAsyncComponent(() => import('quasar/src/components/header/QHeader.js'))
+const QDrawer = defineAsyncComponent(() => import('quasar/src/components/drawer/QDrawer.js'))
+const QLayout = defineAsyncComponent(() => import('quasar/src/components/layout/QLayout.js'))
+const QPageContainer = defineAsyncComponent(() => import('quasar/src/components/layout/QPageContainer.js'))
+const QScrollObserver = defineAsyncComponent(() => import('quasar/src/components/scroll-observer/QScrollObserver.js'))
+const QResizeObserver = defineAsyncComponent(() => import('quasar/src/components/resize-observer/QResizeObserver.js'))
+/* eslint-enable no-unused-vars */
 
-const QScrollObserver = defineAsyncComponent(() =>
-  import('quasar/src/components/scroll-observer/QScrollObserver.js')
-)
-const QResizeObserver = defineAsyncComponent(() =>
-  import('quasar/src/components/resize-observer/QResizeObserver.js')
-)
 // Move these from standard imports to Async imports
 const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
 const AiAssistant = defineAsyncComponent(() => import('src/components/AiAssistant.vue'))
@@ -334,8 +333,10 @@ onMounted(() => {
     try {
       await Promise.all([
         import('quasar/src/components/layout/QLayout.js'),
-        import('quasar/src/components/header/QHeader.js'),
-      ])
+        import('quasar/src/components/header/QHeader.js'), // <-- Warm up the header too
+        import('quasar/src/components/layout/QPageContainer.js'),
+        import('quasar/src/components/scroll-observer/QScrollObserver.js'),
+        import('quasar/src/components/resize-observer/QResizeObserver.js')])
 
       // 2. Now that scripts are in the browser cache,
       // flipping this switch will be INSTANT (no white screen)
