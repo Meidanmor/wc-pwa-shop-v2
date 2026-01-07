@@ -194,6 +194,20 @@ body section {
 i.q-icon.on-left.notranslate.material-icons {
     margin-right: 3px;
 }
+.q-badge.flex.inline.items-center.no-wrap.q-badge--single-line.bg-red.q-badge--floating {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: red;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 700;
+}
 .q-carousel {
     padding-bottom: 30px;
   position: relative;
