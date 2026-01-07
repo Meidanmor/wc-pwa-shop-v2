@@ -222,7 +222,7 @@ const QItemSection = defineAsyncComponent(() => import('quasar/src/components/it
 const QHeader = defineAsyncComponent(() => import('quasar/src/components/header/QHeader.js'))
 const QDrawer = defineAsyncComponent(() => import('quasar/src/components/drawer/QDrawer.js'))
 const QLayout = defineAsyncComponent(() => import('quasar/src/components/layout/QLayout.js'))
-const QPageContainer = defineAsyncComponent(() => import('quasar/src/components/layout/QPageContainer.js'))
+const QPageContainer = defineAsyncComponent(() => import('quasar/src/components/page/QPageContainer.js'))
 const QScrollObserver = defineAsyncComponent(() => import('quasar/src/components/scroll-observer/QScrollObserver.js'))
 const QResizeObserver = defineAsyncComponent(() => import('quasar/src/components/resize-observer/QResizeObserver.js'))
 /* eslint-enable no-unused-vars */
@@ -334,7 +334,7 @@ onMounted(() => {
       await Promise.all([
         import('quasar/src/components/layout/QLayout.js'),
         import('quasar/src/components/header/QHeader.js'), // <-- Warm up the header too
-        import('quasar/src/components/layout/QPageContainer.js'),
+        import('quasar/src/components/page/QPageContainer.js'),
         import('quasar/src/components/scroll-observer/QScrollObserver.js'),
         import('quasar/src/components/resize-observer/QResizeObserver.js')])
 
