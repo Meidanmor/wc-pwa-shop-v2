@@ -221,9 +221,13 @@ const QItemSection = defineAsyncComponent(() => import('quasar').then(m => m.QIt
 const QDrawer = defineAsyncComponent(() => import('quasar').then(m => m.QDrawer))
 const QLayout = defineAsyncComponent(() => import('quasar').then(m => m.QLayout))
 const QPageContainer = defineAsyncComponent(() => import('quasar').then(m => m.QPageContainer))
-const QScrollObserver = defineAsyncComponent(() => import('quasar').then(m => m.QScrollObserver))
-const QResizeObserver = defineAsyncComponent(() => import('quasar').then(m => m.QResizeObserver))
 
+const QScrollObserver = defineAsyncComponent(() =>
+  import('quasar/src/components/scroll-observer/QScrollObserver.js')
+)
+const QResizeObserver = defineAsyncComponent(() =>
+  import('quasar/src/components/resize-observer/QResizeObserver.js')
+)
 // Move these from standard imports to Async imports
 const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
 const AiAssistant = defineAsyncComponent(() => import('src/components/AiAssistant.vue'))
