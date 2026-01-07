@@ -1,5 +1,15 @@
 <template>
-  <q-layout view="hHh lpR fFf">
+  <div v-if="!uiHydrated" class="minimal-fallback">
+<header class="q-header q-layout__section--marginal fixed-top"><div class="container"><div class="q-toolbar row no-wrap items-center flex justify-between q-pa-sm" role="toolbar"><div class="flex"><!-- Desktop Navigation --><div class="q-toolbar__title ellipsis nav-bar"><!--v-if--><a aria-current="page" href="/" class="router-link-active router-link-exact-active text-h6 no-decoration">My Shop</a><a href="/products/" class="text-h6 no-decoration">Products</a><a href="/cart/" class="text-h6 no-decoration">Cart</a><a href="/checkout/" class="text-h6 no-decoration">Checkout</a><a href="/my-account/" class="text-h6 no-decoration">My account</a></div><!-- Mobile Menu Toggle --><!--v-if--></div><a aria-current="page" href="/" class="router-link-active router-link-exact-active flex items-center q-mr-auto order-first" aria-label="Navigate to home page"><svg width="180px" height="42px" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 206.73 48" style="display: block;"><text transform="translate(55 23.71)" style="fill: var(--q-secondary); font-family: ArialMT, Arial; font-size: 26px; isolation: isolate;"><tspan x="0" y="0">NaturaBloom</tspan></text><text transform="translate(56 41.71)" style="fill: var(--q-secondary); font-family: ArialMT, Arial; font-size: 12px; isolation: isolate;"><tspan x="0" y="0">Let</tspan><tspan x="16.68" y="0" style="letter-spacing: -0.02em;">’</tspan><tspan x="19.13" y="0">s Bloom</tspan><tspan x="62.48" y="0" style="letter-spacing: -0.02em;"></tspan><tspan x="65.6" y="0" style="letter-spacing: -0.11em;">T</tspan><tspan x="71.6" y="0">ogether</tspan></text><circle cx="24" cy="24" r="24" style="fill: rgb(243, 236, 226);"></circle><path d="M24,10c6,10,6,18,0,28-6-10-6-18,0-28Z" style="fill: rgb(163, 201, 168);"></path></svg></a><div><button class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle q-btn--actionable q-focusable q-hoverable q-btn--dense q-ml-sm q-mr-sm" tabindex="0" type="button" aria-label="Add to wishlist"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><i class="q-icon" aria-hidden="true" role="img"><svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" style="fill: none;"></path><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"></path></svg></i><!--v-if--></span></button><button class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle q-btn--actionable q-focusable q-hoverable q-btn--dense" tabindex="0" type="button" aria-label="View cart"><span class="q-focus-helper"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><i class="q-icon" aria-hidden="true" role="img"><svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" style="fill: none;"></path><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"></path></svg></i><!--v-if--></span></button></div></div></div><div class="q-layout__shadow absolute-full overflow-hidden no-pointer-events"></div><!----></header>
+
+    <main>
+      <div style="padding-top: 58px">
+    <router-view />
+        </div>
+    </main>
+  </div>
+
+  <q-layout view="hHh lpR fFf" v-else>
     <q-header elevated>
     <div class="container">
       <q-toolbar class="flex justify-between q-pa-sm">
@@ -38,9 +48,6 @@
 
     <!-- Mobile Navigation Drawer -->
     <q-drawer
-        no-swipe-open
-        no-swipe-close
-        no-swipe-backdrop
       v-model="mobileMenuDrawer"
       side="left"
       overlay
@@ -109,9 +116,6 @@
 
   <!-- Wishlist Drawer -->
   <q-drawer
-      no-swipe-open
-      no-swipe-close
-      no-swipe-backdrop
     v-model="wishlistDrawerOpen"
     side="right"
     overlay
@@ -122,9 +126,6 @@
   </q-drawer>
 <!-------------- ------->
     <q-drawer
-        no-swipe-open
-        no-swipe-close
-        no-swipe-backdrop
       v-model="cartDrawer"
       side="right"
       overlay
@@ -218,6 +219,7 @@ const QList = defineAsyncComponent(() => import('quasar').then(m => m.QList))
 const QItem = defineAsyncComponent(() => import('quasar').then(m => m.QItem))
 const QItemSection = defineAsyncComponent(() => import('quasar').then(m => m.QItemSection))
 const QDrawer = defineAsyncComponent(() => import('quasar').then(m => m.QDrawer))
+const QLayout = defineAsyncComponent(() => import('quasar').then(m => m.QLayout))
 
 // Move these from standard imports to Async imports
 const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
@@ -281,7 +283,7 @@ const increase = (id) => cart.increase(id, $q)
 const decrease = (id) => cart.decrease(id, $q)
 const remove = (itemKey=null, itemAPIkey=null) => cart.remove(itemKey,itemAPIkey, $q)
 
-function onPan(evt) {
+/*function onPan(evt) {
   if (evt.isFinal) {
     //if (evt.direction === 'right') cartDrawer.value = true
     const screenWidth = window.innerWidth
@@ -301,7 +303,7 @@ function onPan(evt) {
     }
     // Do NOT call evt.preventDefault() unless you want to block child interactions
   }
-}
+}*/
 
 async function handleSubscribe () {
   await subscribeToWebPush()
