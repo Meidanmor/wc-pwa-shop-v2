@@ -126,15 +126,18 @@ export default defineConfig((/* ctx */) => {
               ...viteConf.build.rollupOptions?.output,
               manualChunks(id) {
                 // If the file is an observer, force it into its own async chunk
-                if (id.includes('quasar/src/components/scroll-observer') ||
-                    id.includes('quasar/src/components/resize-observer')) {
+                if (
+                    id.includes('quasar/src/components/scroll-observer') ||
+                    id.includes('quasar/src/components/resize-observer') ||
+                    id.includes('quasar/src/directives/touch-pan') ||
+                    id.includes('quasar/src/directives/touch-hold')) {
                   return 'quasar-observers-delayed';
-                }
-
-                // DO NOT group the rest of quasar here.
-                // Let Vite handle the rest automatically so your
-                // defineAsyncComponent logic actually creates separate files.
               }
+
+              // DO NOT group the rest of quasar here.
+              // Let Vite handle the rest automatically so your
+              // defineAsyncComponent logic actually creates separate files.
+            }
             }
           };
         }
