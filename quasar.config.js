@@ -118,26 +118,26 @@ export default defineConfig((/* ctx */) => {
         }
       }*/
       // quasar.config.js -> build section
-      extendViteConf(viteConf) {
-        viteConf.optimizeDeps = viteConf.optimizeDeps || {}
-        viteConf.optimizeDeps.exclude = viteConf.optimizeDeps.exclude || []
-        if (!viteConf.optimizeDeps.exclude.includes('quasar')) {
-          viteConf.optimizeDeps.exclude.push('quasar')
-        }
-        viteConf.plugins.push({
-          name: 'strip-font-preloads',
-          // This runs during the generation of the SSR manifest
-          generateBundle(_, bundle) {
-            for (const file in bundle) {
-              if (file.endsWith('.woff') || file.endsWith('.woff2')) {
-                // We set 'isEntry' to false to prevent Vite from
-                // thinking this is a critical dependency that needs preloading
-                bundle[file].isEntry = false;
-                bundle[file].isImplicitEntry = false;
+      extendViteConf(viteConf, {isClient}) {
+        if (isClient) {
+          viteConf.build.rollupOptions = {
+            ...viteConf.build.rollupOptions,
+            output: {
+              ...viteConf.build.rollupOptions?.output,
+              manualChunks(id) {
+                // If the file is an observer, force it into its own async chunk
+                if (id.includes('quasar/src/components/scroll-observer') ||
+                    id.includes('quasar/src/components/resize-observer')) {
+                  return 'quasar-observers-delayed';
+                }
+
+                // DO NOT group the rest of quasar here.
+                // Let Vite handle the rest automatically so your
+                // defineAsyncComponent logic actually creates separate files.
               }
             }
-          }
-        });
+          };
+        }
       },
     },
 
