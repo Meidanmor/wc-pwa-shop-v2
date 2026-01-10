@@ -1,9 +1,9 @@
 <template>
   <div v-if="!uiHydrated" class="minimal-fallback">
-<header class="fallback-header-style fixed-top"><div class="container">
-  <div class="custom-toolbar row no-wrap items-center flex justify-between q-pa-sm" role="toolbar">
+<header class="q-header q-layout__section--marginal fixed-top"><div class="container">
+  <div class="q-toolbar row no-wrap items-center flex justify-between q-pa-sm" role="toolbar">
     <div class="flex"><!-- Desktop Navigation -->
-      <div class="custom-toolbar__title ellipsis nav-bar gt-sm"><!--v-if-->
+      <div class="q-toolbar__title ellipsis nav-bar gt-sm"><!--v-if-->
         <a aria-current="page" href="/" class="router-link-active router-link-exact-active text-h6 no-decoration">My Shop</a>
         <a href="/products/" class="text-h6 no-decoration">Products</a>
         <a href="/cart/" class="text-h6 no-decoration">Cart</a>
@@ -231,7 +231,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import cart from 'src/stores/cart'
 //import WishlistDrawer from 'src/components/WishlistDrawer.vue'
-import { useQuasar } from "quasar";
+//import { useQuasar } from "quasar";
 //import AiAssistant from "src/components/AiAssistant.vue";
 import { subscribeToWebPush } from 'src/boot/push'
 import { matShoppingCart,
@@ -269,7 +269,7 @@ const permission = ref('default')
 const supported = ref(false)
 const isSuperAdmin = computed(() => cart.state.user?.is_super_admin === true)
 
-const $q = useQuasar()
+//const $q = useQuasar()
 const mobileMenuDrawer = ref(false)
 
 const wishlistDrawerOpen = ref(false)
@@ -319,9 +319,9 @@ const toggleCart = () => (cartDrawer.value = !cartDrawer.value)
 const toggleWishlistDrawer = () => (wishlistDrawerOpen.value = !wishlistDrawerOpen.value)
 
 // Wrap cart methods so template can call directly
-const increase = (id) => cart.increase(id, $q)
-const decrease = (id) => cart.decrease(id, $q)
-const remove = (itemKey=null, itemAPIkey=null) => cart.remove(itemKey,itemAPIkey, $q)
+const increase = (id) => cart.increase(id)
+const decrease = (id) => cart.decrease(id)
+const remove = (itemKey=null, itemAPIkey=null) => cart.remove(itemKey,itemAPIkey)
 
 /*function onPan(evt) {
   if (evt.isFinal) {
