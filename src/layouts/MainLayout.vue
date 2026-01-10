@@ -98,7 +98,6 @@
             <q-item
       v-if="isSuperAdmin"
       clickable
-      v-ripple
       to="/admin"
       active-class="text-primary"
     >
@@ -108,27 +107,27 @@
       <q-item-section>Go to Admin Panel</q-item-section>
     </q-item>
 
-            <q-item clickable v-ripple to="/" @click="mobileMenuDrawer = false">
+            <q-item clickable to="/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matHome" /></q-item-section>
               <q-item-section>Home</q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple to="/products/" @click="mobileMenuDrawer = false">
+            <q-item clickable to="/products/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matStorefront" /></q-item-section>
               <q-item-section>Products</q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple to="/cart/" @click="mobileMenuDrawer = false">
+            <q-item clickable to="/cart/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matShoppingCart" /></q-item-section>
               <q-item-section>Cart</q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple to="/checkout/" @click="mobileMenuDrawer = false">
+            <q-item clickable to="/checkout/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matReceipt" /></q-item-section>
               <q-item-section>Checkout</q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple to="/my-account/" @click="mobileMenuDrawer = false">
+            <q-item clickable to="/my-account/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matPerson" /></q-item-section>
               <q-item-section>My Account</q-item-section>
             </q-item>
