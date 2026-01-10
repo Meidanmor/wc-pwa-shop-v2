@@ -130,7 +130,8 @@ export default defineConfig((/* ctx */) => {
                     id.includes('quasar/src/components/scroll-observer') ||
                     id.includes('quasar/src/components/resize-observer') ||
                     id.includes('quasar/src/directives/touch-pan') ||
-                    id.includes('quasar/src/directives/touch-hold')) {
+                    id.includes('quasar/src/directives/touch-hold') ||
+                    id.includes('quasar/src/utils/format')) {
                   return 'quasar-observers-delayed';
               }
 

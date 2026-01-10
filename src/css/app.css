@@ -69,7 +69,11 @@ body{
   color: var(--q-secondary);
   /*scroll-behavior: smooth;*/
 }
-
+/* If the scroll is NOT prevented, the backdrop MUST NOT exist */
+body:not(.q-body--prevent-scroll) .q-drawer__backdrop[style="background-color: rgba(0, 0, 0, 0);"] {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
 .screen-reader-text {
     position: absolute;
     visibility: hidden;
@@ -215,6 +219,7 @@ i.q-icon.on-left.notranslate.material-icons {
 .q-carousel__control.absolute:not(.q-carousel__navigation) {
     top: 45%;
     background: #fff;
+    bottom: unset;
     border-radius: 50%;
 }
 .q-carousel__control.absolute.absolute-left.flex.items-center {
