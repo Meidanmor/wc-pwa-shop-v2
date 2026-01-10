@@ -98,6 +98,7 @@
             <q-item
       v-if="isSuperAdmin"
       clickable
+      v-ripple
       to="/admin"
       active-class="text-primary"
     >
@@ -107,27 +108,27 @@
       <q-item-section>Go to Admin Panel</q-item-section>
     </q-item>
 
-            <q-item clickable to="/" @click="mobileMenuDrawer = false">
+            <q-item clickable v-ripple to="/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matHome" /></q-item-section>
               <q-item-section>Home</q-item-section>
             </q-item>
 
-            <q-item clickable to="/products/" @click="mobileMenuDrawer = false">
+            <q-item clickable v-ripple to="/products/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matStorefront" /></q-item-section>
               <q-item-section>Products</q-item-section>
             </q-item>
 
-            <q-item clickable to="/cart/" @click="mobileMenuDrawer = false">
+            <q-item clickable v-ripple to="/cart/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matShoppingCart" /></q-item-section>
               <q-item-section>Cart</q-item-section>
             </q-item>
 
-            <q-item clickable to="/checkout/" @click="mobileMenuDrawer = false">
+            <q-item clickable v-ripple to="/checkout/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matReceipt" /></q-item-section>
               <q-item-section>Checkout</q-item-section>
             </q-item>
 
-            <q-item clickable to="/my-account/" @click="mobileMenuDrawer = false">
+            <q-item clickable v-ripple to="/my-account/" @click="mobileMenuDrawer = false">
               <q-item-section avatar><q-icon :name="matPerson" /></q-item-section>
               <q-item-section>My Account</q-item-section>
             </q-item>
@@ -258,6 +259,8 @@ const QLayout = defineAsyncComponent(() => import('quasar/src/components/layout/
 const QPageContainer = defineAsyncComponent(() => import('quasar/src/components/page/QPageContainer.js'))
 const QScrollObserver = defineAsyncComponent(() => import('quasar/src/components/scroll-observer/QScrollObserver.js'))
 const QResizeObserver = defineAsyncComponent(() => import('quasar/src/components/resize-observer/QResizeObserver.js'))
+const QToolbar = defineAsyncComponent(() => import('quasar/src/components/toolbar/QToolbar.js'))
+const QToolbarTitle = defineAsyncComponent(() => import('quasar/src/components/toolbar/QToolbarTitle.js'))
 /* eslint-enable no-unused-vars */
 
 // Move these from standard imports to Async imports
@@ -369,11 +372,14 @@ onMounted(() => {
     // This happens while the user is looking at the static SSR page
     try {
       await Promise.all([
+        import('quasar/src/components/scroll-observer/QScrollObserver.js'),
+        import('quasar/src/components/resize-observer/QResizeObserver.js'),
         import('quasar/src/components/layout/QLayout.js'),
         import('quasar/src/components/header/QHeader.js'), // <-- Warm up the header too
+        import('quasar/src/components/toolbar/QToolbar.js'), // Add this
+        import('quasar/src/components/toolbar/QToolbarTitle.js'), // Add this
         import('quasar/src/components/page/QPageContainer.js'),
-        import('quasar/src/components/scroll-observer/QScrollObserver.js'),
-        import('quasar/src/components/resize-observer/QResizeObserver.js')])
+      ])
 
       // 2. Now that scripts are in the browser cache,
       // flipping this switch will be INSTANT (no white screen)
