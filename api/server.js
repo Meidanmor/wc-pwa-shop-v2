@@ -3,19 +3,24 @@ import { pathToFileURL } from 'url';
 
 export default async function handler(req, res) {
   try {
-    // Dynamically locate the Quasar index.js relative to this function
     const indexPath = join(process.cwd(), 'dist', 'ssr', 'index.js');
+    const quasarServer = await import(pathToFileURL(indexPath).href);
 
-    // Convert to File URL for ESM import compatibility
-    const { handler: quasarHandler } = await import(pathToFileURL(indexPath).href);
+    // Quasar ESM builds usually export the handler as '_e'
+    // We check for 'handler' first, then '_e', then 'default'
+    const render = quasarServer.handler || quasarServer._e || quasarServer.default;
 
-    return quasarHandler(req, res);
+    if (typeof render !== 'function') {
+      throw new Error(`No valid handler found. Exports: ${Object.keys(quasarServer).join(', ')}`);
+    }
+
+    return render(req, res);
   } catch (error) {
     console.error('Vercel Execution Error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
       message: error.message,
-      stack: error.stack
+      keys: error.keys // Helping us debug if it fails again
     });
   }
 }
