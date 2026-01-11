@@ -1,19 +1,9 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "dist/ssr/index.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/_next/static/(.*)",
-      "dest": "/_next/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "dist/ssr/index.js"
+      "source": "/(.*)",
+      "destination": "/api/server.js"
     }
   ]
 }
