@@ -123,7 +123,7 @@ export default defineConfig((/* ctx */) => {
           resolveDependencies: (filename, deps) => {
             // Filter out Quasar components from the 'preload' list
             // This forces the browser to wait until the 5-second timer to even start the download
-            return deps.filter(dep => !dep.includes('QLayout') && !dep.includes('QList') && !dep.includes('use-quasar'));
+            return deps.filter(dep => !dep.includes('QLayout') && !dep.includes('QList') && !dep.includes('QItemSection') && !dep.includes('use-quasar'));
           },
         }
         if (isClient) {
