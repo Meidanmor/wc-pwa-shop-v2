@@ -1,12 +1,19 @@
 {
   "version": 2,
-  "functions": {
-    "api/server.js": {
-      "runtime": "node@20",
-      "includeFiles": "dist/ssr/**"
+  "builds": [
+    {
+      "src": "dist/ssr/index.js",
+      "use": "@vercel/node"
     }
-  },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/server.js" }
+  ],
+  "routes": [
+    {
+      "src": "/_next/static/(.*)",
+      "dest": "/_next/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "dist/ssr/index.js"
+    }
   ]
 }
