@@ -1,12 +1,21 @@
-// api/index.js
-import { handler } from '../dist/ssr/index.js';
+import { join } from 'path';
+import { pathToFileURL } from 'url';
 
-export default async function (req, res) {
+export default async function handler(req, res) {
   try {
-    // Quasar handler is an (req, res) Express-like function
-    return handler(req, res);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Internal Server Error');
+    // Dynamically locate the Quasar index.js relative to this function
+    const indexPath = join(process.cwd(), 'dist', 'ssr', 'index.js');
+
+    // Convert to File URL for ESM import compatibility
+    const { handler: quasarHandler } = await import(pathToFileURL(indexPath).href);
+
+    return quasarHandler(req, res);
+  } catch (error) {
+    console.error('Vercel Execution Error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: error.message,
+      stack: error.stack
+    });
   }
 }
