@@ -119,6 +119,13 @@ export default defineConfig((/* ctx */) => {
       }*/
       // quasar.config.js -> build section
       extendViteConf(viteConf, {isClient}) {
+        viteConf.build.modulePreload = {
+          resolveDependencies: (filename, deps) => {
+            // Filter out Quasar components from the 'preload' list
+            // This forces the browser to wait until the 5-second timer to even start the download
+            return deps.filter(dep => !dep.includes('QLayout') && !dep.includes('QList') && !dep.includes('use-quasar'));
+          },
+        }
         if (isClient) {
           viteConf.build.rollupOptions = {
             ...viteConf.build.rollupOptions,
