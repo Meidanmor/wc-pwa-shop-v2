@@ -237,7 +237,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
 import cart from 'src/stores/cart'
-//import { fetchSeoForPath } from 'src/composables/useSeo'
+import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight } from '@quasar/extras/material-icons'
 //import LazySection from 'components/LazySection.vue'
@@ -268,9 +268,9 @@ defineExpose({ scrollToProducts })
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.path)
-    //const { fetchSeoForPath } = await import('src/composables/useSeo')
-    //const seo = await fetchSeoForPath('homepage')
-    const seo = null;
+    const { fetchSeoForPath } = await import('src/composables/useSeo')
+    const seo = await fetchSeoForPath('homepage')
+    //const seo = null;
     // 2. FETCH PRODUCTS (This was missing!)
     await productsStore.preFetchProducts()
 
