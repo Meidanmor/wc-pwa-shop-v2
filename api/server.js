@@ -1,8 +1,10 @@
-const path = require('path');
-
-// We use path.resolve to make sure Vercel finds the folder we 'included' above
-const serverPath = path.resolve(__dirname, '../dist/ssr/index.js');
-const server = require(serverPath);
-
-// Quasar SSR exports the Express 'app'. Vercel needs that exported.
-module.exports = server;
+// We use dynamic import because Quasar SSR is likely ESM
+export default async function handler(req, res) {
+  try {
+    const { handler } = await import('../dist/ssr/index.js');
+    return handler(req, res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+}

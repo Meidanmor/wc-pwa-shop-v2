@@ -6,7 +6,7 @@
       "destination": "/dist/ssr/client/_quasar/$1"
     },
     {
-      "source": "/(js|css|fonts|icons)/(.*)",
+      "source": "/(js|css|fonts|icons|sw.js|favicon.ico)/(.*)",
       "destination": "/dist/ssr/client/$1/$2"
     },
     {
