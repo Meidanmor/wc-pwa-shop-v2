@@ -2,6 +2,14 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/_quasar/(.*)",
+      "destination": "/dist/ssr/client/_quasar/$1"
+    },
+    {
+      "source": "/(js|css|fonts|icons)/(.*)",
+      "destination": "/dist/ssr/client/$1/$2"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api/server.js"
     }
