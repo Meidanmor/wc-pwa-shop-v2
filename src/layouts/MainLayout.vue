@@ -245,12 +245,12 @@ import { matShoppingCart,
   matAdd,
   matClose,
   matRemove} from '@quasar/extras/material-icons'
-import { defineAsyncComponent } from 'vue'
+//import { defineAsyncComponent } from 'vue'
 
 // Explicitly define these as Async to remove them from the Critical Path
 /* eslint-disable no-unused-vars */
 const _responsiveClasses = 'gt-sm lt-md gt-md lt-sm'
-const QList = defineAsyncComponent(() => import('quasar/src/components/item/QList.js'))
+/*const QList = defineAsyncComponent(() => import('quasar/src/components/item/QList.js'))
 const QItem = defineAsyncComponent(() => import('quasar/src/components/item/QItem.js'))
 const QItemSection = defineAsyncComponent(() => import('quasar/src/components/item/QItemSection.js'))
 const QHeader = defineAsyncComponent(() => import('quasar/src/components/header/QHeader.js'))
@@ -261,11 +261,12 @@ const QScrollObserver = defineAsyncComponent(() => import('quasar/src/components
 const QResizeObserver = defineAsyncComponent(() => import('quasar/src/components/resize-observer/QResizeObserver.js'))
 const QToolbar = defineAsyncComponent(() => import('quasar/src/components/toolbar/QToolbar.js'))
 const QToolbarTitle = defineAsyncComponent(() => import('quasar/src/components/toolbar/QToolbarTitle.js'))
+*/
 /* eslint-enable no-unused-vars */
 
 // Move these from standard imports to Async imports
-const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
-const AiAssistant = defineAsyncComponent(() => import('src/components/AiAssistant.vue'))
+//const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
+//const AiAssistant = defineAsyncComponent(() => import('src/components/AiAssistant.vue'))
 
 const permission = ref('default')
 const supported = ref(false)
