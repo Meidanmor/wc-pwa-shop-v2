@@ -372,18 +372,11 @@ onMounted(() => {
     // 1. Pre-load the heavy scripts in the background
     // This happens while the user is looking at the static SSR page
     try {
-      await Promise.all([
-        import('quasar/src/components/scroll-observer/QScrollObserver.js'),
-        import('quasar/src/components/resize-observer/QResizeObserver.js'),
-        import('quasar/src/components/layout/QLayout.js'),
-        import('quasar/src/components/header/QHeader.js'), // <-- Warm up the header too
-        import('quasar/src/components/toolbar/QToolbar.js'), // Add this
-        import('quasar/src/components/toolbar/QToolbarTitle.js'), // Add this
-        import('quasar/src/components/page/QPageContainer.js'),
-      ])
+      // We dynamic-import the utility, which then dynamic-imports Quasar.
+      // This 'double-hop' usually breaks the auto-preload scanner.
+      const {hydrate} = await import('../utils/lazy-quasar.js')
+      await hydrate()
 
-      // 2. Now that scripts are in the browser cache,
-      // flipping this switch will be INSTANT (no white screen)
       requestAnimationFrame(() => {
         uiHydrated.value = true
       })
