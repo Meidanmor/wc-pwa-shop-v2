@@ -390,9 +390,9 @@ if (process.env.CLIENT) {
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref('');
 // --- computed version (reactive) ---
-const featuredProductsComputed = computed(async() => {
+const featuredProductsComputed = computed(() => {
   if(!productsStore.products.value.length){
-    await productsStore.preFetchProducts('', true)
+     productsStore.preFetchProducts('', true)
   }
   const list = productsStore.products.value
   if (!Array.isArray(list)) return []
@@ -437,7 +437,6 @@ const recomputeSlides = async (forceRemount = false) => {
   // GUARD: If we aren't hydrated, stop. Don't waste CPU cycles.
   if (!isHydrated.value) return
 
-  console.log('products length', productsStore.products.value);
   if(!productsStore.products.value.length){
       await productsStore.preFetchProducts('', true)
   }
