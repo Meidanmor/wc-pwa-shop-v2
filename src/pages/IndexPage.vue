@@ -131,8 +131,13 @@
           <div
             v-for="fp in slideGroup"
             :key="fp.id"
-            class="col-12 col-sm-6 col-md-4"
+            class="col-12 col-sm-6 col-md-4 relative-position"
           >
+            <div class="item-loop-wl absolute">
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => fp.id === obj.id)" @click="addToWishlist(fp.id)" color="accent" :icon="matFavorite" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist(fp.id)" color="accent" :icon="matFavoriteBorder" />
+            </div>
+
             <q-card class="my-card full-height">
               <img
                 :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
@@ -307,7 +312,7 @@ import { useQuasar, useMeta } from 'quasar'
 import cart from 'src/stores/cart'
 //import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { matChevronLeft, matChevronRight } from '@quasar/extras/material-icons'
+import { matChevronLeft, matChevronRight, matFavoriteBorder, matFavorite } from '@quasar/extras/material-icons'
 //import LazySection from 'components/LazySection.vue'
 import { defineAsyncComponent } from 'vue'
 
@@ -416,6 +421,10 @@ const visibleStaticItems = computed(() => {
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
 const $q = useQuasar()
+
+async function addToWishlist(objID = 0) {
+  await cart.toggleWishlistItem(objID, $q);
+}
 
 const slideChunks = ref([])
 const slide = ref(0)

@@ -212,21 +212,42 @@ i.q-icon.on-left.notranslate.material-icons {
     font-size: 10px;
     font-weight: 700;
 }
+
+.item-loop-wl.absolute {
+    z-index: 1;
+    right: 7px;
+}
+
+.item-loop-wl.absolute span.q-btn__content i {
+    background: #f6f2e7;
+    border: 1px solid var(--q-primary);
+    border-radius: 50%;
+    padding: 2px;
+    transition: 0.3s ease;
+    width: 28px;
+    height: 28px;
+}
+.item-loop-wl.absolute span.q-btn__content i svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--q-primary)
+}
+
 .q-carousel {
     padding-bottom: 30px;
   position: relative;
 }
 .q-carousel__control.absolute:not(.q-carousel__navigation) {
-    top: 45%;
+    top: 38%;
     background: #fff;
     bottom: unset;
     border-radius: 50%;
 }
 .q-carousel__control.absolute.absolute-left.flex.items-center {
-    left: 0;
+    left: 10px;
 }
 .q-carousel__control.absolute.absolute-right.flex.items-center {
-    right: 0;
+    right: 10px;
 }
 .q-carousel__slide .row.justify-between {
     padding: 5px;

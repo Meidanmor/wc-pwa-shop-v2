@@ -53,10 +53,15 @@ safelist: {
     /q-separator/,      // If you use lines between menu items
     'q-router-link--active', // Highlights the current page in the menu
     'q-link',           // Base link styles
+
+      // ----- Carousel styles -----
+      /^q-carousel/,      // Keeps all carousel structural classes
+      /^q-transition/,    // Keeps all transition/animation classes
   ],
   deep: [
-    /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/
-  ]
+    /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /q-carousel/
+  ],
+  greedy: [/q-transition/]
 },
       defaultExtractor: content => content.match(/[\w-/:]+(?<!:)/g) || []
     })

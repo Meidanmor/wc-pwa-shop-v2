@@ -167,11 +167,10 @@
       :touch-area-width="250"
       v-if="uiHydrated"
     >
-
-
       <q-no-ssr>
-      <q-scroll-area class="fit q-pa-sm" v-if="cart.hasItems.value">
+      <q-scroll-area class="fit q-pa-sm">
         <h4> Cart </h4>
+        <div v-if="cart.hasItems.value">
         <div v-for="item in cart.state.items" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
           <img v-if="item.images" :src="item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
           <div class="q-ml-sm column">
@@ -201,20 +200,19 @@
         />
         </router-link>
 
+        </div>
+        <div v-else class="q-pa-sm row items-center">
+          <h5>seems like your cart is empty</h5>
+          <router-link to="/products/">
+            <q-btn
+                color="primary"
+                label="Shop now!"
+            />
+          </router-link>
+        </div>
+
       </q-scroll-area>
-
-      <div v-else class="q-pa-sm row items-center">
-      <h5>seems like your cart is empty</h5>
-       <router-link to="/products/">
-         <q-btn
-          color="primary"
-          label="Shop now!"
-        />
-        </router-link>
-
-
-      </div>
-        </q-no-ssr>
+       </q-no-ssr>
     </q-drawer>
     <ai-assistant v-if="uiHydrated"></ai-assistant>
     <button v-else class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle q-btn--rounded bg-primary text-white q-btn--actionable q-focusable q-hoverable q-btn--fab fixed-bottom-left q-mb-md q-ml-md z-max" tabindex="0" type="button" aria-label="Open chat"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><i class="q-icon absolute" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" style="fill: none;"></path><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"></path></svg></i></span></button>
