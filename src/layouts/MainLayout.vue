@@ -230,9 +230,9 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import cart from 'src/stores/cart'
-//import WishlistDrawer from 'src/components/WishlistDrawer.vue'
+import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 //import { useQuasar } from "quasar";
-//import AiAssistant from "src/components/AiAssistant.vue";
+import AiAssistant from "src/components/AiAssistant.vue";
 import { subscribeToWebPush } from 'src/boot/push'
 import { matShoppingCart,
   matFavoriteBorder,

@@ -36,10 +36,78 @@
 <section ref="productSection" class="featured-products">
   <div class="container">
     <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
+<div v-if="!isHydrated && productsStore.products.value.length" class="q-carousel q-panel-parent q-carousel--without-padding q-carousel--navigation-bottom rounded-borders" style="height: 100%;">
+  <div class="q-carousel__slides-container">
+    <div class="q-panel scroll" role="tabpanel" style="--q-transition-duration: 300ms;">
+      <div class="q-carousel__slide">
+        <div class="row justify-between">
+
+          <div
+            v-for="(product, index) in visibleStaticItems"
+            :key="product.id"
+            class="col-12 col-sm-6 col-md-4"
+            :class="{ 'gt-xs': index === 1, 'gt-sm': index === 2 }"
+          >
+            <div class="q-card my-card full-height">
+              <img
+                width="300"
+                height="300"
+                :src="product.images?.[0]?.src|| ''"
+                :srcset="product.images?.[0]?.srcset || ''"
+                :sizes="product.images?.[0]?.sizes || ''"
+                :alt="product?.name || ''"
+              >
+              <div class="q-card__section q-card__section--vert">
+                <div class="text-h6">{{ product?.name }}</div>
+                <div class="text-subtitle2" v-html="product?.price_html"></div>
+              </div>
+              <div class="q-card__actions justify-start q-card__actions--horiz row">
+                <div v-if="!product?.is_in_stock">Out of stock</div>
+                <button
+                  v-else
+                  class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-primary text-white q-btn--actionable"
+                  type="button"
+                >
+                  <span class="q-btn__content text-center col items-center justify-center row">
+                    <span class="block">Add to Cart</span>
+                  </span>
+                </button>
+
+                <a
+                  class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable"
+                  :href="`/product/${getSlugFromPermalink(product?.permalink || '')}`"
+                >
+                  <span class="q-btn__content text-center col items-center justify-center row">
+                    <span class="block">View</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+          </div>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-carousel__control absolute absolute-left flex items-center" style="margin: 18px;">
+    <button class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--dense" type="button">
+      <span class="q-btn__content text-center col items-center justify-center row">
+        <i class="q-icon"><svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg></i>
+      </span>
+    </button>
+  </div>
+  <div class="q-carousel__control absolute absolute-right flex items-center" style="margin: 18px;">
+    <button class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--dense" type="button">
+      <span class="q-btn__content text-center col items-center justify-center row">
+        <i class="q-icon"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></i>
+      </span>
+    </button>
+  </div>
+</div>
 
     <!-- Interactive carousel AFTER hydration -->
     <q-carousel
-        v-if="isHydrated"
+        v-else
       :key="carouselKey"
       @touchstart.stop
       @mousedown.stop
@@ -320,25 +388,30 @@ if (process.env.CLIENT) {
 
 //const products = productsStore.products
 // --- featuredProducts prefilled SSR-safe ---
-const featuredProducts = ref(productsStore.products.value.slice(0, 6))
+const featuredProducts = ref('');
 // --- computed version (reactive) ---
-const featuredProductsComputed = computed(() => {
+const featuredProductsComputed = computed(async() => {
+  if(!productsStore.products.value.length){
+    await productsStore.preFetchProducts('', true)
+  }
   const list = productsStore.products.value
   if (!Array.isArray(list)) return []
   return list.filter(p => p.id).slice(0, 6)
 })
 
 // --- fill SSR payload first (if exists) ---
-if (import.meta.env.SSR) {
   featuredProducts.value = featuredProductsComputed.value
-}
 
-/*const visibleStaticItems = computed(() => {
+const visibleStaticItems = computed(() => {
+  if(!productsStore.products.value.length) {
+     productsStore.preFetchProducts('', true)
+  }
+  console.log(productsStore.products.value);
   const allProducts = productsStore.products.value || [];
   // If we have products, take 3.
   // If not, return 3 empty objects (we handle the missing properties in the template)
   return allProducts.length >= 3 ? allProducts.slice(0, 3) : [{}, {}, {}];
-});*/
+});
 
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
@@ -364,6 +437,10 @@ const recomputeSlides = async (forceRemount = false) => {
   // GUARD: If we aren't hydrated, stop. Don't waste CPU cycles.
   if (!isHydrated.value) return
 
+  console.log('products length', productsStore.products.value);
+  if(!productsStore.products.value.length){
+      await productsStore.preFetchProducts('', true)
+  }
   const list = productsStore.products.value || []
   const items = list.slice(0, 6)
   const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
@@ -425,14 +502,14 @@ isHydrated.value = false
     // COLD START: Wait for user interaction
     const hydrateOnInteraction = () => {
       if (isHydrated.value) return
-      setTimeout(function(){
-        isHydrated.value = true
-        recomputeSlides()
-      }, 2000)
+
       // Cleanup listeners
       window.removeEventListener('scroll', hydrateOnInteraction)
       window.removeEventListener('mousemove', hydrateOnInteraction)
       window.removeEventListener('touchstart', hydrateOnInteraction)
+
+      isHydrated.value = true
+      recomputeSlides()
     }
 
     window.addEventListener('scroll', hydrateOnInteraction, { passive: true })
