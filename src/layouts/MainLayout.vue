@@ -360,6 +360,24 @@ onMounted(() => {
   // Phase 1: Show the badges immediately
   storeReady.value = true
 
+  const headerBtnClick = async(e) => {
+    await scheduler()
+    const btn = e.target.closest('[aria-label]');
+    if (btn) {
+      const label = btn.getAttribute('aria-label');
+      requestAnimationFrame(() => {
+        // Check for your specific button labels
+        if (label === 'Open menu') {
+          mobileMenuDrawer.value = true
+        } else if (label === 'Add to wishlist') {
+          wishlistDrawerOpen.value = true
+        } else if (label === 'View cart') {
+          cartDrawer.value = true
+        }
+      });
+    }
+  }
+  document.querySelector('header').addEventListener('click', headerBtnClick, {passive: true});
   // Phase 2: Wait for the Hero to paint, then load the heavy stuff
   const scheduler = async () => {
 
@@ -369,6 +387,8 @@ onMounted(() => {
     window.removeEventListener('scroll', scheduler)
     window.removeEventListener('mousemove', scheduler)
     window.removeEventListener('touchstart', scheduler)
+    window.removeEventListener('click', headerBtnClick);
+
     // 1. Pre-load the heavy scripts in the background
     // This happens while the user is looking at the static SSR page
     try {
