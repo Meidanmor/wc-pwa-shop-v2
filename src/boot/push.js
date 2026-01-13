@@ -115,6 +115,7 @@ async function syncCartTimestamp() {
     await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/cart-timestamp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
       body: JSON.stringify({
         cart_token: cartToken,
         timestamp: Date.now()
@@ -168,42 +169,41 @@ export default ({ router } = {}) => {
   if (router) {
     window.$router = router
   }
-  // 3. THE FIX: Wait for the page to be fully loaded and painted
-  window.addEventListener('load', async() => {
-    // Wait an extra 3 seconds so the Hero image has 100% priority
 
-      setupCartTracking()
+  const initCarTracking = async () => {
+    setupCartTracking()
 
-      if (Platform.is && Platform.is.capacitor) {
-        try {
-          // We use a variable for the name so Vite doesn't try to
-          // strictly resolve it during the Web/SSR build process.
-          const packageName = '@capacitor/push-notifications'
-          const {PushNotifications: NativePush} = await import(/* @vite-ignore */ packageName)
+    if (Platform.is && Platform.is.capacitor) {
+      try {
+        // We use a variable for the name so Vite doesn't try to
+        // strictly resolve it during the Web/SSR build process.
+        const packageName = '@capacitor/push-notifications'
+        const {PushNotifications: NativePush} = await import(/* @vite-ignore */ packageName)
 
-          PushNotifications = NativePush
-          await registerNativePush()
-        } catch (e) {
-          console.warn('Push plugin not available or not on mobile:', e)
-        }
-      } else if ('serviceWorker' in navigator) {
-        // This fetch call no longer blocks the initial paint
-        syncSubscriptionCartToken()
-
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data?.action === 'navigate' && event.data.url) {
-            // Check if we attached the router to window earlier
-            if (window.$router) {
-              window.$router.push(event.data.url).catch(() => {
-                window.location.href = event.data.url // Fallback
-              })
-            } else {
-              window.location.href = event.data.url
-            }
-          }
-        })
+        PushNotifications = NativePush
+        await registerNativePush()
+      } catch (e) {
+        console.warn('Push plugin not available or not on mobile:', e)
       }
+    } else if ('serviceWorker' in navigator) {
+      // This fetch call no longer blocks the initial paint
+      syncSubscriptionCartToken()
 
-      console.log('✅ Push & Tracking initialized after LCP')
-  })
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.action === 'navigate' && event.data.url) {
+          // Check if we attached the router to window earlier
+          if (window.$router) {
+            window.$router.push(event.data.url).catch(() => {
+              window.location.href = event.data.url // Fallback
+            })
+          } else {
+            window.location.href = event.data.url
+          }
+        }
+      })
+    }
+
+    console.log('✅ Push & Tracking initialized after LCP')
+  }
+  initCarTracking();
 }
