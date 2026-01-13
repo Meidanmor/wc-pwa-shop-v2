@@ -112,9 +112,11 @@ async function syncCartTimestamp() {
     const cartToken = localStorage.getItem('wc_cart_token')
     if (!cartToken) return
 
+    await syncSubscriptionCartToken()
+
     await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/cart-timestamp', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type': 'application/json'},
       keepalive: true,
       body: JSON.stringify({
         cart_token: cartToken,
@@ -147,6 +149,7 @@ async function syncSubscriptionCartToken() {
     await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/update-cart-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
       body: JSON.stringify({
         device_id: deviceId,
         cart_token: cartToken
