@@ -231,7 +231,7 @@ import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 //import { useQuasar } from "quasar";
 import AiAssistant from "src/components/AiAssistant.vue";
-import { subscribeToWebPush } from 'src/boot/push'
+import initPush, { subscribeToWebPush } from 'src/boot/push'
 import { matShoppingCart,
   matFavoriteBorder,
   matMenu,
@@ -401,6 +401,12 @@ onMounted(() => {
     } catch (e) {
       console.error("Hydration prefetch failed", e)
       uiHydrated.value = true // Fallback
+    }
+    // 1. ALWAYS initialize tracking (Abandoned Cart logic)
+    // This doesn't ask for permission, it just sets up listeners.
+    if (typeof window !== 'undefined') {
+      initPush();
+      console.log('🛒 Cart tracking active');
     }
     if ('Notification' in window) {
       supported.value = true
