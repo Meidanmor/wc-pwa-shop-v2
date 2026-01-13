@@ -21,9 +21,9 @@
         loading="eager"
         decoding="async"
         alt="Homepage hero image"
-        src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png"
+        src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png"
         srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
-        sizes="(min-width: 768px) 50vw, 100vw"
+        sizes="(min-width: 768px) 50vw, calc(100vw - 40px)"
         width="300"
         height="200"
         class="hero-img"
@@ -50,6 +50,7 @@
           >
             <div class="q-card my-card full-height">
               <img
+                  loading="lazy"
                 width="300"
                 height="300"
                 :src="product.images?.[0]?.src|| ''"
@@ -342,10 +343,15 @@ defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.path)
     const { fetchSeoForPath } = await import('src/composables/useSeo')
-    const seo = await fetchSeoForPath('homepage')
+    /*const seo = await fetchSeoForPath('homepage')
     //const seo = null;
     // 2. FETCH PRODUCTS (This was missing!)
-    await productsStore.preFetchProducts()
+    await productsStore.preFetchProducts()*/
+    // Fire both requests at the same time
+    const [seo] = await Promise.all([
+      fetchSeoForPath('homepage'),
+      productsStore.preFetchProducts()
+    ])
 
     // 2. Prepare the "Lean" data
     // We only need the first 6 for the homepage carousel
@@ -357,9 +363,9 @@ defineOptions({
       // INJECT PRODUCTS HERE:
       ssrContext.productsData = leanProducts
       ssrContext.heroData = {
-        src: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png',
+        src: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png',
         srcset: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w',
-        sizes: '(min-width: 768px) 50vw, 100vw'
+        sizes: '(min-width: 768px) 50vw, calc(100vw - 40px)'
       }
     }
   }
@@ -411,7 +417,7 @@ const visibleStaticItems = computed(() => {
   if(!productsStore.products.value.length) {
      productsStore.preFetchProducts('', true)
   }
-  console.log(productsStore.products.value);
+  //console.log(productsStore.products.value);
   const allProducts = productsStore.products.value || [];
   // If we have products, take 3.
   // If not, return 3 empty objects (we handle the missing properties in the template)
