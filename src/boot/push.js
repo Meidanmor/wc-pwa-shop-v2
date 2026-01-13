@@ -160,17 +160,17 @@ async function syncSubscriptionCartToken() {
 /**
  * Init push + cart tracking
  */
-export default ({ router }) => {
+export default ({ router } = {}) => {
   // 1. Prevent server-side execution
   if (typeof window === 'undefined') return
 
-  // 2. Attach router to window immediately (very light)
-  window.$router = router
-
+// 2. Assign the router to the window IF it was provided
+  if (router) {
+    window.$router = router
+  }
   // 3. THE FIX: Wait for the page to be fully loaded and painted
-  window.addEventListener('load', () => {
+  window.addEventListener('load', async() => {
     // Wait an extra 3 seconds so the Hero image has 100% priority
-    setTimeout(async () => {
 
       setupCartTracking()
 
@@ -192,13 +192,18 @@ export default ({ router }) => {
 
         navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data?.action === 'navigate' && event.data.url) {
-            window.$router.push(event.data.url).catch(() => {
-            })
+            // Check if we attached the router to window earlier
+            if (window.$router) {
+              window.$router.push(event.data.url).catch(() => {
+                window.location.href = event.data.url // Fallback
+              })
+            } else {
+              window.location.href = event.data.url
+            }
           }
         })
       }
 
       console.log('✅ Push & Tracking initialized after LCP')
-    }, 3000)
   })
 }
