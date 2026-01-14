@@ -107,7 +107,7 @@ async function registerNativePush() {
 /**
  * Sync cart token + timestamp when user leaves or hides the app
  */
-async function syncCartTimestamp() {
+/*async function syncCartTimestamp() {
   try {
     const cartToken = localStorage.getItem('wc_cart_token')
     if (!cartToken) return
@@ -129,11 +129,11 @@ async function syncCartTimestamp() {
     console.error('❌ Failed to sync cart timestamp:', err)
   }
 }
-
+*/
 function setupCartTracking() {
-  window.addEventListener('beforeunload', syncCartTimestamp)
+  //window.addEventListener('beforeunload', syncSubscriptionCartToken)
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) syncCartTimestamp()
+    if (document.hidden) syncSubscriptionCartToken()
   })
 }
 
@@ -152,7 +152,8 @@ async function syncSubscriptionCartToken() {
       keepalive: true,
       body: JSON.stringify({
         device_id: deviceId,
-        cart_token: cartToken
+        cart_token: cartToken,
+        timestamp: Date.now()
       })
     })
 
@@ -190,7 +191,7 @@ export default ({ router } = {}) => {
       }
     } else if ('serviceWorker' in navigator) {
       // This fetch call no longer blocks the initial paint
-      syncSubscriptionCartToken()
+      //syncSubscriptionCartToken()
 
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data?.action === 'navigate' && event.data.url) {
