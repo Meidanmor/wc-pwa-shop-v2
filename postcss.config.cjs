@@ -27,6 +27,8 @@ safelist: {
   standard: [
     'html', 'body',
     /q-app/, /q-layout/, /q-page/, /q-header/, /q-footer/,
+    /^q-notify/,       // any class starting with q-notify
+    /^q-notify__/,
     /q-body--/,        // Vital for drawer-open overflow handling
     /q-layout--/,      // Vital for header/drawer positioning
 

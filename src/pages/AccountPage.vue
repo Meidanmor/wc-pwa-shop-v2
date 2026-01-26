@@ -88,10 +88,19 @@ if(process.env.CLIENT) {
     cart.state.user = {};
   }
 
-
-
-
 onMounted(() => {
   if (isLoggedIn.value) fetchUser()
 })
 </script>
+<style scoped>
+/* purgecss start ignore */
+.q-field__label {
+    transition: 0.3s ease;
+}
+.q-field--focused .q-field__label
+.q-field--float .q-field__label{
+  font-size: 10px;
+  transform: translateY(-5px);
+}
+/* purgecss end ignore */
+</style>

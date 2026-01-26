@@ -75,7 +75,7 @@ function handleLogin() {
 
 // Redirect fallback to Google OAuth
 function redirectToGoogleLogin() {
-  const redirectUri = 'https://pwa.meidanm.com/auth/callback'; // must match Google app redirect URI
+  const redirectUri = 'https://pwav.meidanm.com/auth/callback'; // must match Google app redirect URI
   const state = encodeURIComponent(window.location.href); // save current page
 
   const url = `https://accounts.google.com/o/oauth2/v2/auth?` +

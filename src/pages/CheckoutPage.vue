@@ -7,9 +7,7 @@
         <GoogleLoginButton />
       </div>
 
-      <q-skeleton v-if="!checkoutReady" height="300px" />
-
-      <q-form v-else-if="checkoutReady && itemsCount !== '0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
+      <q-form v-if="checkoutReady && itemsCount !== '0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
       <div class="float-left">
       <!-- Personal Info -->
       <q-card class="q-mb-md">
@@ -165,16 +163,17 @@
       </q-card>
         </div>
     </q-form>
-      <div v-else-if="itemsCount === 0">
+            <!-- Render loader and sync retry state -->
+      <div v-else-if="!checkoutReady && needsSync" class="centered">
+        <q-spinner color="primary" size="2em" />
+        <div>Synchronizing cart, please wait...</div>
+      </div>
+
+      <div v-else-if="itemsCount === '0'">
         Your cart is empty!
         <router-link to="/products/">Go to shop</router-link>
       </div>
 
-      <!-- Render loader and sync retry state -->
-      <div v-if="!checkoutReady && needsSync" class="centered">
-        <q-spinner color="primary" size="2em" />
-        <div>Synchronizing cart, please wait...</div>
-      </div>
       <div v-if="syncError" class="text-negative q-mt-md text-center">
         {{ syncError }}
         <q-btn label="Retry Sync" color="primary" @click="syncCart" class="q-ml-md" />
@@ -189,6 +188,7 @@ import cart from 'src/stores/cart';
 import { useRouter } from 'vue-router';
 import { fetchWithToken } from 'src/composables/useApiFetch.js';
 import GoogleLoginButton from 'src/components/GoogleLoginButton.vue';
+
 const syncError = ref(null);
 const token = ref('');
 if(process.env.CLIENT) {
@@ -198,6 +198,7 @@ if(process.env.CLIENT) {
 const checkoutReady = ref(false)
 const isLoggedIn = ref(!!token.value)
 const router = useRouter();
+
 const form = reactive({
   first_name: '',
   last_name: '',
@@ -464,6 +465,7 @@ const syncCart = async () => {
 const needsSync = computed(() => {
   // offline → never block
   if (cart.state.offline) return false
+  if (cart.state.synced === false) return true
 
   // no server snapshot yet → need sync
 // cart not hydrated yet → NOT a sync case
@@ -507,6 +509,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* purgecss start ignore */
+.q-field__label {
+    transition: 0.3s ease;
+}
+.q-field--focused .q-field__label
+.q-field--float .q-field__label{
+  font-size: 10px;
+  transform: translateY(-5px);
+}
+/* purgecss end ignore */
+
+
 .q-form .float-left,
 .q-form .float-right {
   width: 100%;

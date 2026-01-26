@@ -230,8 +230,9 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 //import { useQuasar } from "quasar";
+import { Platform } from 'quasar';
 import AiAssistant from "src/components/AiAssistant.vue";
-import initPush, { subscribeToWebPush } from 'src/boot/push'
+import initPush, { subscribeToWebPush, initNativePush } from 'src/boot/push'
 import { matShoppingCart,
   matFavoriteBorder,
   matMenu,
@@ -244,6 +245,11 @@ import { matShoppingCart,
   matClose,
   matRemove} from '@quasar/extras/material-icons'
 //import { defineAsyncComponent } from 'vue'
+
+function normalizePermission(value) {
+  if (value === 'prompt') { return 'default' } else if (value === 'initialized') { return 'granted' }
+  return value
+}
 
 // Explicitly define these as Async to remove them from the Critical Path
 /* eslint-disable no-unused-vars */
@@ -346,9 +352,20 @@ const remove = (itemKey=null, itemAPIkey=null) => cart.remove(itemKey,itemAPIkey
   }
 }*/
 
-async function handleSubscribe () {
-  await subscribeToWebPush()
-  permission.value = Notification.permission
+async function handleSubscribe() {
+  if (Platform.is.capacitor) {
+    try {
+      // request permission via the boot helper (user gesture)
+      const result = await initNativePush()
+      permission.value = normalizePermission(result)
+      alert('Permission status: ' + result)
+    } catch (e) {
+      console.error('Native permission error', e)
+    }
+  } else {
+    await subscribeToWebPush()
+    permission.value = Notification.permission
+  }
 }
 
 const storeReady = ref(process.env.SERVER) // Immediate sync
@@ -404,13 +421,19 @@ onMounted(() => {
     }
     // 1. ALWAYS initialize tracking (Abandoned Cart logic)
     // This doesn't ask for permission, it just sets up listeners.
-    if (typeof window !== 'undefined') {
+    if ( typeof window !== 'undefined' || Platform.is.capacitor ) {
       initPush();
       console.log('🛒 Cart tracking active');
     }
-    if ('Notification' in window) {
+
+
+    if (Platform.is.capacitor) {
       supported.value = true
-      permission.value = Notification.permission
+      /*const result = await initNativePush()
+      permission.value = normalizePermission(result)*/
+    } else if ('Notification' in window) {
+      supported.value = true
+      permission.value = normalizePermission(Notification.permission)
     }
 
     window.addEventListener('touchstart', handleTouchStart, {passive: true})
