@@ -1,9 +1,9 @@
+// src/boot/push.js
 import { Platform } from 'quasar'
 
-let PushNotifications
+let PushNotifications = null
 
 function generateUUID() {
-  // https://stackoverflow.com/a/2117523/1218980
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0
     const v = c === 'x' ? r : (r & 0x3 | 0x8)
@@ -24,7 +24,7 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray
 }
 
-// Replace this with your own VAPID public key
+// your VAPID public key for web push
 const APP_SERVER_KEY = 'BHSV149RpWY5IkRyGC_DvxRWQuO_29FAdwhhFu9IPyfUNHDedg7pTCer_WrlJipDvmU0JqxBy4lKHWItX2E6cLw'
 
 /**
@@ -73,63 +73,189 @@ export async function subscribeToWebPush() {
     })
 
     const result = await res.json()
-    console.log('✅ Push subscription saved:', result)
+    console.log('✅ Push subscription saved (web):', result)
   } catch (err) {
-    console.error('❌ Push subscription failed:', err)
+    console.error('❌ Push subscription failed (web):', err)
   }
 }
 
-/**
- * Register native push notifications (Capacitor)
- */
-async function registerNativePush() {
-  if (!PushNotifications) return
+/* ——— Native (Capacitor) helpers ——— */
+async function createNotificationChannels() {
+  // Orders
+  await PushNotifications.createChannel({
+    id: 'orders',
+    name: 'Orders',
+    description: 'Order confirmations and payment updates',
+    importance: 4, // HIGH
+    visibility: 1, // PUBLIC (shows on lock screen)
+    vibration: true
+  });
 
-  let permStatus = await PushNotifications.checkPermissions()
-  if (permStatus.receive !== 'granted') {
-    permStatus = await PushNotifications.requestPermissions()
-  }
+  // Abandoned cart
+  await PushNotifications.createChannel({
+    id: 'abandoned_cart',
+    name: 'Abandoned Cart',
+    description: 'Reminders about items left in your cart',
+    importance: 4, // HIGH
+    visibility: 1,
+    vibration: true
+  });
 
-  if (permStatus.receive === 'granted') {
-    await PushNotifications.register()
-  }
+  // Promotions
+  await PushNotifications.createChannel({
+    id: 'promotions',
+    name: 'Promotions',
+    description: 'Sales, discounts and special offers',
+    importance: 3, // DEFAULT
+    visibility: 1,
+    vibration: true
+  });
 
-  PushNotifications.addListener('registration', (token) => {
-    console.log('📡 Native push token:', token.value)
-    // Send to backend if needed
-  })
-
-  PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('🔔 Notification received:', notification)
-  })
+  // System / background
+  await PushNotifications.createChannel({
+    id: 'system',
+    name: 'System',
+    description: 'System and background notifications',
+    importance: 2, // LOW
+    visibility: 0, // PRIVATE
+    vibration: true
+  });
 }
 
 /**
- * Sync cart token + timestamp when user leaves or hides the app
+ * initNativePush:
+ *  - dynamically imports native modules
+ *  - registers listeners (registration, registrationError, received)
+ *  - does NOT force a permissions prompt
+ *  - safe to call on app startup to set listeners
  */
-/*async function syncCartTimestamp() {
+export async function initNativePush() {
+  if (!Platform.is.capacitor) return 'unsupported'
+
   try {
-    const cartToken = localStorage.getItem('wc_cart_token')
-    if (!cartToken) return
+    const pushModule = await import(/* @vite-ignore */ '@capacitor/push-notifications')
+    PushNotifications = pushModule.PushNotifications
 
-    await syncSubscriptionCartToken()
-
-    await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/cart-timestamp', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      keepalive: true,
-      body: JSON.stringify({
-        cart_token: cartToken,
-        timestamp: Date.now()
-      })
+    // listeners (register these ONCE)
+    PushNotifications.addListener('registration', async (token) => {
+      console.log('🟢 Native token:', token?.value)
+      try {
+        const deviceId = getDeviceId()
+        const cartToken = localStorage.getItem('wc_cart_token') || null
+        await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/save-subscription', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            device_id: deviceId,
+            cart_token: cartToken,
+            subscription: {endpoint: token?.value, native: true}
+          })
+        })
+      } catch (err) {
+        console.error('❌ Failed saving native token to server', err)
+      }
     })
 
-    console.log('🕒 Cart timestamp synced:', cartToken)
-  } catch (err) {
-    console.error('❌ Failed to sync cart timestamp:', err)
+    PushNotifications.addListener('registrationError', (err) => {
+      console.error('❌ Native push registration error:', err)
+    })
+
+    /* --------------------------------------------------
+     * 1️⃣ Foreground push (equivalent to SW "push" event)
+     * -------------------------------------------------- */
+
+    PushNotifications.addListener(
+        'pushNotificationReceived',
+        (notification) => {
+          alert(
+              'PUSH RECEIVED\n' +
+              JSON.stringify(notification, null, 2)
+          )
+        }
+    )
+
+    /* --------------------------------------------------
+     * 2️⃣ Notification tap (equivalent to notificationclick)
+     * -------------------------------------------------- */
+    PushNotifications.addListener(
+        'pushNotificationActionPerformed',
+        (action) => {
+          console.log('[Native] Push action', action)
+
+          const data =
+              action.notification?.data?.notification ||
+              action.notification?.data ||
+              {}
+
+          if (data.url) {
+            if (window.$router) {
+              window.$router.push(data.url).catch(() => {
+                window.location.href = data.url
+              })
+            } else {
+              window.location.href = data.url
+            }
+          }
+        }
+    )
+    const perm = await PushNotifications.checkPermissions()
+    if (perm.receive !== 'granted') {
+      const req = await PushNotifications.requestPermissions()
+      if (req.receive !== 'granted') return
+    }
+
+    /* ✅ CREATE CHANNELS */
+    await createNotificationChannels()
+
+    await PushNotifications.register()
+
+
+    return 'initialized'
+  } catch (e) {
+    console.warn('Push plugin not available or not on mobile:', e)
+    return 'default'
   }
 }
-*/
+
+/**
+ * requestNativePermission:
+ *  - intended to be called from a user gesture (your "Enable" button)
+ *  - will requestPermissions() and attempt register() (wrapped safely)
+ *  - returns the permission.receive string (e.g. 'granted'|'denied'|'prompt')
+ */
+export async function requestNativePermission() {
+  if (!Platform.is.capacitor) return 'unsupported'
+  if (!PushNotifications) {
+    // ensure listeners are set up
+    await initNativePush()
+    if (!PushNotifications) return 'default'
+  }
+
+  try {
+    const permStatus = await PushNotifications.requestPermissions()
+    const p = permStatus.receive || 'default'
+    // Try registering immediately — if this errors, appStateChange listener will attempt again when active
+    if (p === 'granted') {
+      try {
+        // small delay to allow native to settle after permission dialog
+        await new Promise(r => setTimeout(r, 250))
+        await PushNotifications.register()
+        console.log('Requested register() after permission granted')
+      } catch (err) {
+        console.warn('Immediate register() failed (will rely on appStateChange):', err)
+      }
+    }
+    return p
+  } catch (err) {
+    console.error('requestNativePermission error', err)
+    return 'default'
+  }
+}
+
+/* -------------------------
+   Boot init that sets up tracking & listeners
+   — this is called by Quasar boot (default export)
+   ------------------------- */
 function setupCartTracking() {
   //window.addEventListener('beforeunload', syncSubscriptionCartToken)
   document.addEventListener('visibilitychange', () => {
@@ -137,13 +263,11 @@ function setupCartTracking() {
   })
 }
 
-// Add this function to your Quasar file
 async function syncSubscriptionCartToken() {
   const deviceId = getDeviceId()
   const cartToken = localStorage.getItem('wc_cart_token')
 
   if (!cartToken || !deviceId) return
-
   try {
     // Send the stable deviceId and the volatile cartToken
     await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/update-cart-token', {
@@ -156,7 +280,6 @@ async function syncSubscriptionCartToken() {
         timestamp: Date.now()
       })
     })
-
     console.log('✅ Cart token synced to push subscription.')
   } catch (err) {
     console.error('❌ Failed to sync cart token:', err)
@@ -168,38 +291,26 @@ async function syncSubscriptionCartToken() {
 export default ({ router } = {}) => {
   // 1. Prevent server-side execution
   if (typeof window === 'undefined') return
-
-// 2. Assign the router to the window IF it was provided
-  if (router) {
-    window.$router = router
-  }
+  if (router) window.$router = router
 
   const initCarTracking = async () => {
     setupCartTracking()
 
     if (Platform.is && Platform.is.capacitor) {
       try {
-        // We use a variable for the name so Vite doesn't try to
-        // strictly resolve it during the Web/SSR build process.
-        const packageName = '@capacitor/push-notifications'
-        const {PushNotifications: NativePush} = await import(/* @vite-ignore */ packageName)
-
+        // dynamic import only to copy the module for plugin detection
+        const { PushNotifications: NativePush } = await import(/* @vite-ignore */ '@capacitor/push-notifications')
         PushNotifications = NativePush
-        await registerNativePush()
+        // Do not request permission here — we only set up listeners in initNativePush
+        //await initNativePush()
       } catch (e) {
         console.warn('Push plugin not available or not on mobile:', e)
       }
     } else if ('serviceWorker' in navigator) {
-      // This fetch call no longer blocks the initial paint
-      //syncSubscriptionCartToken()
-
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data?.action === 'navigate' && event.data.url) {
-          // Check if we attached the router to window earlier
           if (window.$router) {
-            window.$router.push(event.data.url).catch(() => {
-              window.location.href = event.data.url // Fallback
-            })
+            window.$router.push(event.data.url).catch(() => { window.location.href = event.data.url })
           } else {
             window.location.href = event.data.url
           }
@@ -209,5 +320,5 @@ export default ({ router } = {}) => {
 
     console.log('✅ Push & Tracking initialized after LCP')
   }
-  initCarTracking();
+  initCarTracking()
 }
