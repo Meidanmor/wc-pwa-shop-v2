@@ -140,14 +140,22 @@ export default defineConfig((ctx) => {
                     id.includes('quasar/src/directives/touch-hold') ||
                     id.includes('quasar/src/utils/format')) {
                   return 'quasar-observers-delayed';
-              }
+                }
 
-              // DO NOT group the rest of quasar here.
-              // Let Vite handle the rest automatically so your
-              // defineAsyncComponent logic actually creates separate files.
-            }
+                // DO NOT group the rest of quasar here.
+                // Let Vite handle the rest automatically so your
+                // defineAsyncComponent logic actually creates separate files.
+              }
             }
           };
+        }
+        const isCapacitor = !!process.env.CAPACITOR
+        viteConf.resolve = viteConf.resolve || {}
+        viteConf.resolve.alias = {
+          ...(viteConf.resolve.alias || {}),
+          'src/boot/push': isCapacitor
+              ? 'src/boot/push.native.js'
+              : 'src/boot/push.web.js'
         }
       },
     },
