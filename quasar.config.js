@@ -152,17 +152,11 @@ export default defineConfig((ctx) => {
         }
         const isCapacitor = !!process.env.CAPACITOR
 
-        viteConf.resolve = viteConf.resolve || {}
         viteConf.resolve.alias = {
-          ...(viteConf.resolve.alias || {}),
-
-          // IMPORTANT: anchor with $
-          'src/boot/push$': path.resolve(
-              __dirname,
-              isCapacitor
-                  ? 'src/boot/push.native.js'
-                  : 'src/boot/push.web.js'
-          )
+          ...viteConf.resolve.alias,
+          'src/boot/push': isCapacitor
+              ? path.join(__dirname, './src/boot/push.native.js')
+              : path.join(__dirname, './src/boot/push.web.js')
         }
       },
     },

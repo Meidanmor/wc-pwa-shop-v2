@@ -232,7 +232,7 @@ import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 //import { useQuasar } from "quasar";
 import { Platform } from 'quasar';
 import AiAssistant from "src/components/AiAssistant.vue";
-import initPush, { subscribeToWebPush, initNativePush } from 'src/boot/push$'
+import initPush, { subscribeToWebPush, initNativePush } from 'src/boot/push'
 import { matShoppingCart,
   matFavoriteBorder,
   matMenu,
