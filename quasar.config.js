@@ -156,7 +156,7 @@ export default defineConfig((ctx) => {
 // We use find/replacement objects to ensure Vite prioritizes this match
         viteConf.resolve.alias = [
           {
-            find: 'src/boot/push',
+            find: 'src/boot/push.js',
             replacement: isCapacitor
                 ? path.resolve(__dirname, 'src/boot/push.native.js')
                 : path.resolve(__dirname, 'src/boot/push.web.js')
