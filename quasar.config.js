@@ -2,7 +2,8 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
 import { defineConfig } from '#q-app/wrappers'
-import fs from 'fs';
+import fs from 'fs'
+import { resolve } from 'path'
 
 export default defineConfig((ctx) => {
   return {
@@ -150,12 +151,16 @@ export default defineConfig((ctx) => {
           };
         }
         const isCapacitor = !!process.env.CAPACITOR
+
         viteConf.resolve = viteConf.resolve || {}
         viteConf.resolve.alias = {
           ...(viteConf.resolve.alias || {}),
-          'src/boot/push': isCapacitor
-              ? 'src/boot/push.native.js'
-              : 'src/boot/push.web.js'
+          'src/boot/push': resolve(
+              __dirname,
+              isCapacitor
+                  ? 'src/boot/push.native.js'
+                  : 'src/boot/push.web.js'
+          )
         }
       },
     },
