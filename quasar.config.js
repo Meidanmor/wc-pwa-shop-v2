@@ -153,18 +153,12 @@ export default defineConfig((ctx) => {
         // ... inside extendViteConf
         const isCapacitor = !!process.env.CAPACITOR
 
-// We use find/replacement objects to ensure Vite prioritizes this match
-        viteConf.resolve.alias = [
-          {
-            find: 'src/boot/push.js',
-            replacement: isCapacitor
-                ? path.resolve(__dirname, 'src/boot/push.native.js')
-                : path.resolve(__dirname, 'src/boot/push.web.js')
-          },
-          // Spread existing aliases if they are in array format,
-          // or keep them if they are in object format.
-          ...(Array.isArray(viteConf.resolve.alias) ? viteConf.resolve.alias : [])
-        ]
+        viteConf.resolve.alias = {
+          'src/boot/push.js': isCapacitor
+              ? path.resolve(__dirname, 'src/boot/push.native.js')
+              : path.resolve(__dirname, 'src/boot/push.web.js'),
+          ...viteConf.resolve.alias
+        };
       },
     },
 
