@@ -75,6 +75,9 @@ export async function subscribeToWebPush() {
   }
 }
 
+export async function checkNativePermission() {
+  return 'unsupported'
+}
 export async function initNativePush() {
   return 'unsupported'
 }

@@ -232,7 +232,7 @@ import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 //import { useQuasar } from "quasar";
 import { Platform } from 'quasar';
 import AiAssistant from "src/components/AiAssistant.vue";
-import initPush, { subscribeToWebPush, initNativePush } from 'src/boot/push.js'
+import initPush, { subscribeToWebPush, initNativePush, checkNativePermission } from 'src/boot/push.js'
 import { matShoppingCart,
   matFavoriteBorder,
   matMenu,
@@ -422,7 +422,9 @@ onMounted(() => {
     // 1. ALWAYS initialize tracking (Abandoned Cart logic)
     // This doesn't ask for permission, it just sets up listeners.
     if ( typeof window !== 'undefined' || Platform.is.capacitor ) {
-      initPush();
+      initPush()
+      const initialPermissions = await checkNativePermission();
+      permission.value = normalizePermission(initialPermissions)
       console.log('🛒 Cart tracking active');
     }
 

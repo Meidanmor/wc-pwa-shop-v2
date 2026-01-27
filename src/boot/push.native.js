@@ -122,6 +122,19 @@ async function createNotificationChannels() {
   });
 }
 
+export async function checkNativePermission(){
+  if (!Platform.is.capacitor) return 'unsupported'
+  try {
+    const pushModule = await import(/* @vite-ignore */ '@capacitor/push-notifications')
+    PushNotifications = pushModule.PushNotifications
+
+    const perm = await PushNotifications.checkPermissions()
+    return perm.receive;
+
+  } catch(e){
+    console.warn('have error!', e)
+  }
+}
 /**
  * initNativePush:
  *  - dynamically imports native modules
@@ -295,12 +308,12 @@ export default ({ router } = {}) => {
 
   const initCarTracking = async () => {
     setupCartTracking()
-
     if (Platform.is && Platform.is.capacitor) {
       try {
+
         // dynamic import only to copy the module for plugin detection
-        const {PushNotifications: NativePush} = await import(/* @vite-ignore */ '@capacitor/push-notifications')
-        PushNotifications = NativePush
+        const nativePush = await import(/* @vite-ignore */ '@capacitor/push-notifications')
+        PushNotifications = nativePush.PushNotifications
         // Do not request permission here — we only set up listeners in initNativePush
         //await initNativePush()
       } catch (e) {
