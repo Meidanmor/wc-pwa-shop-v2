@@ -151,8 +151,7 @@ export default defineConfig((ctx) => {
           };
         }
         // ... inside extendViteConf
-        const isCapacitor = !!process.env.CAPACITOR
-
+        const isCapacitor = ctx.mode.capacitor;
         viteConf.resolve.alias = {
           'src/boot/push.js': isCapacitor
               ? path.resolve(__dirname, 'src/boot/push.native.js')
