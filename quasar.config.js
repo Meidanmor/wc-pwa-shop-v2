@@ -3,7 +3,7 @@
 
 import { defineConfig } from '#q-app/wrappers'
 import fs from 'fs'
-import { path } from 'path'
+import { resolve } from 'path'
 
 export default defineConfig((ctx) => {
   return {
@@ -157,7 +157,7 @@ export default defineConfig((ctx) => {
           ...(viteConf.resolve.alias || {}),
 
           // IMPORTANT: anchor with $
-          'src/boot/push$': path.resolve(
+          'src/boot/push$': resolve(
               __dirname,
               isCapacitor
                   ? 'src/boot/push.native.js'
