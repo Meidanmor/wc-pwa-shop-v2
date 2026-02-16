@@ -130,6 +130,9 @@ export default defineConfig((ctx) => {
         if (isClient) {
           viteConf.build.rollupOptions = {
             ...viteConf.build.rollupOptions,
+                  external: [
+                      '@capgo/capacitor-social-login'
+                  ],
             output: {
               ...viteConf.build.rollupOptions?.output,
               manualChunks(id) {
