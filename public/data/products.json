@@ -12,9 +12,9 @@
         "description": "<p>A rejuvenating serum rich in antioxidants and essential fatty acids, promoting radiant skin.</p>",
         "on_sale": true,
         "prices": {
-            "price": "8900",
+            "price": "9900",
             "regular_price": "12000",
-            "sale_price": "8900",
+            "sale_price": "9900",
             "price_range": null,
             "currency_code": "ILS",
             "currency_symbol": "\u20aa",
@@ -24,7 +24,7 @@
             "currency_prefix": "",
             "currency_suffix": "\u20aa"
         },
-        "price_html": "<del aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">120.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></del> <span class=\"screen-reader-text\">Original price was: 120.00&#8362;.</span><ins aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">89.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></ins><span class=\"screen-reader-text\">Current price is: 89.00&#8362;.</span>",
+        "price_html": "<del aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">120.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></del> <span class=\"screen-reader-text\">Original price was: 120.00&#8362;.</span><ins aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">99.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></ins><span class=\"screen-reader-text\">Current price is: 99.00&#8362;.</span>",
         "average_rating": "0",
         "review_count": 0,
         "images": [
@@ -46,20 +46,20 @@
         "grouped_products": [],
         "has_options": false,
         "is_purchasable": true,
-        "is_in_stock": false,
+        "is_in_stock": true,
         "is_on_backorder": false,
-        "low_stock_remaining": 0,
+        "low_stock_remaining": null,
         "stock_availability": {
-            "text": "Out of stock",
-            "class": "out-of-stock"
+            "text": "20 in stock",
+            "class": "in-stock"
         },
         "sold_individually": false,
         "add_to_cart": {
-            "text": "Read more",
-            "description": "Read more about &ldquo;Organic Rosehip Facial Serum&rdquo;",
-            "url": "https://nuxt.meidanm.com/product/organic-rosehip-facial-serum/",
+            "text": "Add to cart",
+            "description": "Add to cart: &ldquo;Organic Rosehip Facial Serum&rdquo;",
+            "url": "?add-to-cart=227",
             "minimum": 1,
-            "maximum": 9999,
+            "maximum": 20,
             "multiple_of": 1
         },
         "extensions": {
@@ -342,7 +342,7 @@
         "is_on_backorder": false,
         "low_stock_remaining": null,
         "stock_availability": {
-            "text": "46 in stock",
+            "text": "36 in stock",
             "class": "in-stock"
         },
         "sold_individually": false,
@@ -351,7 +351,7 @@
             "description": "Add to cart: &ldquo;Natural Lip Balm Trio&rdquo;",
             "url": "?add-to-cart=223",
             "minimum": 1,
-            "maximum": 46,
+            "maximum": 36,
             "multiple_of": 1
         },
         "extensions": {
