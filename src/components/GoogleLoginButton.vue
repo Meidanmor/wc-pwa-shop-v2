@@ -1,5 +1,5 @@
 <template>
-  <q-btn
+<q-btn
     label="Sign in with Google"
     :icon="matLogin"
     color="primary"
@@ -9,69 +9,81 @@
 </template>
 
 <script setup>
-import { ref, /*nextTick*/ } from "vue";
-//import { useRouter, useRoute } from "vue-router";
-import { matLogin } from '@quasar/extras/material-icons'
+import { ref, nextTick } from "vue";
+import { useRouter } from 'vue-router';
+import { matLogin } from '@quasar/extras/material-icons';
+import { Platform } from 'quasar';
 
-// 🔒 Use environment variable in production
-const GOOGLE_CLIENT_ID =
-  "541818756446-cpeeist28iikua9g1i436vpj5mncslmb.apps.googleusercontent.com";
+// This is the "Web Application" Client ID from Google Console
+const GOOGLE_WEB_CLIENT_ID = "541818756446-cpeeist28iikua9g1i436vpj5mncslmb.apps.googleusercontent.com";
 
 const loading = ref(false);
-/*const router = useRouter();
-const route = useRoute();*/
 
-//let loginInProgress = false;
-
-function handleLogin() {
-  /*if (loginInProgress) return;
-  loginInProgress = true;*/
-  loading.value = true; // show spinner immediately
+const router = useRouter();
+async function handleLogin() {
+  loading.value = true;
 
   try {
-    // Optional: fallback
-    redirectToGoogleLogin();
-
+    if (Platform.is.capacitor) {
+      await handleNativeLogin();
+    } else {
+      redirectToGoogleLogin(); // Your existing web fallback
+    }
   } catch (err) {
     console.error("Google login failed:", err);
-    //loginInProgress = false;
     loading.value = false;
-
   }
 }
 
-/*function handleCredentialResponse(response) {
-  loading.value = true; // spinner
-  const idToken = response.credential;
+async function handleNativeLogin() {
+  // 1. Dynamic import so web builds don't break
+  const { SocialLogin } = await import('@capgo/capacitor-social-login');
 
-  fetch("https://nuxt.meidanm.com/wp-json/custom/v1/google-login", {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: idToken }),
-  })
-    .then((res) => res.json())
-    .then(async (data) => {
-      if (data.success) {
-        if (data.token) localStorage.setItem("jwt_token", data.token);
-        if (data.user) cart.state.user = data.user;
+  // 2. Initialize (Must use WEB Client ID even on Android)
+  await SocialLogin.initialize({
+    google: {
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+    },
+  });
 
-        // 🔄 Force route refresh
-        await nextTick();
-        router.replace(route.path);
+  // 3. Trigger Native Bottom Sheet
+  const { result } = await SocialLogin.login({
+    provider: 'google',
+    options: {
+      scopes: ['email', 'profile'],
+    }
+  });
 
-      } else {
-        console.error("Login failed:", data.message);
-      }
-    })
-    .catch((error) => {
-      console.error("Login request failed:", error);
-    })
-    .finally(() => {
-      loginInProgress = false;
-      loading.value = false;
+  if (result.idToken) {
+    await sendTokenToBackend(result.idToken);
+  }
+}
+
+async function sendTokenToBackend(idToken) {
+  try {
+    const response = await fetch("https://nuxt.meidanm.com/wp-json/custom/v1/google-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: idToken }),
     });
-}*/
+    const data = await response.json();
+
+    if (data.success) {
+      // Handle successful login (save JWT, redirect user)
+      if (data.token) localStorage.setItem("jwt_token", data.token);
+
+      // 1. Wait for Vue to acknowledge the localStorage change
+      await nextTick();
+
+      // This tells the router "Hey, the URL changed (slightly), please update!"
+      router.go(0)
+    }
+  } catch (error) {
+    console.error("Backend sync failed:", error);
+  } finally {
+    loading.value = false;
+  }
+}
 
 // Redirect fallback to Google OAuth
 function redirectToGoogleLogin() {
@@ -79,7 +91,7 @@ function redirectToGoogleLogin() {
   const state = encodeURIComponent(window.location.href); // save current page
 
   const url = `https://accounts.google.com/o/oauth2/v2/auth?` +
-              `client_id=${GOOGLE_CLIENT_ID}` +
+              `client_id=${GOOGLE_WEB_CLIENT_ID}` +
               `&redirect_uri=${encodeURIComponent(redirectUri)}` +
               `&response_type=code` +
               `&scope=openid%20email%20profile` +

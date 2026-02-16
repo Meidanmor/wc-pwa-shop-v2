@@ -1,6 +1,7 @@
 import { reactive, computed } from 'vue'
 import { fetchWithToken } from 'src/composables/useApiFetch.js'
 import productsStore from 'src/stores/products'
+import { matShoppingCart, matError, matFavorite, matCloudOff, matCloudDone } from '@quasar/extras/material-icons'
 
 /* -------------------------
    Constants & state (same shape as before)
@@ -425,7 +426,7 @@ async function mergeLocalIntoApi($q = null) {
       }
       persistLocalCart()
       rebuildMergedView()
-      if ($q && $q.notify) $q.notify({ type: 'positive', message: 'Cart synced with server.', icon: 'cloud_done' })
+      if ($q && $q.notify) $q.notify({ type: 'positive', message: 'Cart synced with server.', icon: matCloudDone })
     } else {
       console.warn('[cart] fetchCart after merge failed')
     }
@@ -576,7 +577,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     const allowed = maxAllowed === Infinity ? Infinity : maxAllowed - current
     const addQty = Math.min(quantity, allowed)
     if (addQty <= 0) {
-      if ($q) $q.notify({ type: 'negative', message: 'No more stock available', icon: 'error' })
+      if ($q) $q.notify({ type: 'negative', message: 'No more stock available', icon: matError })
       state.loading.cart = false
       return
     }
@@ -585,7 +586,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     persistLocalCart()
     rebuildMergedView()
     scheduleSyncLocalToServer()
-    if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: 'shopping_cart' })
+    if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: matShoppingCart })
     state.loading.cart = false
     state.drawerOpen = true
     return
@@ -598,7 +599,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     const intendedQty = (apiItem.quantity || 0) + quantity
     const clampQty = maxAllowed === Infinity ? intendedQty : Math.min(intendedQty, maxAllowed)
     if (clampQty <= (apiItem.quantity || 0)) {
-      if ($q) $q.notify({ type: 'negative', message: 'Only 0 more available for this product.', icon: 'error' })
+      if ($q) $q.notify({ type: 'negative', message: 'Only 0 more available for this product.', icon: matError })
       state.loading.cart = false
       return
     }
@@ -621,7 +622,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
     persistLocalCart()
     rebuildMergedView()
     scheduleSyncLocalToServer()
-    if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: 'shopping_cart' })
+    if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: matShoppingCart })
     state.loading.cart = false
     state.drawerOpen = true
     return
@@ -635,13 +636,13 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
   const maxAllowedNew = getMaxAllowed(localItemNew)
   if (maxAllowedNew !== Infinity && localItemNew.quantity > maxAllowedNew) {
     localItemNew.quantity = maxAllowedNew
-    if ($q) $q.notify({ type: 'negative', message: `Only ${maxAllowedNew} available for this product`, icon: 'error' })
+    if ($q) $q.notify({ type: 'negative', message: `Only ${maxAllowedNew} available for this product`, icon: matError })
   }
   state.local_cart.items.push(localItemNew)
   persistLocalCart()
   rebuildMergedView()
   scheduleSyncLocalToServer()
-  if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: 'shopping_cart' })
+  if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: matShoppingCart })
   state.loading.cart = false
   state.drawerOpen = true
 }
@@ -666,14 +667,14 @@ async function increase(productIdOrKey, $q = null) {
   if (localItem) {
     const max = getMaxAllowed(localItem)
     if (max !== Infinity && (localItem.quantity || 0) >= max) {
-      if ($q) $q.notify({ type: 'negative', message: `Reached max stock (${max}) for ${localItem.name || 'item'}`, icon: 'error' })
+      if ($q) $q.notify({ type: 'negative', message: `Reached max stock (${max}) for ${localItem.name || 'item'}`, icon: matError })
       return
     }
     localItem.quantity = Number(localItem.quantity || 0) + 1
     persistLocalCart()
     rebuildMergedView()
     scheduleSyncLocalToServer()
-    if ($q) $q.notify({ type: 'info', message: 'Quantity updated', icon: 'shopping_cart' })
+    if ($q) $q.notify({ type: 'info', message: 'Quantity updated', icon: matShoppingCart })
     return
   }
 
@@ -685,7 +686,7 @@ async function increase(productIdOrKey, $q = null) {
   persistLocalCart()
   rebuildMergedView()
   scheduleSyncLocalToServer()
-  if ($q) $q.notify({ type: 'info', message: 'Quantity updated', icon: 'shopping_cart' })
+  if ($q) $q.notify({ type: 'info', message: 'Quantity updated', icon: matShoppingCart })
 }
 
 async function decrease(cartItemKey, /*$q = null*/) {
@@ -740,7 +741,7 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
     persistLocalCart()
     rebuildMergedView()
     state.loading.cart = false
-    if ($q) $q.notify({ type: 'positive', message: 'Removed from cart', icon: 'shopping_cart' })
+    if ($q) $q.notify({ type: 'positive', message: 'Removed from cart', icon: matShoppingCart })
     // We removed locally — schedule a background sync to reconcile later (if online)
     // but only if we are online; mergeLocalIntoApi / syncLocalCartWithServer will handle validation.
     if (!state.offline) scheduleSyncLocalToServer()
@@ -766,7 +767,7 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
       persistLocalCart()
       rebuildMergedView()
       state.loading.cart = false
-      if ($q) $q.notify({ type: 'info', message: 'Removed from cart (local)', icon: 'cloud_off' })
+      if ($q) $q.notify({ type: 'info', message: 'Removed from cart (local)', icon: matCloudOff })
       // schedule background sync only when we created a local override
       if (!state.offline) scheduleSyncLocalToServer()
     } else {
@@ -792,7 +793,7 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
 
     // update server snapshot (no replace of local)
     await updateCartState(data)
-    if ($q) $q.notify({ type: 'positive', message: 'Removed from cart.', icon: 'shopping_cart' })
+    if ($q) $q.notify({ type: 'positive', message: 'Removed from cart.', icon: matShoppingCart })
 
     // Persist local changes but DO NOT call scheduleSyncLocalToServer()
     // because the server remove is authoritative and updateCartState() refreshed cart_array.
@@ -800,7 +801,7 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
     rebuildMergedView()
   } catch (err) {
     state.error = err.message
-    if ($q) $q.notify({ type: 'negative', message: 'Failed to remove.', icon: 'error' })
+    if ($q) $q.notify({ type: 'negative', message: 'Failed to remove.', icon: matError })
     // On failure, schedule a full sync attempt (this helps recover transient errors)
     if (!state.offline) scheduleSyncLocalToServer()
   } finally {
@@ -1018,7 +1019,7 @@ async function toggleWishlistItem(productId, $q = null) {
         $q.notify({
           type: 'positive',
           message: exists ? 'Removed from wishlist' : 'Added to wishlist',
-          icon: 'favorite'
+          icon: matFavorite
         })
       }
     } catch (err) {
@@ -1059,7 +1060,7 @@ async function toggleWishlistItem(productId, $q = null) {
       $q.notify({
         type: 'positive',
         message: exists ? 'Removed from wishlist' : 'Added to wishlist',
-        icon: 'favorite'
+        icon: matFavorite
       })
     }
   } catch (err) {

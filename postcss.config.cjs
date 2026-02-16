@@ -27,8 +27,6 @@ safelist: {
   standard: [
     'html', 'body',
     /q-app/, /q-layout/, /q-page/, /q-header/, /q-footer/,
-    /^q-notify/,       // any class starting with q-notify
-    /^q-notify__/,
     /q-body--/,        // Vital for drawer-open overflow handling
     /q-layout--/,      // Vital for header/drawer positioning
 
@@ -59,6 +57,17 @@ safelist: {
       // ----- Carousel styles -----
       /^q-carousel/,      // Keeps all carousel structural classes
       /^q-transition/,    // Keeps all transition/animation classes
+      // --- Notification System Fixes ---
+    'q-notifications',      // The main container wrapper (Crucial!)
+    /^q-notification/,     // Individual notification wrapper
+    /^q-notify/,           // Quasar notification classes
+
+    // --- Transition/Animation Fixes ---
+    // Notifications use Quasar's internal transitions to fade in/out
+    'q-transition--fade',
+    'q-transition--scale',
+    'q-transition--slide-up',
+    /^q-transition/,
   ],
   deep: [
     /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /q-carousel/
