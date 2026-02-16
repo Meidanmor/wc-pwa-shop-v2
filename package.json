@@ -15,6 +15,7 @@
     "postinstall": "quasar prepare"
   },
   "dependencies": {
+    "@capgo/capacitor-social-login": "^8.2.16",
     "@quasar/extras": "^1.16.4",
     "gsap": "^3.13.0",
     "quasar": "^2.16.0",
