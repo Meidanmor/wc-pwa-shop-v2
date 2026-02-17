@@ -531,7 +531,7 @@ isHydrated.value = false
     window.addEventListener('touchstart', hydrateOnInteraction, { passive: true })
 
     // Safety fallback: Hydrate after 5 seconds if no interaction
-    setTimeout(hydrateOnInteraction, 5000)
+    setTimeout(hydrateOnInteraction, 3000)
   }
 })
 

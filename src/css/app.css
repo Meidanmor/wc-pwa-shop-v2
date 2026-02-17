@@ -81,7 +81,9 @@ body:not(.q-body--prevent-scroll) .q-drawer__backdrop[style="background-color: r
     left: -999999px;
     pointer-events: none;
 }
-
+img.q-img__image {
+    width: 100%;
+}
 .no-decoration {
   text-decoration: none;
 }
@@ -260,6 +262,10 @@ i.q-icon.on-left.notranslate.material-icons {
     width: 100%;
     justify-content: center;
 }
+.q-tabs.q-tabs--scrollable.q-tabs--horizontal {
+    overflow: auto;
+}
+
 @media (max-width: 767px) {
     body section {
         padding-top: 40px;

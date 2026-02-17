@@ -11,7 +11,7 @@
     </div>
 
     <div v-else>
-      <q-tabs :right-icon="matChevronLeft" :left-icon="matChevronRight" v-model="tab" class="text-primary" active-color="primary" align="justify">
+      <q-tabs @touchstart.stop @mousedown.stop :right-icon="matChevronLeft" :left-icon="matChevronRight" v-model="tab" class="text-primary" active-color="primary" align="justify">
         <q-tab name="dashboard" label="Dashboard" />
         <q-tab name="orders" label="My Orders" />
         <q-tab name="details" label="Account Details" />

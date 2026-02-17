@@ -449,7 +449,7 @@ onMounted(() => {
   window.addEventListener('touchstart', scheduler, {passive: true})
 
   // Safety fallback: Hydrate after 5 seconds if no interaction
-  setTimeout(scheduler, 5000)
+  setTimeout(scheduler, 3000)
 
 })
 onUnmounted(() => {
