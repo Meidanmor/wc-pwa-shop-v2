@@ -11,7 +11,7 @@
     </div>
 
     <div v-else>
-      <q-tabs v-model="tab" class="text-primary" active-color="primary" align="justify">
+      <q-tabs :right-icon="matChevronLeft" :left-icon="matChevronRight" v-model="tab" class="text-primary" active-color="primary" align="justify">
         <q-tab name="dashboard" label="Dashboard" />
         <q-tab name="orders" label="My Orders" />
         <q-tab name="details" label="Account Details" />
@@ -43,7 +43,7 @@ import OrdersSection from 'components/OrdersSection.vue'
 import AccountDetails from 'components/AccountDetails.vue'
 import cart from 'src/stores/cart.js';
 import GoogleLoginButton from 'src/components/GoogleLoginButton.vue';
-
+import { matChevronLeft, matChevronRight } from '@quasar/extras/material-icons'
 
 const tab = ref('dashboard')
 
