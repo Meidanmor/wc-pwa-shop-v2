@@ -36,6 +36,12 @@ async function handleLogin() {
 }
 
 async function handleNativeLogin() {
+  // Guard: Only attempt this if we are actually on a mobile device/native app
+  if (!Platform.is.capacitor) {
+    console.warn('Native login not available on web.');
+    // Trigger web-based login fallback here if you have one
+    return;
+  }
   // 1. Dynamic import so web builds don't break
   const { SocialLogin } = await import('@capgo/capacitor-social-login');
 

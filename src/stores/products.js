@@ -116,6 +116,34 @@ async function fetchProductsIfNeeded(ctx) {
 }
 
 // --- consumer helpers ---
+async function fetchSingleProduct(slug) {
+  // 1. Check if we already have it in the existing list
+  const existing = products.value.find(p => {
+    const pSlug = p.permalink?.split('/').filter(Boolean).pop()
+    return pSlug === slug
+  })
+
+  if (existing) return existing
+
+  // 2. If not, fetch it specifically from the API
+  try {
+    productsLoading.value = true
+    // You'll need a method in your woocommerce boot file that calls
+    // `wp-json/wc/v3/products?slug=...`
+    const data = await api.getProductBySlug(slug)
+
+    if (data) {
+      // Add it to our local state so other components can use it
+      products.value.push(data)
+      return data
+    }
+  } catch (err) {
+    console.error('Error fetching single product:', err)
+  } finally {
+    productsLoading.value = false
+  }
+  return null
+}
 function getById(id) {
   return products.value.find(p => p.id === id) || null
 }
@@ -127,5 +155,6 @@ export default {
   preFetchProducts,
   initFromSSR,
   fetchProductsIfNeeded,
-  getById
+  getById,
+  fetchSingleProduct
 }

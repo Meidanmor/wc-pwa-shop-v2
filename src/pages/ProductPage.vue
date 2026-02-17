@@ -230,11 +230,17 @@ const quantity = ref(1)
 // Inside your Page or Layout
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
-    console.log('--- PreFetch Running for:', currentRoute.path)
-    const seo = await fetchSeoForPath(currentRoute.path)
+    console.log('--- PreFetch Running for:', currentRoute.params.slug)
+    // FETCH DATA: This is the key change
+    const [seo, productData] = await Promise.all([
+      fetchSeoForPath(currentRoute.path),
+      productsStore.fetchSingleProduct(currentRoute.params.slug) // New specific fetcher
+    ])
+    //const seo = await fetchSeoForPath(currentRoute.path)
     if (ssrContext) {
       // Initialize the state object if it doesn't exist
       ssrContext.seoData = seo
+      ssrContext.productData = productData
     }
   }
 })
@@ -245,6 +251,7 @@ const seoData = ref(null)
 if (process.env.CLIENT) {
   if (window.__SEO_DATA__) {
     seoData.value = window.__SEO_DATA__
+    product.value = window.__PRODUCT_DATA__
   }
 
   useMeta(() => {

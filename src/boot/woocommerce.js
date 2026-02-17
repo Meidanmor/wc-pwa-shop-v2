@@ -41,7 +41,7 @@ export async function fetchAdminProducts() {
 // --- default export for convenience ---
 const WC = {
   getProducts: () => fetchAPI('/products?per_page=100'),
-  getProductBySlug: (slug) => fetchAPI(`/products/slug/${slug}`),
+  getProductBySlug: (slug) => fetchAPI(`/products/${slug}`),
   getCategories: () => fetchAPI('/products/categories'),
   getAdminProducts: () => fetchAdminProducts()
 }

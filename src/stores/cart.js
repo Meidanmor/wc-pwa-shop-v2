@@ -1007,7 +1007,7 @@ async function toggleWishlistItem(productId, $q = null) {
         }
         const newItem = cachedProduct ? { id: cachedProduct.id,
           name: cachedProduct.name,
-          image: cachedProduct.images[0].thumbnail,
+          image: cachedProduct?.images[0]?.thumbnail || '',
         slug: productSlug} : { id: productId }
         state.wishlist_items.push(newItem)
         console.log(state.wishlist_items)
