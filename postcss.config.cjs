@@ -54,14 +54,34 @@ safelist: {
     'q-router-link--active', // Highlights the current page in the menu
     'q-link',           // Base link styles
 
+    // --- Select Specifics ---
+    'q-select',
+    'q-menu',             // The popup container (Critical!)
+    'q-position-engine',  // Quasar's logic for positioning the dropdown
+
+    // --- List & Items (Inside the dropdown) ---
+    'q-list',
+    'q-item',
+    'q-item__section',
+    'q-item__label',
+    'q-virtual-scroll__content', // Selects often use virtual scroll
+
+    // --- States ---
+    'q-manual-focusable',
+    'q-hoverable',
+    'q-focusable',
+    'text-primary',      // Often used for the active item
       // ----- Carousel styles -----
-      /^q-carousel/,      // Keeps all carousel structural classes
-      /^q-transition/,    // Keeps all transition/animation classes
+    /^q-carousel/,      // Keeps all carousel structural classes
+    /^q-transition/,    // Keeps all transition/animation classes
       // --- Notification System Fixes ---
     'q-notifications',      // The main container wrapper (Crucial!)
     /^q-notification/,     // Individual notification wrapper
     /^q-notify/,           // Quasar notification classes
 
+    'q-spinner',
+    'q-spinner-mat', // Or whatever spinner type you use
+    /^q-transition/,  // Important for fade-in/out of the spinner
     // --- Transition/Animation Fixes ---
     // Notifications use Quasar's internal transitions to fade in/out
     'q-transition--fade',
@@ -70,9 +90,9 @@ safelist: {
     /^q-transition/,
   ],
   deep: [
-    /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /q-carousel/
+    /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /q-carousel/, /q-spinner/, /q-menu/, /q-select/
   ],
-  greedy: [/q-transition/]
+  greedy: [/q-transition/, /rotate/]
 },
       defaultExtractor: content => content.match(/[\w-/:]+(?<!:)/g) || []
     })
