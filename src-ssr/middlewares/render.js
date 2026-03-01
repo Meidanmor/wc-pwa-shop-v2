@@ -31,20 +31,52 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
         render(ssrContext)
             .then(html => {
                 const seoData = ssrContext.seoData || {};
+                const productData = ssrContext.productData || {};
                 const productsData = ssrContext.productsData || {};
                 const heroData = ssrContext.heroData || {};
 
                 const safeTitle = escapeHTML(seoData?.title || 'NaturaBloom');
                 const safeDesc = escapeHTML(seoData?.description || "Let's Bloom Together");
+                const safeRobots = escapeHTML(seoData?.robots || 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+                const safeOgType = escapeHTML(seoData?.og_type || 'website');
+                const safeOgImage = escapeHTML(seoData?.og_image || '');
 
-                // 1. CRITICAL HEAD TOP: Connections, Styles, and Pixels
-                // This goes at the very top so the browser starts downloading the image
-                // and layout while it waits for the 901ms Quasar CSS.
+                // 1. GENERATE SCHEMA (JSON-LD)
+                // This allows Google to show Price, Rating, and Stock in search results.
+                let schemaHtml = '';
+                if (productData && productData.id) {
+                    const schema = {
+                        "@context": "https://schema.org/",
+                        "@type": "Product",
+                        "name": safeTitle,
+                        "description": safeDesc,
+                        "image": [safeOgImage],
+                        "offers": {
+                            "@type": "Offer",
+                            "priceCurrency": "ILS", // Change to your currency
+                            "price": productData.price || '0',
+                            "availability": productData.stock_status === 'instock' ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+                        }
+                    };
+                    schemaHtml = `<script type="application/ld+json">${JSON.stringify(schema).replace(/</g, '\\u003c')}</script>`;
+                }
+
+                // 2. CRITICAL HEAD TOP: Connections, Styles, Pixels, and SEO
                 const criticalHeadTop = `
     <link rel="preconnect" href="https://nuxt.meidanm.com" crossorigin>
     <link rel="dns-prefetch" href="https://nuxt.meidanm.com">
     <title>${safeTitle}</title>
     <meta name="description" content="${safeDesc}">
+    <meta name="robots" content="${safeRobots}">
+    
+    <meta property="og:title" content="${safeTitle}">
+    <meta property="og:description" content="${safeDesc}">
+    <meta property="og:image" content="${safeOgImage}">
+    <meta property="og:type" content="${safeOgType}">
+    <meta name="twitter:card" content="summary_large_image">
+
+    ${schemaHtml}
+
     ${heroData.src ? `
       <link 
         rel="preload" 
@@ -55,34 +87,28 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
         fetchpriority="high"
       >` : ''}
     <style>
-    /* 1. Force everything in the LCP area to be visible instantly */
-  .hero-section-sec, 
-  .lcp-wrapper, 
-  .hero-img, 
-  .q-layout, 
-  .q-page-container,
-  #q-app {
-    opacity: 1 !important;
-    visibility: visible !important;
-    display: block !important; /* or block, matching your hero class */
-    transition: none !important;
-    animation: none !important;
-  }
-</style>
+      .hero-section-sec, .lcp-wrapper, .hero-img, .q-layout, .q-page-container, #q-app {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+        transition: none !important;
+        animation: none !important;
+      }
+    </style>
   `;
 
-                // 2. HEAVY DATA: Move to the very bottom of the body.
-                // This prevents the browser from having to parse massive JSON before it draws the page.
+                // 3. HEAVY DATA: Bottom of body
                 const bodyBottom = `
     <script>window.__SEO_DATA__ = ${JSON.stringify(seoData).replace(/</g, '\\u003c')}</script>
     <script>window.__PRODUCTS_DATA__ = ${JSON.stringify(productsData).replace(/</g, '\\u003c')}</script>
+    <script>window.__PRODUCT_DATA__ = ${JSON.stringify(productData).replace(/</g, '\\u003c')}</script>
   `;
 
-                // 3. SURGICAL PLACEMENT:
+                // 4. SURGICAL PLACEMENT
                 const output = html
-                    .replace(/<title>.*?<\/title>/i, '') // Remove Quasar's default title
-                    .replace('<head>', `<head>${criticalHeadTop}`) // Inject critical stuff at the TOP
-                    .replace('</body>', `${bodyBottom}</body>`); // Inject heavy JSON at the BOTTOM
+                    .replace(/<title>.*?<\/title>/i, '')
+                    .replace('<head>', `<head>${criticalHeadTop}`)
+                    .replace('</body>', `${bodyBottom}</body>`);
 
                 res.send(output);
             })

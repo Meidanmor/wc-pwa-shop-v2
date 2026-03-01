@@ -387,9 +387,15 @@ if (process.env.CLIENT) {
         return {
           title: seo?.title || 'NaturaBloom',
           meta: {
-            description: { name: 'description', content: seo?.description || "Let's Bloom Together" },
-            'og:title': { property: 'og:title', content: seo?.title || 'NaturaBloom' },
-            'og:description': { property: 'og:description', content: seo?.description || "Let's Bloom Together" }
+            // Dynamic robots from Yoast!
+            robots: {name: 'robots', content: seo?.robots || 'index, follow'},
+            description: {name: 'description', content: seo?.description},
+
+            // OpenGraph (Social Media)
+            'og:title': {property: 'og:title', content: seo?.title},
+            'og:description': {property: 'og:description', content: seo?.description},
+            'og:image': {property: 'og:image', content: seo?.og_image},
+            'og:type': {property: 'og:type', content: 'website'},
           }
         }
       })
