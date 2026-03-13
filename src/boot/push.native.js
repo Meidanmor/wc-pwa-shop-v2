@@ -1,5 +1,6 @@
 // src/boot/push.js
 import { Platform } from 'quasar'
+//import { App } from '@capacitor/app';
 
 let PushNotifications = null
 
@@ -190,27 +191,26 @@ export async function initNativePush() {
     /* --------------------------------------------------
      * 2️⃣ Notification tap (equivalent to notificationclick)
      * -------------------------------------------------- */
-    PushNotifications.addListener(
-        'pushNotificationActionPerformed',
-        (action) => {
-          console.log('[Native] Push action', action)
+    /*PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      console.log('[Native] Push action received', action);
 
-          const data =
-              action.notification?.data?.notification ||
-              action.notification?.data ||
-              {}
+      // 1. Flattened data access
+      const data = action.notification.data;
+      const targetUrl = data?.url;
 
-          if (data.url) {
-            if (window.$router) {
-              window.$router.push(data.url).catch(() => {
-                window.location.href = data.url
-              })
-            } else {
-              window.location.href = data.url
-            }
-          }
-        }
-    )
+      if (targetUrl) {
+        console.log('[Native] Navigating to:', targetUrl);
+
+        // 2. Use the imported route instance
+        // Wrap in isReady to ensure the app is fully loaded before navigating
+        route.isReady().then(() => {
+          route.push(targetUrl).catch((err) => {
+            console.error('Router push failed, falling back to href', err);
+            window.location.href = targetUrl;
+          });
+        });
+      }
+    });*/
     const perm = await PushNotifications.checkPermissions()
     if (perm.receive !== 'granted') {
       const req = await PushNotifications.requestPermissions()
@@ -270,6 +270,13 @@ export async function requestNativePermission() {
    — this is called by Quasar boot (default export)
    ------------------------- */
 function setupCartTracking() {
+  // Native-friendly way to detect the app going to background
+  /*App.addListener('appStateChange', ({ isActive }) => {
+    if (!isActive) {
+      console.log('📱 App going to background, syncing cart...')
+      syncSubscriptionCartToken()
+    }
+  });*/
   //window.addEventListener('beforeunload', syncSubscriptionCartToken)
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) syncSubscriptionCartToken()
@@ -314,6 +321,14 @@ export default ({ router } = {}) => {
         // dynamic import only to copy the module for plugin detection
         const nativePush = await import(/* @vite-ignore */ '@capacitor/push-notifications')
         PushNotifications = nativePush.PushNotifications
+        PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+          console.log(action);
+          const data = action.notification.data
+          if (data?.url) {
+            // Use the router passed in by Quasar
+            router.push(data.url)
+          }
+        })
         // Do not request permission here — we only set up listeners in initNativePush
         //await initNativePush()
       } catch (e) {
