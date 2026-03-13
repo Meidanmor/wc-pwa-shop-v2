@@ -1,5 +1,158 @@
 [
     {
+        "id": 515,
+        "name": "New product check",
+        "slug": "new-product-check",
+        "parent": 0,
+        "type": "simple",
+        "variation": "",
+        "permalink": "https://nuxt.meidanm.com/product/new-product-check/",
+        "sku": "",
+        "short_description": "",
+        "description": "<p>Check</p>",
+        "on_sale": true,
+        "prices": {
+            "price": "45500",
+            "regular_price": "50000",
+            "sale_price": "45500",
+            "price_range": null,
+            "currency_code": "ILS",
+            "currency_symbol": "\u20aa",
+            "currency_minor_unit": 2,
+            "currency_decimal_separator": ".",
+            "currency_thousand_separator": ",",
+            "currency_prefix": "",
+            "currency_suffix": "\u20aa"
+        },
+        "price_html": "<del aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">500.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></del> <span class=\"screen-reader-text\">Original price was: 500.00&#8362;.</span><ins aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">455.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></ins><span class=\"screen-reader-text\">Current price is: 455.00&#8362;.</span>",
+        "average_rating": "0",
+        "review_count": 0,
+        "images": [
+            {
+                "id": 101,
+                "src": "https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-2-1.webp",
+                "thumbnail": "https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-2-1-300x300.webp",
+                "srcset": "https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-2-1.webp 1440w, https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-2-1-300x160.webp 300w, https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-2-1-1024x548.webp 1024w, https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-2-1-768x411.webp 768w, https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-2-1-600x321.webp 600w",
+                "sizes": "(max-width: 1440px) 100vw, 1440px",
+                "name": "Cover-2-1",
+                "alt": ""
+            }
+        ],
+        "categories": [
+            {
+                "id": 27,
+                "name": "test",
+                "slug": "test",
+                "link": "https://nuxt.meidanm.com/product-category/test/"
+            }
+        ],
+        "tags": [],
+        "brands": [],
+        "attributes": [],
+        "variations": [],
+        "grouped_products": [],
+        "has_options": false,
+        "is_purchasable": true,
+        "is_in_stock": true,
+        "is_on_backorder": false,
+        "low_stock_remaining": null,
+        "stock_availability": {
+            "text": "",
+            "class": "in-stock"
+        },
+        "sold_individually": false,
+        "add_to_cart": {
+            "text": "Add to cart",
+            "description": "Add to cart: &ldquo;New product check&rdquo;",
+            "url": "?add-to-cart=515",
+            "minimum": 1,
+            "maximum": 9999,
+            "multiple_of": 1
+        },
+        "extensions": {
+            "mpress": {
+                "default_category": {
+                    "id": 27,
+                    "name": "test",
+                    "slug": "test"
+                }
+            }
+        }
+    },
+    {
+        "id": 514,
+        "name": "new product",
+        "slug": "new-product",
+        "parent": 0,
+        "type": "simple",
+        "variation": "",
+        "permalink": "https://nuxt.meidanm.com/product/new-product/",
+        "sku": "",
+        "short_description": "",
+        "description": "<p>HELLO</p>",
+        "on_sale": true,
+        "prices": {
+            "price": "18900",
+            "regular_price": "20000",
+            "sale_price": "18900",
+            "price_range": null,
+            "currency_code": "ILS",
+            "currency_symbol": "\u20aa",
+            "currency_minor_unit": 2,
+            "currency_decimal_separator": ".",
+            "currency_thousand_separator": ",",
+            "currency_prefix": "",
+            "currency_suffix": "\u20aa"
+        },
+        "price_html": "<del aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">200.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></del> <span class=\"screen-reader-text\">Original price was: 200.00&#8362;.</span><ins aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">189.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></ins><span class=\"screen-reader-text\">Current price is: 189.00&#8362;.</span>",
+        "average_rating": "0",
+        "review_count": 0,
+        "images": [
+            {
+                "id": 100,
+                "src": "https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-3-1.webp",
+                "thumbnail": "https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-3-1-300x300.webp",
+                "srcset": "https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-3-1.webp 1440w, https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-3-1-300x160.webp 300w, https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-3-1-1024x548.webp 1024w, https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-3-1-768x411.webp 768w, https://nuxt.meidanm.com/wp-content/uploads/2023/05/Cover-3-1-600x321.webp 600w",
+                "sizes": "(max-width: 1440px) 100vw, 1440px",
+                "name": "Cover-3-1",
+                "alt": ""
+            }
+        ],
+        "categories": [],
+        "tags": [],
+        "brands": [],
+        "attributes": [],
+        "variations": [],
+        "grouped_products": [],
+        "has_options": false,
+        "is_purchasable": true,
+        "is_in_stock": true,
+        "is_on_backorder": false,
+        "low_stock_remaining": null,
+        "stock_availability": {
+            "text": "",
+            "class": "in-stock"
+        },
+        "sold_individually": false,
+        "add_to_cart": {
+            "text": "Add to cart",
+            "description": "Add to cart: &ldquo;new product&rdquo;",
+            "url": "?add-to-cart=514",
+            "minimum": 1,
+            "maximum": 9999,
+            "multiple_of": 1
+        },
+        "extensions": {
+            "mpress": {
+                "default_category": {
+                    "id": 30,
+                    "name": "Beauty &amp; Wellness",
+                    "slug": "beauty-and-wellness"
+                }
+            }
+        }
+    },
+    {
         "id": 227,
         "name": "Organic Rosehip Facial Serum",
         "slug": "organic-rosehip-facial-serum",
