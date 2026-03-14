@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import api from 'src/boot/woocommerce'
 import path from 'path'
 import fs from 'fs'
+import { isAdmin } from 'src/stores/user' // Our new lightweight store
 
 // --- reactive state ---
 const products = ref([])
@@ -84,6 +85,38 @@ export async function preFetchProducts(ctx, force=false) {
         console.log(err)
       }
     }
+
+    // --- NEW: Admin "Top-up" for Drafts ---
+    // This happens AFTER the initial load so the user sees products immediately.
+    if (isAdmin.value) {
+      // Use a separate, non-blocking function to fetch drafts
+      fetchAdminDrafts()
+    }
+  }
+}
+
+// --- The New Helper ---
+async function fetchAdminDrafts() {
+  try {
+    // Calling your specific /wc/v3 logic from woocommerce.js
+    const allAdminProducts = await api.getAdminProducts()
+
+    if (Array.isArray(allAdminProducts)) {
+      // Create Map from current list (Store API / JSON format)
+      const productsMap = new Map(products.value.map(p => [p.id, p]))
+
+      // Merge in the /v3 products (including drafts)
+      allAdminProducts.forEach(item => {
+        // This overwrites the 'publish' version with the fresh API version
+        // and adds any 'draft' items that weren't in the JSON
+        productsMap.set(item.id, item)
+      })
+
+      products.value = Array.from(productsMap.values())
+      console.log(`[Admin] View updated with fresh data from /wc/v3 (Drafts included)`)
+    }
+  } catch (err) {
+    console.warn('Failed to fetch admin products:', err)
   }
 }
 

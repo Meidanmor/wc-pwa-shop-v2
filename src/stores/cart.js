@@ -2,13 +2,14 @@ import { reactive, computed } from 'vue'
 import { fetchWithToken } from 'src/composables/useApiFetch.js'
 import productsStore from 'src/stores/products'
 import { matShoppingCart, matError, matFavorite, matCloudOff, matCloudDone } from '@quasar/extras/material-icons'
-
+import { userState, isLoggedIn } from 'src/stores/user' // Import the new store
 /* -------------------------
    Constants & state (same shape as before)
    ------------------------- */
 const API_BASE = import.meta.env.VITE_STORE_API_BASE;
 const LOCAL_CART_KEY = 'local_cart_v1'
 const LEGACY_OFFLINE_KEY = 'offline_cart'
+
 
 const state = reactive({
   cart_array: null,
@@ -20,10 +21,12 @@ const state = reactive({
   loading: { cart: false, quickbuy: false, wishlist: false },
   error: null,
   wishlist_items: {},
-  user: {},
   offline: typeof navigator !== 'undefined' ? !navigator.onLine : true,
   drawerOpen: false,
-  synced: false // <--- NEW
+  synced: false, // <--- NEW
+  // ADD a getter:
+  get user() { return userState.data },
+  set user(val) { setUser(val) }
 })
 
 /* -------------------------
@@ -940,9 +943,8 @@ async function fetchWishlistItems() {
   loadOfflineWL()
 
   // If offline or no logged-in user → stop here
-  if (state.offline || !state.user || !state.user.id) {
-    return
-  }
+  // Cleaner check using our new store
+  if (state.offline || !isLoggedIn.value) return;
 
   state.loading.wishlist = true
 
