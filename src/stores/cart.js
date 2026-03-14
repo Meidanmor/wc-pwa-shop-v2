@@ -2,7 +2,7 @@ import { reactive, computed } from 'vue'
 import { fetchWithToken } from 'src/composables/useApiFetch.js'
 import productsStore from 'src/stores/products'
 import { matShoppingCart, matError, matFavorite, matCloudOff, matCloudDone } from '@quasar/extras/material-icons'
-import { userState, isLoggedIn } from 'src/stores/user' // Import the new store
+import { userState, isLoggedIn, setUser } from 'src/stores/user'
 /* -------------------------
    Constants & state (same shape as before)
    ------------------------- */
