@@ -45,6 +45,8 @@ export async function fetchAdminProducts() {
     const drafts = await draftsRes.json()
     const published = await publishRes.json()
 
+    console.log(drafts);
+    console.log(published);
     // Combine them into one array
     return [...(Array.isArray(drafts) ? drafts : []), ...(Array.isArray(published) ? published : [])]
   } catch (err) {
