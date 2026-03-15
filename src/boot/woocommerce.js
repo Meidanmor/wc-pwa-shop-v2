@@ -33,7 +33,7 @@ export async function fetchAllProducts() {
 }
 
 export async function fetchAdminProducts() {
-  const response = await fetchWithToken(`https://nuxt.meidanm.com/wp-json/wc/v3/products?per_page=100&status=draft,publish`, { credentials: 'include' })
+  const response = await fetchWithToken(`https://nuxt.meidanm.com/wp-json/wc/v3/products?per_page=100&status[]=draft&status[]=publish`, { credentials: 'include' })
   const data = await response.json()
   return data
 }
