@@ -120,25 +120,30 @@ export async function preFetchProducts(ctx, force=false) {
 // --- The New Helper ---
 async function fetchAdminDrafts() {
   try {
-    // Calling your specific /wc/v3 logic from woocommerce.js
     const allAdminProducts = await api.getAdminProducts()
-
     if (Array.isArray(allAdminProducts)) {
-      // Create Map from current list (Store API / JSON format)
       const productsMap = new Map(products.value.map(p => [p.id, p]))
 
-      // Merge in the /v3 products (including drafts)
       allAdminProducts.forEach(item => {
-        // This overwrites the 'publish' version with the fresh API version
-        // and adds any 'draft' items that weren't in the JSON
+        // 🟢 CONVERT: Standard API "15.00" -> Store API "1500"
+        // We multiply by 100 to align the Admin data with your JSON data
+        const normalizedPrice = item.price ? (parseFloat(item.price) * 100).toString() : '0';
+
+        if (!item.prices) {
+          item.prices = {
+            price: normalizedPrice,
+            regular_price: item.regular_price ? (parseFloat(item.regular_price) * 100).toString() : normalizedPrice,
+            sale_price: item.sale_price ? (parseFloat(item.sale_price) * 100).toString() : normalizedPrice,
+            price_range: null
+          }
+        }
         productsMap.set(item.id, item)
       })
 
       products.value = Array.from(productsMap.values())
-      console.log(`[Admin] View updated with fresh data from /wc/v3 (Drafts included)`)
     }
   } catch (err) {
-    console.warn('Failed to fetch admin products:', err)
+    console.warn('Admin fetch failed', err)
   }
 }
 

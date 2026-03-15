@@ -312,29 +312,37 @@ onMounted(async() => {
 const updatePriceLimits = (productsList) => {
     if (!productsList || productsList.length === 0) return;
 
-    // Filter to see what products are available in this cat/search
     const available = productsList.filter(p => {
-        const matchCat = !selectedCategory.value || p.categories.some(c => c.id === selectedCategory.value);
-        const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase());
+        // Use optional chaining on categories in case an admin product is missing them
+        const matchCat = !selectedCategory.value ||
+                         p.categories?.some(c => c.id === selectedCategory.value);
+        const matchSearch = p.name?.toLowerCase().includes(search.value.toLowerCase());
         return matchCat && matchSearch;
     });
 
     if (available.length === 0) return;
 
-    const prices = available.flatMap(p => [
-        parseFloat(p.prices.price_range?.min_amount || p.prices.price) / 100,
-        parseFloat(p.prices.price_range?.max_amount || p.prices.price) / 100
-    ]);
+    const prices = available.flatMap(p => {
+        // 1. Get potential values (handling both Store API and normalized Admin formats)
+        // We divide by 100 because your store uses millicents/cents logic
+        const min = p.prices?.price_range?.min_amount ?? p.prices?.price ?? p.price ?? 0;
+        const max = p.prices?.price_range?.max_amount ?? p.prices?.price ?? p.price ?? 0;
+
+        return [parseFloat(min) / 100, parseFloat(max) / 100];
+    }).filter(val => !isNaN(val) && val !== null); // Remove any broken data
+
+    if (prices.length === 0) return;
 
     const trueMin = Math.floor(Math.min(...prices));
     const trueMax = Math.ceil(Math.max(...prices));
 
-    // Update the slider boundaries
-    priceMin.value = trueMin;
-    priceMax.value = trueMax;
-
-    // Reset the handle positions to the full width
-    priceRange.value = { min: trueMin, max: trueMax };
+    // Only update if the values actually changed to avoid unnecessary re-renders
+    if (priceMin.value !== trueMin || priceMax.value !== trueMax) {
+        priceMin.value = trueMin;
+        priceMax.value = trueMax;
+        // Reset handles to the new outer limits
+        priceRange.value = { min: trueMin, max: trueMax };
+    }
 }
 
 // Watch the selected category and update limits
