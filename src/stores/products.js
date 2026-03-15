@@ -95,36 +95,44 @@ export async function preFetchProducts(ctx, force=false) {
   }
 }
 
-// 2. The "Safe Merge" Helper
-function updateProductsState(newProducts) {
-  if (!Array.isArray(newProducts)) return
-
-  // Use a Map to prevent duplicates and preserve existing items
-  const productsMap = new Map(products.value.map(p => [p.id, p]))
-  newProducts.forEach(p => productsMap.set(p.id, p))
-
-  products.value = Array.from(productsMap.values())
-}
-
+// --- The New Helper ---
 async function fetchAdminDrafts() {
   try {
+    // Calling your specific /wc/v3 logic from woocommerce.js
     const allAdminProducts = await api.getAdminProducts()
-    if (allAdminProducts) {
-      updateProductsState(allAdminProducts)
-      console.log('[Admin] Drafts merged successfully')
+
+    if (Array.isArray(allAdminProducts)) {
+      // Create Map from current list (Store API / JSON format)
+      const productsMap = new Map(products.value.map(p => [p.id, p]))
+
+      // Merge in the /v3 products (including drafts)
+      allAdminProducts.forEach(item => {
+        // This overwrites the 'publish' version with the fresh API version
+        // and adds any 'draft' items that weren't in the JSON
+        productsMap.set(item.id, item)
+      })
+
+      products.value = Array.from(productsMap.values())
+      console.log(`[Admin] View updated with fresh data from /wc/v3 (Drafts included)`)
     }
   } catch (err) {
-    console.warn('Admin fetch failed', err)
+    console.warn('Failed to fetch admin products:', err)
   }
 }
 
 function initFromSSR() {
   if (initialized.value) return
-  if (typeof window !== 'undefined' && window[SSR_KEY]) {
-    products.value = window[SSR_KEY]
+
+  let pre = []
+
+  // client hydration
+  if (typeof window !== 'undefined') {
+    pre = window.__PRODUCTS_DATA__ || []
+  }
+
+  if (Array.isArray(pre) && pre.length) {
+    products.value = pre
     initialized.value = true
-    // Clean up to prevent memory leaks
-    delete window[SSR_KEY]
   }
 }
 
