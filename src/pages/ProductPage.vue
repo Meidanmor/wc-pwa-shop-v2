@@ -149,6 +149,8 @@
           </q-tooltip>
         </q-btn>
 
+        <div v-else-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
+
         <div v-else> Out of stock </div>
 
        <div class="full-width">

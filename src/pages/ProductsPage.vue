@@ -88,7 +88,8 @@
               <div class="text-subtitle2" v-html="product.price_html" />
             </q-card-section>
             <q-card-actions>
-              <q-btn v-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="primary" @click="addToCart(product)" />
+              <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
+              <q-btn v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="primary" @click="addToCart(product)" />
               <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" :to="`/product/${getSlugFromPermalink(product.permalink)}`" label="Choose options" color="primary" />
               <div v-else>Out of stock</div>
               <q-btn

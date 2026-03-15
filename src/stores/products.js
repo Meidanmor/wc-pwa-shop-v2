@@ -127,7 +127,7 @@ async function fetchAdminDrafts() {
       allAdminProducts.forEach(item => {
         // 🟢 NORMALIZE DATE: Store API uses 'date_created', v3 uses 'date_created' or 'date_created_gmt'
         // We ensure a standard Date object can be created from it
-        item.date_created = item.date_created || item.date_created_gmt;
+        item.date_created = item.date_created_gmt || item.date_created || new Date().toISOString();
 
         // ... your existing price normalization logic ...
         const normalizedPrice = item.price ? (parseFloat(item.price) * 100).toString() : '0';
@@ -146,9 +146,16 @@ async function fetchAdminDrafts() {
         productsMap.set(item.id, item)
       })
 
-      // 🟢 SORT: Convert Map to Array and sort by Date (Newest first)
+// 2. Sort with a more explicit numeric comparison
       const sortedArray = Array.from(productsMap.values()).sort((a, b) => {
-        return new Date(b.date_created) - new Date(a.date_created);
+        const dateA = new Date(a.date_created).getTime();
+        const dateB = new Date(b.date_created).getTime();
+
+        // Handle invalid dates (NaN) just in case
+        if (isNaN(dateA)) return 1;
+        if (isNaN(dateB)) return -1;
+
+        return dateB - dateA; // Newest first
       });
 
       products.value = sortedArray;
