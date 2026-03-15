@@ -125,22 +125,33 @@ async function fetchAdminDrafts() {
       const productsMap = new Map(products.value.map(p => [p.id, p]))
 
       allAdminProducts.forEach(item => {
-        // 🟢 CONVERT: Standard API "15.00" -> Store API "1500"
-        // We multiply by 100 to align the Admin data with your JSON data
-        const normalizedPrice = item.price ? (parseFloat(item.price) * 100).toString() : '0';
+        // 🟢 NORMALIZE DATE: Store API uses 'date_created', v3 uses 'date_created' or 'date_created_gmt'
+        // We ensure a standard Date object can be created from it
+        item.date_created = item.date_created || item.date_created_gmt;
 
+        // ... your existing price normalization logic ...
+        const normalizedPrice = item.price ? (parseFloat(item.price) * 100).toString() : '0';
         if (!item.prices) {
           item.prices = {
             price: normalizedPrice,
-            regular_price: item.regular_price ? (parseFloat(item.regular_price) * 100).toString() : normalizedPrice,
-            sale_price: item.sale_price ? (parseFloat(item.sale_price) * 100).toString() : normalizedPrice,
+            regular_price: normalizedPrice,
+            sale_price: normalizedPrice,
             price_range: null
-          }
+          };
+        }
+        // If no slug exists, or it's a draft, use the ID-based structure
+        if (!item.slug || item.status === 'draft') {
+          item.permalink = `/product/id-${item.id}`;
         }
         productsMap.set(item.id, item)
       })
 
-      products.value = Array.from(productsMap.values())
+      // 🟢 SORT: Convert Map to Array and sort by Date (Newest first)
+      const sortedArray = Array.from(productsMap.values()).sort((a, b) => {
+        return new Date(b.date_created) - new Date(a.date_created);
+      });
+
+      products.value = sortedArray;
     }
   } catch (err) {
     console.warn('Admin fetch failed', err)
