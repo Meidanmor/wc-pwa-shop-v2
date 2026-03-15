@@ -9,7 +9,7 @@ import { isAdmin } from 'src/stores/user' // Our new lightweight store
 const products = ref([])
 const productsLoading = ref(false)
 const initialized = ref(false)
-
+let loadingPromise = null // The "Gatekeeper"
 const SSR_KEY = '__PRODUCTS_DATA__'
 
 // --- core fetchers ---
@@ -75,22 +75,44 @@ export async function preFetchProducts(ctx, force=false) {
     // CLIENT: do NOT fetch
     initFromSSR()
 
-    if (!initialized.value || force == true) {
-      // fallback only if SSR failed
-      try {
-        const productsRes = await fetch('/data/products.json').then(res => res.json());
-        products.value = productsRes
-        initialized.value = true
-      } catch (err) {
-        console.log(err)
-      }
-    }
+    // 1. If a fetch is already in flight, don't start a new one.
+    // This solves the 4x fetch problem.
+    if (loadingPromise) return loadingPromise
 
-    // --- NEW: Admin "Top-up" for Drafts ---
-    // This happens AFTER the initial load so the user sees products immediately.
-    if (isAdmin.value) {
-      // Use a separate, non-blocking function to fetch drafts
-      fetchAdminDrafts()
+    // 2. Only fetch if we aren't initialized OR we are forced
+    if (!initialized.value || force) {
+      loadingPromise = (async () => {
+        try {
+          productsLoading.value = true
+
+          // Fetch the full JSON
+          const res = await fetch('/data/products.json')
+          const data = await res.json()
+
+          // 3. Non-destructive Merge
+          // We map the existing items (the 6 from SSR) and merge the new ones.
+          // This solves the "Blanking" problem.
+          const productsMap = new Map(products.value.map(p => [p.id, p]))
+          data.forEach(p => productsMap.set(p.id, p))
+
+          products.value = Array.from(productsMap.values())
+          initialized.value = true
+
+          // 4. Admin "Top-up"
+          // Re-inserted: Only runs if the user is an admin
+          if (isAdmin.value) {
+            await fetchAdminDrafts()
+          }
+
+        } catch (err) {
+          console.error('Client fetch failed', err)
+        } finally {
+          productsLoading.value = false
+          loadingPromise = null // Release the lock
+        }
+      })()
+
+      return loadingPromise
     }
   }
 }

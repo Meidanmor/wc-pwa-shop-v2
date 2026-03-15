@@ -287,6 +287,7 @@ watch(priceRange, (val) => {
 // Lifecycle
 onMounted(async() => {
   if (process.env.CLIENT) {
+    isClient.value = true;
     console.log('PWA Shell detected: Fetching SEO data from API...')
     try {
       // Use your existing fetch function
@@ -298,12 +299,11 @@ onMounted(async() => {
   }
 
   await productsStore.preFetchProducts('', true)
-// 🚨 NEW FIX: Call the update function immediately after fetching data
-  // This sets the correct min/max values for the initial page load.
+
+  // 🟢 Now this runs on the FULL dataset
   updatePriceLimits(productsStore.products.value)
 
   if (process.env.CLIENT) {
-    isClient.value = true;
     await fetchCategories()
   }
 })
