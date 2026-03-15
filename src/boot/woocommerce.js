@@ -33,9 +33,24 @@ export async function fetchAllProducts() {
 }
 
 export async function fetchAdminProducts() {
-  const response = await fetchWithToken(`https://nuxt.meidanm.com/wp-json/wc/v3/products?per_page=100&status[]=draft&status[]=publish`, { credentials: 'include' })
-  const data = await response.json()
-  return data
+  const base = 'https://nuxt.meidanm.com/wp-json/wc/v3/products?per_page=100'
+
+  try {
+    // We run both requests at the same time for speed
+    const [draftsRes, publishRes] = await Promise.all([
+      fetchWithToken(`${base}&status=draft`, { credentials: 'include' }),
+      fetchWithToken(`${base}&status=publish`, { credentials: 'include' })
+    ])
+
+    const drafts = await draftsRes.json()
+    const published = await publishRes.json()
+
+    // Combine them into one array
+    return [...(Array.isArray(drafts) ? drafts : []), ...(Array.isArray(published) ? published : [])]
+  } catch (err) {
+    console.error('[fetchAdminProducts] Failed parallel fetch:', err)
+    return []
+  }
 }
 
 // --- default export for convenience ---

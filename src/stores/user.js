@@ -34,5 +34,6 @@ export function clearUser() {
   userState.data = {}
   if (typeof window !== 'undefined') {
     localStorage.removeItem('user_session')
+    localStorage.removeItem('jwt_token') // Clear the token too!
   }
 }
