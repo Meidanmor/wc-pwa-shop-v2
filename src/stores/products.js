@@ -95,7 +95,8 @@ export async function preFetchProducts(ctx, force=false) {
             date_created: p.date_created || new Date(0).toISOString()
           }))
 
-          const productsMap = new Map(products.value.map(p => [p.id, p]))
+          const currentList = Array.isArray(products.value) ? products.value : []
+          const productsMap = new Map(currentList.map(p => [p?.id, p]))
           normalizedData.forEach(p => productsMap.set(p.id, p))
 
           products.value = Array.from(productsMap.values())

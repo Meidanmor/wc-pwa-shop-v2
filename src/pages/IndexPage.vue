@@ -327,7 +327,7 @@ const QInput = defineAsyncComponent(() => import('quasar').then(m => m.QInput))
 const isHydrated = ref(false)
 
 // Sync data immediately so the static HTML is correct
-if (process.env.CLIENT && window.__PRODUCTS_DATA__) {
+if (process.env.CLIENT && window.__PRODUCTS_DATA__ && Array.isArray(window.__PRODUCTS_DATA__)) {
   productsStore.products.value = window.__PRODUCTS_DATA__
 }
 // ----------------- Scroll -----------------
