@@ -156,7 +156,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import cart from 'src/stores/cart'
 //import { fetchAllProducts } from 'src/boot/woocommerce'
-import { matChevronLeft, matChevronRight } from '@quasar/extras/material-icons'
+import { matChevronLeft, matChevronRight, matFavorite, matFavoriteBorder } from '@quasar/extras/material-icons'
 
 const props = defineProps({
   productId: Number,

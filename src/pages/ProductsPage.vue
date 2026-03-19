@@ -134,7 +134,7 @@ import cart from 'src/stores/cart'
 import { useQuasar, useMeta, scroll } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose } from '@quasar/extras/material-icons'
+import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFavorite, matFavoriteBorder } from '@quasar/extras/material-icons'
 
 const $q = useQuasar()
 const { setVerticalScrollPosition } = scroll
