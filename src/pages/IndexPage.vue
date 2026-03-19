@@ -311,10 +311,8 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
 import cart from 'src/stores/cart'
-//import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matFavoriteBorder, matFavorite } from '@quasar/extras/material-icons'
-//import LazySection from 'components/LazySection.vue'
 import { defineAsyncComponent } from 'vue'
 
 // Instead of standard imports, do this:
