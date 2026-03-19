@@ -70,7 +70,7 @@
         <div
           v-for="product in paginatedProducts"
           :key="product.id"
-          class="col-xs-12 col-sm-6 col-md-4"
+          class="col-xs-12 col-sm-6 col-md-4 relative-position"
         >
           <div class="item-loop-wl absolute">
               <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
