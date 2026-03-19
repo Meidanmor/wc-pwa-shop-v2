@@ -370,62 +370,23 @@ defineOptions({
 })
 
 const seoData = ref(null)
-// 1. Declare it at the top level (outside any functions)
-// 2. Updated SEO Watcher
-if (process.env.CLIENT) {
-  watch(isHydrated, async (val) => {
-    if (val) {
-      // Check if we have SSR data, otherwise fetch it (SPA navigation)
-        const { fetchSeoForPath } = await import('src/composables/useSeo')
-        seoData.value = await fetchSeoForPath('homepage')
 
-      // Apply Meta Tags
-      useMeta(() => {
-        const seo = seoData.value;
-        return {
-          title: seo?.title || 'NaturaBloom',
-          meta: {
-            // Dynamic robots from Yoast!
-            robots: {name: 'robots', content: seo?.robots || 'index, follow'},
-            description: {name: 'description', content: seo?.description},
-
-            // OpenGraph (Social Media)
-            'og:title': {property: 'og:title', content: seo?.title},
-            'og:description': {property: 'og:description', content: seo?.description},
-            'og:image': {property: 'og:image', content: seo?.og_image},
-            'og:type': {property: 'og:type', content: 'website'},
-          }
-        }
-      })
-    }
-  }, { immediate: true })
-}
-
-//const products = productsStore.products
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref('');
 // --- computed version (reactive) ---
 const featuredProductsComputed = computed(() => {
-  if(!productsStore.products.value.length){
-     productsStore.preFetchProducts('', true)
-  }
   const list = productsStore.products.value
   if (!Array.isArray(list)) return []
-  return list.filter(p => p.id).slice(0, 6)
+  // Only filter if we actually have data
+  return list.filter(p => p && p.id).slice(0, 6)
 })
 
-// --- fill SSR payload first (if exists) ---
-  featuredProducts.value = featuredProductsComputed.value
-
 const visibleStaticItems = computed(() => {
-  if(!productsStore.products.value.length) {
-     productsStore.preFetchProducts('', true)
+  const allProducts = productsStore.products.value;
+  if (!Array.isArray(allProducts) || allProducts.length === 0) {
+     return [{}, {}, {}];
   }
-  //console.log(productsStore.products.value);
-  const allProducts = productsStore.products.value || [];
-  // If we have products, take 3.
-  // If not, return 3 empty objects (we handle the missing properties in the template)
-  return allProducts.length >= 3 ? allProducts.slice(0, 3) : [{}, {}, {}];
+  return allProducts.slice(0, 3);
 });
 
 // ----------------- Setup -----------------
@@ -539,15 +500,51 @@ isHydrated.value = false
   }
 })
 
-// REPLACE YOUR WATCHERS WITH THIS NESTED VERSION:
-watch(() => isHydrated.value, (val) => {
-  if (val) {
-    // Only now do we care about screen size changes or data updates
+watch(isHydrated, async (val) => {
+  if (!val) return;
+
+  try {
+    // 1. DATA FETCHING (Parallel)
+    // We do these together to save time.
+    // We only fetch products if the store is empty (SPA navigation)
+    const [ { fetchSeoForPath } ] = await Promise.all([
+      import('src/composables/useSeo'),
+      !productsStore.products.value.length ? productsStore.preFetchProducts('', true) : Promise.resolve()
+    ]);
+
+    // 2. SEO UPDATE
+    seoData.value = await fetchSeoForPath('homepage');
+
+    // 3. APPLY META
+    useMeta(() => {
+      const seo = seoData.value;
+      return {
+        title: seo?.title || 'NaturaBloom',
+        meta: {
+          robots: { name: 'robots', content: seo?.robots || 'index, follow' },
+          description: { name: 'description', content: seo?.description },
+          'og:title': { property: 'og:title', content: seo?.title },
+          'og:description': { property: 'og:description', content: seo?.description },
+          'og:image': { property: 'og:image', content: seo?.og_image },
+          'og:type': { property: 'og:type', content: 'website' },
+        }
+      };
+    });
+
+    // 4. UI INITIALIZATION
+    // Now that data is guaranteed to be in the store, we setup the carousel
+    await recomputeSlides(true);
+
+    // 5. RESPONSIVE LISTENER
+    // We only start listening to screen/store changes AFTER initial hydration is done
     watch([() => productsStore.products.value, () => $q.screen.name], () => {
-      recomputeSlides(true)
-    })
+      recomputeSlides(true);
+    });
+
+  } catch (err) {
+    console.error('Hydration error:', err);
   }
-}, { immediate: true })
+}, { immediate: true });
 
 </script>
 
