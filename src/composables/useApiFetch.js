@@ -21,14 +21,20 @@ export async function fetchWithToken(url, options = {}) {
 
   // 3. Handle Expired Token (Interception)
   if (response.status === 401 && isClient) {
-    console.warn('Token expired or unauthorized. Clearing session...');
+// 🟢 CRITICAL CHECK:
+    // Is this a data fetch or a JS/CSS file?
+    // We ONLY redirect if it's a data request (usually starts with http or /wp-json)
+    const isDataRequest = url.includes('wp-json') || !url.match(/\.(js|css|woff2?|png|jpg)$/);
 
-    // Dynamically import to avoid circular dependency crashes
-    const { clearUser } = await import('src/stores/user');
-    clearUser();
+    if (isDataRequest && !window.location.pathname.includes('/login')) {
+      console.warn('Token expired. Clearing session...');
 
-    // Optional: Redirect to login or reload to reset app state
-    window.location.href = '/login?reason=expired';
+      // We still use dynamic import to be safe with Quasar's boot order
+      const {clearUser} = await import('src/stores/user');
+      clearUser();
+
+      window.location.href = '/login?reason=expired';
+    }
   }
 
   return response;
