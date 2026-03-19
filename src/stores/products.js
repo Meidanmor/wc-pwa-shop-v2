@@ -80,35 +80,38 @@ export async function preFetchProducts(ctx, force=false) {
     if (loadingPromise) return loadingPromise
 
     // 2. Only fetch if we aren't initialized OR we are forced
-    if (!initialized.value || force) {
+if (!initialized.value || force) {
       loadingPromise = (async () => {
         try {
           productsLoading.value = true
 
-          // Fetch the full JSON
           const res = await fetch('/data/products.json')
           const data = await res.json()
 
-          // 3. Non-destructive Merge
-          // We map the existing items (the 6 from SSR) and merge the new ones.
-          // This solves the "Blanking" problem.
-          const productsMap = new Map(products.value.map(p => [p.id, p]))
-          data.forEach(p => productsMap.set(p.id, p))
+          // 🟢 FIX 1: Ensure JSON products have a date for sorting
+          const normalizedData = data.map(p => ({
+            ...p,
+            date_created: p.date_created || new Date(0).toISOString() // Fallback for old JSON items
+          }))
 
+          const productsMap = new Map(products.value.map(p => [p.id, p]))
+          normalizedData.forEach(p => productsMap.set(p.id, p))
+
+          // 🟢 FIX 2: Single point of assignment to keep array reactive
           products.value = Array.from(productsMap.values())
           initialized.value = true
 
-          // 4. Admin "Top-up"
-          // Re-inserted: Only runs if the user is an admin
           if (isAdmin.value) {
             await fetchAdminDrafts()
           }
 
+          return products.value // Ensure the promise resolves with the array
         } catch (err) {
           console.error('Client fetch failed', err)
+          return products.value
         } finally {
           productsLoading.value = false
-          loadingPromise = null // Release the lock
+          loadingPromise = null
         }
       })()
 
@@ -148,15 +151,10 @@ async function fetchAdminDrafts() {
 
 // 2. Sort with a more explicit numeric comparison
       const sortedArray = Array.from(productsMap.values()).sort((a, b) => {
-        const dateA = new Date(a.date_created).getTime();
-        const dateB = new Date(b.date_created).getTime();
-
-        // Handle invalid dates (NaN) just in case
-        if (isNaN(dateA)) return 1;
-        if (isNaN(dateB)) return -1;
-
-        return dateB - dateA; // Newest first
-      });
+        const timeA = new Date(a.date_created || 0).getTime()
+        const timeB = new Date(b.date_created || 0).getTime()
+        return timeB - timeA
+      })
 
       products.value = sortedArray;
     }
