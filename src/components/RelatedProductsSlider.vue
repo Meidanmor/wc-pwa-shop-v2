@@ -70,9 +70,14 @@
           <div
             v-for="product in group"
             :key="product.id"
-            :class="colClass"
-            class="q-mb-md"
+            :class="[colClass, 'q-mb-md', 'relative-position']"
           >
+
+            <div class="item-loop-wl absolute">
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
+            </div>
+
             <q-card class="q-pa-sm full-height flex column">
               <router-link
                 :to="`/product/${product.slug}`"
