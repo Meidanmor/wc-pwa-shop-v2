@@ -132,6 +132,12 @@ async function fetchAdminDrafts() {
         // We ensure a standard Date object can be created from it
         item.date_created = item.date_created_gmt || item.date_created || new Date().toISOString();
 
+        // Store API uses 'is_in_stock' (boolean), REST API uses 'stock_status' (string)
+
+        if (item.is_in_stock === undefined) {
+          item.is_in_stock = item.stock_status === 'instock';
+        }
+
         // ... your existing price normalization logic ...
         const normalizedPrice = item.price ? (parseFloat(item.price) * 100).toString() : '0';
         if (!item.prices) {
