@@ -2,8 +2,7 @@
   <q-page class="q-pa-md">
     <div class="container">
       <h2>Checkout</h2>
-      <div v-if="isLoggedIn === false">
-        {{isLoggedIn}}
+      <div v-if="isLoggedIn === false && checkoutReady && itemsCount !== '0'">
         <GoogleLoginButton />
       </div>
 
@@ -163,7 +162,7 @@
       </q-card>
         </div>
     </q-form>
-            <!-- Render loader and sync retry state -->
+      <!-- Render loader and sync retry state -->
       <div v-else-if="!checkoutReady && needsSync" class="centered">
         <q-spinner color="primary" size="2em" />
         <div>Synchronizing cart, please wait...</div>
