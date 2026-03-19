@@ -109,8 +109,11 @@
           </div>
         </div>
 
+        <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
+
+        <div v-else-if="product.is_in_stock">
         <!-- Quantity Selector -->
-        <div v-if="product.is_in_stock" class="row items-center q-mb-md">
+        <div class="row items-center q-mb-md">
           <q-btn flat round :icon="matRemove" @click="decreaseQty" />
           <q-input
             v-model.number="quantity"
@@ -125,7 +128,6 @@
         <q-btn
           label="Add to Cart"
           class="q-mr-sm"
-          v-if="product.is_in_stock"
           color="primary"
           :disable="shouldDisableCartButtons"
           @click="addToCartHandler"
@@ -138,7 +140,6 @@
 
         <q-btn
           label="Quick Checkout"
-          v-if="product.is_in_stock"
           color="black"
           :disable="shouldDisableCartButtons"
           @click="addToCartHandler"
@@ -149,7 +150,7 @@
           </q-tooltip>
         </q-btn>
 
-        <div v-else-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
+        </div>
 
         <div v-else> Out of stock </div>
 
