@@ -377,18 +377,16 @@ const featuredProducts = ref('');
 const featuredProductsComputed = computed(() => {
   const list = productsStore.products.value
   if (!Array.isArray(list)) return []
-  // Only filter if we actually have data
-  return list.filter(p => p && p.id).slice(0, 6)
+  return list.filter(p => p.id).slice(0, 6)
 })
 
-const visibleStaticItems = computed(() => {
-  const allProducts = productsStore.products.value;
-  if (!Array.isArray(allProducts) || allProducts.length === 0) {
-     return [{}, {}, {}];
-  }
-  return allProducts.slice(0, 3);
-});
+// --- fill SSR payload first (if exists) ---
+featuredProducts.value = featuredProductsComputed.value
 
+const visibleStaticItems = computed(() => {
+  const allProducts = productsStore.products.value || [];
+  return allProducts.length >= 3 ? allProducts.slice(0, 3) : [{}, {}, {}];
+});
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
 const $q = useQuasar()
