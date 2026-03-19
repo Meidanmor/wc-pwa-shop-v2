@@ -77,27 +77,27 @@ export async function preFetchProducts(ctx, force=false) {
 
     // 1. If a fetch is already in flight, don't start a new one.
     // This solves the 4x fetch problem.
-    if (loadingPromise) return loadingPromise
-
+    if (loadingPromise) {
+      await loadingPromise
+      return products.value
+    }
     // 2. Only fetch if we aren't initialized OR we are forced
-if (!initialized.value || force) {
+    if (!initialized.value || force) {
       loadingPromise = (async () => {
         try {
           productsLoading.value = true
-
           const res = await fetch('/data/products.json')
           const data = await res.json()
 
-          // 🟢 FIX 1: Ensure JSON products have a date for sorting
+          // Ensure JSON products have a date for sorting
           const normalizedData = data.map(p => ({
             ...p,
-            date_created: p.date_created || new Date(0).toISOString() // Fallback for old JSON items
+            date_created: p.date_created || new Date(0).toISOString()
           }))
 
           const productsMap = new Map(products.value.map(p => [p.id, p]))
           normalizedData.forEach(p => productsMap.set(p.id, p))
 
-          // 🟢 FIX 2: Single point of assignment to keep array reactive
           products.value = Array.from(productsMap.values())
           initialized.value = true
 
@@ -105,10 +105,10 @@ if (!initialized.value || force) {
             await fetchAdminDrafts()
           }
 
-          return products.value // Ensure the promise resolves with the array
+          return products.value
         } catch (err) {
           console.error('Client fetch failed', err)
-          return products.value
+          return products.value || []
         } finally {
           productsLoading.value = false
           loadingPromise = null
@@ -117,6 +117,8 @@ if (!initialized.value || force) {
 
       return loadingPromise
     }
+
+    return Array.isArray(products.value) ? products.value : []
   }
 }
 
