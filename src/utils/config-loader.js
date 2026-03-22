@@ -7,7 +7,7 @@ export async function loadPageConfig(page, isPreview) {
     try {
       // 1. If Preview, fetch from WordPress API
       if (isPreview) {
-        const url = `https://pwav.meidanm.com/wp-json/shop-builder/v1/preview/${page}`;
+        const url = `https://nuxt.meidanm.com/wp-json/shop-builder/v1/preview/${page}`;
         console.log(`[SSR] Fetching Preview from API: ${url}`);
 
         // We use a dynamic import for 'node-fetch' or similar if global fetch isn't available
