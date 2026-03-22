@@ -34,6 +34,7 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
                 const productData = ssrContext.productData || {};
                 const productsData = ssrContext.productsData || {};
                 const heroData = ssrContext.heroData || {};
+                const pageConfig = ssrContext.homeConfig || {};
 
                 const safeTitle = escapeHTML(seoData?.title || 'NaturaBloom');
                 const safeDesc = escapeHTML(seoData?.description || "Let's Bloom Together");
@@ -102,6 +103,7 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
     <script>window.__SEO_DATA__ = ${JSON.stringify(seoData).replace(/</g, '\\u003c')}</script>
     <script>window.__PRODUCTS_DATA__ = ${JSON.stringify(productsData).replace(/</g, '\\u003c')}</script>
     <script>window.__PRODUCT_DATA__ = ${JSON.stringify(productData).replace(/</g, '\\u003c')}</script>
+    <script>window.__PAGE_CONFIG__ = ${JSON.stringify(pageConfig).replace(/</g, '\\u003c')}</script>
   `;
 
                 // 4. SURGICAL PLACEMENT

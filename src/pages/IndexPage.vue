@@ -4,7 +4,7 @@
   <div class="hero-section container hero-margin row">
 
     <div class="hero-content col-12 col-md-6 q-mb-lg">
-      <h1 class="text-h1 text-secondary stable-text">NaturaBloom</h1>
+      <h1 class="text-h1 text-secondary stable-text">{{ homeSettings?.hero_title || 'NaturaBloom' }}</h1>
       <p class="text-h6 text-secondary text-weight-light">
         We encompass products that are organic, cruelty-free, and environmentally friendly
       </p>
@@ -314,6 +314,7 @@ import cart from 'src/stores/cart'
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matFavoriteBorder, matFavorite } from '@quasar/extras/material-icons'
 import { defineAsyncComponent } from 'vue'
+import { loadPageConfig } from 'src/utils/config-loader' // Add this here
 
 // Instead of standard imports, do this:
 const QCarousel = defineAsyncComponent(() => import('quasar').then(m => m.QCarousel))
@@ -330,6 +331,12 @@ const isHydrated = ref(false)
 if (process.env.CLIENT && window.__PRODUCTS_DATA__ && Array.isArray(window.__PRODUCTS_DATA__)) {
   productsStore.products.value = window.__PRODUCTS_DATA__
 }
+
+const homeSettings = ref(null)
+// 1. Immediate SSR Sync (Mirrors your window.__PRODUCTS_DATA__ check)
+if (process.env.CLIENT && window.__PAGE_CONFIG__) {
+  homeSettings.value = window.__PAGE_CONFIG__
+}
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
 defineExpose({ scrollToProducts })
@@ -340,14 +347,17 @@ defineExpose({ scrollToProducts })
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.path)
-    const { fetchSeoForPath } = await import('src/composables/useSeo')
+    const {fetchSeoForPath} = await import('src/composables/useSeo')
     /*const seo = await fetchSeoForPath('homepage')
     //const seo = null;
     // 2. FETCH PRODUCTS (This was missing!)
     await productsStore.preFetchProducts()*/
     // Fire both requests at the same time
-    const [seo] = await Promise.all([
+    const isPreview = currentRoute.query.preview === 'true'
+
+    const [seo, configData] = await Promise.all([
       fetchSeoForPath('homepage'),
+      loadPageConfig('home', isPreview), // The helper we'll create
       productsStore.preFetchProducts()
     ])
 
@@ -360,6 +370,7 @@ defineOptions({
       ssrContext.seoData = seo
       // INJECT PRODUCTS HERE:
       ssrContext.productsData = leanProducts
+      ssrContext.pageConfig = homeConfig
       ssrContext.heroData = {
         src: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png',
         srcset: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w',
@@ -370,7 +381,6 @@ defineOptions({
 })
 
 const seoData = ref(null)
-
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref('');
 // --- computed version (reactive) ---
@@ -502,6 +512,13 @@ watch(isHydrated, async (val) => {
   if (!val) return;
 
   try {
+
+    const isPreview = $q.route?.query?.preview === 'true'
+
+    // Use it directly
+    const freshConfig = await loadPageConfig('home', isPreview)
+    if (freshConfig) homeSettings.value = freshConfig
+
     // 1. DATA FETCHING (Parallel)
     // We do these together to save time.
     // We only fetch products if the store is empty (SPA navigation)
