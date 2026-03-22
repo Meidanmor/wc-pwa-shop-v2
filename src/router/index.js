@@ -42,5 +42,25 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE)
   })
 
+  // --- Start Preview Lock Logic ---
+  Router.beforeEach((to, from, next) => {
+    // Check if the URL has ?preview=true
+    const isPreview = to.query.preview === 'true' || from.query.preview === 'true';
+
+    if (isPreview) {
+      // Allow the initial load (when there is no 'from' name or path is just root)
+      if (!from.name && from.fullPath === '/') {
+        return next();
+      }
+
+      // Block all other manual clicks/navigation inside the iframe
+      console.warn('Navigation blocked: Iframe is in Preview Mode');
+      return next(false);
+    }
+
+    next();
+  });
+  // --- End Preview Lock Logic ---
+
   return Router
 })
