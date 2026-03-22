@@ -310,6 +310,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
+import { useRoute } from 'vue-router' // Standard import is tiny
 import cart from 'src/stores/cart'
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matFavoriteBorder, matFavorite } from '@quasar/extras/material-icons'
@@ -337,6 +338,8 @@ const homeSettings = ref(null)
 if (process.env.CLIENT && window.__PAGE_CONFIG__) {
   homeSettings.value = window.__PAGE_CONFIG__
 }
+
+const route = useRoute();
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
 defineExpose({ scrollToProducts })
@@ -512,9 +515,7 @@ watch(isHydrated, async (val) => {
   if (!val) return;
 
   try {
-
-    const isPreview = $q.route?.query?.preview === 'true'
-
+    const isPreview = route.query.preview === 'true'
     // Use it directly
     const freshConfig = await loadPageConfig('home', isPreview)
     if (freshConfig) homeSettings.value = freshConfig
