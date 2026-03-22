@@ -1,6 +1,6 @@
 <template>
   <div>
-<section class="hero-section-sec" v-pre>
+<section class="hero-section-sec">
   <div class="hero-section container hero-margin row">
 
     <div class="hero-content col-12 col-md-6 q-mb-lg">

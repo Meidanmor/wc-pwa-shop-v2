@@ -34,7 +34,7 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
                 const productData = ssrContext.productData || {};
                 const productsData = ssrContext.productsData || {};
                 const heroData = ssrContext.heroData || {};
-                const pageConfig = ssrContext.homeConfig || {};
+                const pageConfig = ssrContext.pageConfig || {};
 
                 const safeTitle = escapeHTML(seoData?.title || 'NaturaBloom');
                 const safeDesc = escapeHTML(seoData?.description || "Let's Bloom Together");
