@@ -4,7 +4,7 @@
   <div class="hero-section container hero-margin row">
 
     <div class="hero-content col-12 col-md-6 q-mb-lg">
-      <h1 class="text-h1 text-secondary stable-text">{{ homeSettings?.hero_title || 'NaturaBloom' }}</h1>
+      <h1 class="text-h1 text-secondary stable-text">{{ homeSettings?.hero_title }}</h1>
       <p class="text-h6 text-secondary text-weight-light">
         We encompass products that are organic, cruelty-free, and environmentally friendly
       </p>
