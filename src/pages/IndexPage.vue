@@ -324,19 +324,30 @@ const QCard = defineAsyncComponent(() => import('quasar').then(m => m.QCard))
 const QCardSection = defineAsyncComponent(() => import('quasar').then(m => m.QCardSection))
 const QCardActions = defineAsyncComponent(() => import('quasar').then(m => m.QCardActions))
 const QInput = defineAsyncComponent(() => import('quasar').then(m => m.QInput))
+const $q = useQuasar()
 
 const isHydrated = ref(false)
+const getInitialConfig = () => {
+  // 1. SERVER-SIDE: This is the missing piece!
+  // If we are on the server, we MUST pull from the ssrContext
+  if (process.env.SERVER) {
+    return $q.ssrContext?.pageConfig || null
+  }
 
+  // 2. CLIENT-SIDE: Pull from the window global we set in render.js
+  if (process.env.CLIENT && window.__PAGE_CONFIG__) {
+    return window.__PAGE_CONFIG__
+  }
+
+  return null
+}
+
+const homeSettings = ref(getInitialConfig())
 // Sync data immediately so the static HTML is correct
 if (process.env.CLIENT && window.__PRODUCTS_DATA__ && Array.isArray(window.__PRODUCTS_DATA__)) {
   productsStore.products.value = window.__PRODUCTS_DATA__
 }
 
-const homeSettings = ref(null)
-// 1. Immediate SSR Sync (Mirrors your window.__PRODUCTS_DATA__ check)
-if (process.env.CLIENT && window.__PAGE_CONFIG__) {
-  homeSettings.value = window.__PAGE_CONFIG__
-}
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
 defineExpose({ scrollToProducts })
@@ -399,7 +410,6 @@ const visibleStaticItems = computed(() => {
 });
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
-const $q = useQuasar()
 
 async function addToWishlist(objID = 0) {
   await cart.toggleWishlistItem(objID, $q);
