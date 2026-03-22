@@ -370,7 +370,7 @@ defineOptions({
       ssrContext.seoData = seo
       // INJECT PRODUCTS HERE:
       ssrContext.productsData = leanProducts
-      ssrContext.pageConfig = homeConfig
+      ssrContext.pageConfig = configData
       ssrContext.heroData = {
         src: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png',
         srcset: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w',
