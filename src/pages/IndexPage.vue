@@ -308,7 +308,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, onServerPrefetch } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
 import { useRoute } from 'vue-router' // Standard import is tiny
 import cart from 'src/stores/cart'
@@ -335,17 +335,19 @@ if (process.env.CLIENT && window.__PRODUCTS_DATA__ && Array.isArray(window.__PRO
 }
 
 const homeSettings = ref(null)
-// IMMEDIATE SYNC FOR SSR
+// 1. THE SERVER FIX (Force the HTML to populate)
 if (process.env.SERVER) {
-  // This picks up the 'pageConfig' we attached in render.js
-  homeSettings.value = $q.ssrContext?.pageConfig || null
+  onServerPrefetch(async () => {
+    // We reach into the Quasar internal instance to get the context
+    homeSettings.value = $q.ssrContext?.pageConfig || null
+    console.log('SSR Title Check:', homeSettings.value?.hero_title)
+  })
 }
 
-// IMMEDIATE SYNC FOR CLIENT (Hydration)
+// 2. THE CLIENT FIX (Keep the Hydration)
 if (process.env.CLIENT && window.__PAGE_CONFIG__) {
   homeSettings.value = window.__PAGE_CONFIG__
 }
-
 const route = useRoute();
 // ----------------- Scroll -----------------
 const scrollToProducts = () => {}
