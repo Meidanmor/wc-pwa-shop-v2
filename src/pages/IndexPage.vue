@@ -327,6 +327,7 @@ const QCardActions = defineAsyncComponent(() => import('quasar').then(m => m.QCa
 const QInput = defineAsyncComponent(() => import('quasar').then(m => m.QInput))
 
 const isHydrated = ref(false)
+const $q = useQuasar()
 
 // Sync data immediately so the static HTML is correct
 if (process.env.CLIENT && window.__PRODUCTS_DATA__ && Array.isArray(window.__PRODUCTS_DATA__)) {
@@ -334,7 +335,13 @@ if (process.env.CLIENT && window.__PRODUCTS_DATA__ && Array.isArray(window.__PRO
 }
 
 const homeSettings = ref(null)
-// 1. Immediate SSR Sync (Mirrors your window.__PRODUCTS_DATA__ check)
+// IMMEDIATE SYNC FOR SSR
+if (process.env.SERVER) {
+  // This picks up the 'pageConfig' we attached in render.js
+  homeSettings.value = $q.ssrContext?.pageConfig || null
+}
+
+// IMMEDIATE SYNC FOR CLIENT (Hydration)
 if (process.env.CLIENT && window.__PAGE_CONFIG__) {
   homeSettings.value = window.__PAGE_CONFIG__
 }
@@ -402,7 +409,6 @@ const visibleStaticItems = computed(() => {
 });
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
-const $q = useQuasar()
 
 async function addToWishlist(objID = 0) {
   await cart.toggleWishlistItem(objID, $q);
