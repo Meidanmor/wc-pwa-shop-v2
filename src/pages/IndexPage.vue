@@ -387,6 +387,7 @@ if (process.env.SERVER) {
   onServerPrefetch(async () => {
     // We reach into the Quasar internal instance to get the context
     const config = $q.ssrContext?.pageConfig || $q.ssrContext?.state?.pageConfig
+    homeSettings.value = config || null
     console.log('SSR Title Check:', homeSettings.value?.hero_title)
   })
 }
