@@ -359,6 +359,7 @@ defineOptions({
       productsStore.preFetchProducts()
     ])
 
+    console.log(configData);
     // 2. Prepare the "Lean" data
     // We only need the first 6 for the homepage carousel
     const leanProducts = productsStore.products.value.slice(0, 6)
