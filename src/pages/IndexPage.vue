@@ -383,7 +383,7 @@ const homeSettings = ref(null)
 // 1. THE SERVER FIX (Force the HTML to populate)
 if (process.env.SERVER) {
   const ssr = useSSRContext()
-  homeSettings.value = ssr?.pageConfig || ssr?.state?.pageConfig || null
+  homeSettings.value = ssr?.pageConfig || null
 }
 
 // 2. THE CLIENT FIX (Keep the Hydration)

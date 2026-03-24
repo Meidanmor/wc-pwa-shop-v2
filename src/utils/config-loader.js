@@ -39,6 +39,7 @@ export async function loadPageConfig(page, isPreview) {
         ? `https://pwav.meidanm.com/wp-json/shop-builder/v1/preview/${page}`
         : `/config/${page}.json`;
 
+      console.log(url)
       const response = await fetch(url);
       if (!response.ok) return {};
       return await response.json();
