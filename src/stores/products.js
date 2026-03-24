@@ -18,7 +18,7 @@ function getByIds(ids = []) {
   const map = new Map(products.value.map(p => [p.id, p]))
 
   return ids
-    .map(id => map.get(id))
+    .map(id => map.get(Number(id))) // ✅ FIX
     .filter(Boolean)
 }
 
