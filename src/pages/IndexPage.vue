@@ -308,7 +308,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed, useSSRContext } from 'vue'
+import { ref, onMounted, watch, computed, useSSRContext, nextTick } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
 import { useRoute } from 'vue-router' // Standard import is tiny
 import cart from 'src/stores/cart'
@@ -444,28 +444,23 @@ const getChunks = (array, size) => {
 
 // UPDATE THIS FUNCTION:
 const recomputeSlides = async (forceRemount = false) => {
-  // GUARD: If we aren't hydrated, stop. Don't waste CPU cycles.
   if (!isHydrated.value) return
 
   if (!productsStore.products.value.length) {
     await productsStore.preFetchProducts('', true)
   }
-  /*const list = productsStore.products.value || []
-  const items = list.slice(0, 6)*/
+
   const ids = homeSettings.value?.featured_products || []
+  const allProducts = productsStore.products.value || []
 
-  let items = []
+  const items = ids.length
+    ? ids.map(id => allProducts.find(p => p.id === id)).filter(Boolean)
+    : allProducts.slice(0, 6)
 
-  if (ids.length) {
-    items = productsStore.getByIds(ids)
-  } else {
-    items = productsStore.products.value.slice(0, 6)
-  }
   const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
 
   if (forceRemount) carouselKey.value++
 
-  // Directly chunk the data here (this replaces the need for hydrateFeaturedProducts)
   slideChunks.value = getChunks(items, chunkSize)
 }
 
@@ -549,6 +544,8 @@ watch(isHydrated, async (val) => {
     console.log(freshConfig)
     if (freshConfig) homeSettings.value = freshConfig
 
+    await nextTick()
+
     // 1. DATA FETCHING (Parallel)
     // We do these together to save time.
     // We only fetch products if the store is empty (SPA navigation)
@@ -582,15 +579,19 @@ watch(isHydrated, async (val) => {
 
     // 5. RESPONSIVE LISTENER
     // We only start listening to screen/store changes AFTER initial hydration is done
-    watch([() => productsStore.products.value, () => $q.screen.name], () => {
-      recomputeSlides(true);
-    });
 
   } catch (err) {
     console.error('Hydration error:', err);
   }
 }, { immediate: true });
 
+watch(
+  [() => productsStore.products.value, () => $q.screen.name, () => homeSettings.value],
+  () => {
+    if (!isHydrated.value) return
+    recomputeSlides(true)
+  }
+)
 </script>
 
 <style scoped>
