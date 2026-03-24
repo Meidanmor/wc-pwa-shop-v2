@@ -308,7 +308,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed, onServerPrefetch } from 'vue'
+import { ref, onMounted, watch, computed, useSSRContext } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
 import { useRoute } from 'vue-router' // Standard import is tiny
 import cart from 'src/stores/cart'
@@ -370,8 +370,6 @@ defineOptions({
       ssrContext.productsData = leanProducts
       ssrContext.pageConfig = configData
       // 2. Attach it to the rendered state (for the component)
-      ssrContext.state = ssrContext.state || {}
-      ssrContext.state.pageConfig = configData
       ssrContext.heroData = {
         src: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png',
         srcset: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w',
@@ -384,12 +382,8 @@ defineOptions({
 const homeSettings = ref(null)
 // 1. THE SERVER FIX (Force the HTML to populate)
 if (process.env.SERVER) {
-  onServerPrefetch(async () => {
-    // We reach into the Quasar internal instance to get the context
-    const config = $q.ssrContext?.pageConfig || $q.ssrContext?.state?.pageConfig
-    homeSettings.value = config || null
-    console.log('SSR Title Check:', homeSettings.value?.hero_title)
-  })
+  const ssr = useSSRContext()
+  homeSettings.value = ssr?.pageConfig || ssr?.state?.pageConfig || null
 }
 
 // 2. THE CLIENT FIX (Keep the Hydration)
@@ -531,6 +525,7 @@ watch(isHydrated, async (val) => {
     const isPreview = route.query.preview === 'true'
     // Use it directly
     const freshConfig = await loadPageConfig('home', isPreview)
+    console.log(freshConfig)
     if (freshConfig) homeSettings.value = freshConfig
 
     // 1. DATA FETCHING (Parallel)
