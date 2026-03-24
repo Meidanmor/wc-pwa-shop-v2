@@ -207,8 +207,10 @@ self.addEventListener('notificationclick', function (event) {
 // This tells the SW: "Try to get the live SSR page first so we see
 // the products and SEO immediately. If the network fails, use the cache."
 registerRoute(
-  ({ request }) => request.mode === 'navigate',
-  new NetworkFirst({
+({ request, url }) =>
+  request.mode === 'navigate' &&
+  !url.searchParams.has('preview'),
+    new NetworkFirst({
     cacheName: 'ssr-pages',
     networkTimeoutSeconds: 2, // If network is dead, fallback to cache after 2s
     plugins: [
