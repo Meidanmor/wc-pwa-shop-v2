@@ -361,11 +361,11 @@ defineOptions({
 
     // 2. Prepare the "Lean" data
     // We only need the first 6 for the homepage carousel
-    //const leanProducts = productsStore.products.value.slice(0, 6)
-    const featuredIds = configData?.featured_products || []
+    const leanProducts = productsStore.products.value.slice(0, 6)
+    /*const featuredIds = configData?.featured_products || []
     const leanProducts = featuredIds.length
   ? productsStore.getByIds(featuredIds)
-  : productsStore.products.value.slice(0, 6)
+  : productsStore.products.value.slice(0, 6)*/
 
     if (ssrContext) {
       // Initialize the state object if it doesn't exist
