@@ -418,9 +418,18 @@ const featuredProductsComputed = computed(() => {
 featuredProducts.value = featuredProductsComputed.value
 
 const visibleStaticItems = computed(() => {
-  const allProducts = productsStore.products.value || [];
-  return allProducts.length >= 3 ? allProducts.slice(0, 3) : [{}, {}, {}];
-});
+  const ids = homeSettings.value?.featured_products || []
+
+  let items = []
+
+  if (ids.length) {
+    items = productsStore.getByIds(ids)
+  } else {
+    items = productsStore.products.value
+  }
+
+  return items.length >= 3 ? items.slice(0, 3) : [{}, {}, {}]
+})
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
 
