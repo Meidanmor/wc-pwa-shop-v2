@@ -12,7 +12,9 @@ export async function loadPageConfig(page, isPreview) {
 
         // We use a dynamic import for 'node-fetch' or similar if global fetch isn't available
         // but usually, in Quasar SSR, global fetch is available.
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          cache: 'no-store'
+        });
         if (response.ok) return await response.json();
         throw new Error(`WP API responded with ${response.status}`);
       }
@@ -39,7 +41,9 @@ export async function loadPageConfig(page, isPreview) {
         ? `https://nuxt.meidanm.com/wp-json/shop-builder/v1/preview/${page}`
         : `/config/${page}.json`;
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store'
+      });
       if (!response.ok) return {};
       return await response.json();
     } catch (err) {
