@@ -12,6 +12,16 @@ const initialized = ref(false)
 let loadingPromise = null // The "Gatekeeper"
 const SSR_KEY = '__PRODUCTS_DATA__'
 
+function getByIds(ids = []) {
+  if (!Array.isArray(ids) || !ids.length) return []
+
+  const map = new Map(products.value.map(p => [p.id, p]))
+
+  return ids
+    .map(id => map.get(id))
+    .filter(Boolean)
+}
+
 // --- core fetchers ---
 export async function preFetchProducts(ctx, force=false) {
   if (import.meta.env.SSR) {
@@ -241,5 +251,6 @@ export default {
   initFromSSR,
   fetchProductsIfNeeded,
   getById,
+  getByIds,
   fetchSingleProduct
 }

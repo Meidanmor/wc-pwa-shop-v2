@@ -361,7 +361,11 @@ defineOptions({
 
     // 2. Prepare the "Lean" data
     // We only need the first 6 for the homepage carousel
-    const leanProducts = productsStore.products.value.slice(0, 6)
+    //const leanProducts = productsStore.products.value.slice(0, 6)
+    const featuredIds = configData?.featured_products || []
+    const leanProducts = featuredIds.length
+  ? productsStore.getByIds(featuredIds)
+  : productsStore.products.value.slice(0, 6)
 
     if (ssrContext) {
       // Initialize the state object if it doesn't exist
@@ -395,10 +399,18 @@ const seoData = ref(null)
 // --- featuredProducts prefilled SSR-safe ---
 const featuredProducts = ref('');
 // --- computed version (reactive) ---
-const featuredProductsComputed = computed(() => {
+/*const featuredProductsComputed = computed(() => {
   const list = productsStore.products.value
   if (!Array.isArray(list)) return []
   return list.filter(p => p.id).slice(0, 6)
+})*/
+
+const featuredProductsComputed = computed(() => {
+  const ids = homeSettings.value?.featured_products || []
+
+  if (!ids.length) return []
+
+  return productsStore.getByIds(ids)
 })
 
 // --- fill SSR payload first (if exists) ---
@@ -435,11 +447,20 @@ const recomputeSlides = async (forceRemount = false) => {
   // GUARD: If we aren't hydrated, stop. Don't waste CPU cycles.
   if (!isHydrated.value) return
 
-  if(!productsStore.products.value.length){
-      await productsStore.preFetchProducts('', true)
+  if (!productsStore.products.value.length) {
+    await productsStore.preFetchProducts('', true)
   }
-  const list = productsStore.products.value || []
-  const items = list.slice(0, 6)
+  /*const list = productsStore.products.value || []
+  const items = list.slice(0, 6)*/
+  const ids = homeSettings.value?.featured_products || []
+
+  let items = []
+
+  if (ids.length) {
+    items = productsStore.getByIds(ids)
+  } else {
+    items = productsStore.products.value.slice(0, 6)
+  }
   const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
 
   if (forceRemount) carouselKey.value++
