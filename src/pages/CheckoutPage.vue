@@ -1,5 +1,4 @@
 <template>
-  <q-page class="q-pa-md">
     <div class="container">
       <h2>Checkout</h2>
       <div v-if="isLoggedIn === false && checkoutReady && itemsCount !== '0'">
@@ -178,7 +177,6 @@
         <q-btn label="Retry Sync" color="primary" @click="syncCart" class="q-ml-md" />
       </div>
     </div>
-  </q-page>
 </template>
 
 <script setup>

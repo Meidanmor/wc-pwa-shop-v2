@@ -1,5 +1,4 @@
 <template>
-  <q-page class="q-pa-md">
   <div class="container">
     <h2>Your Cart</h2>
     <div v-if="cartItems.length === 0">
@@ -27,7 +26,6 @@
       </div>
     </div>
     </div>
-  </q-page>
 </template>
 
 <script setup>

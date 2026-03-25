@@ -229,7 +229,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
-//import { useQuasar } from "quasar";
+import { useRoute } from 'vue-router'
 import { Platform } from 'quasar';
 import AiAssistant from "src/components/AiAssistant.vue";
 import initPush, { subscribeToWebPush, initNativePush, checkNativePermission } from 'src/boot/push.js'
@@ -370,6 +370,13 @@ async function handleSubscribe() {
 
 const storeReady = ref(process.env.SERVER) // Immediate sync
 const uiHydrated = ref(false)              // Deferred functional UI
+const route = useRoute()
+
+const noDelayRoutes = ['/checkout', '/cart']
+
+const shouldDelayHydration = computed(() => {
+  return !noDelayRoutes.includes(route.path)
+})
 
 onMounted(() => {
   // Phase 1: Show the badges immediately
@@ -444,12 +451,19 @@ onMounted(() => {
     window.addEventListener('mouseup', handleMouseUp, {passive: true})
 
   }
-  window.addEventListener('scroll', scheduler, {passive: true})
-  window.addEventListener('mousemove', scheduler, {passive: true})
-  window.addEventListener('touchstart', scheduler, {passive: true})
+    // 🚨 THIS IS THE IMPORTANT PART
+  if (!shouldDelayHydration.value) {
+    // 👉 hydrate immediately
+    scheduler()
+    return
+  } else {
+    window.addEventListener('scroll', scheduler, {passive: true})
+    window.addEventListener('mousemove', scheduler, {passive: true})
+    window.addEventListener('touchstart', scheduler, {passive: true})
 
-  // Safety fallback: Hydrate after 5 seconds if no interaction
-  setTimeout(scheduler, 3000)
+    // Safety fallback: Hydrate after 5 seconds if no interaction
+    setTimeout(scheduler, 3000)
+  }
 
 })
 onUnmounted(() => {

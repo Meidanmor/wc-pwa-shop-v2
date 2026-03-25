@@ -48,7 +48,10 @@
             class="col-12 col-sm-6 col-md-4"
             :class="{ 'gt-xs': index === 1, 'gt-sm': index === 2 }"
           >
-            <div class="q-card my-card full-height">
+
+            <div v-if="product.__placeholder" class="q-card invisible-card"></div>
+
+            <div v-else class="q-card my-card full-height">
               <img
                   loading="lazy"
                 width="300"
@@ -128,12 +131,17 @@
         :key="`slide-${index}-${slideChunks.length}-${slideGroup.map(p => p.id).join('-')}`"
         :name="index"
       >
+
         <div class="row justify-between">
+
           <div
             v-for="fp in slideGroup"
             :key="fp.id"
             class="col-12 col-sm-6 col-md-4 relative-position"
           >
+            <div v-if="fp.__placeholder" class="q-card invisible-card"></div>
+
+            <div v-else>
             <div class="item-loop-wl absolute">
               <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => fp.id === obj.id)" @click="addToWishlist(fp.id)" color="accent" :icon="matFavorite" />
               <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist(fp.id)" color="accent" :icon="matFavoriteBorder" />
@@ -159,11 +167,12 @@
                 <q-btn
                   label="View"
                   color="secondary"
-                  :to="`/product/${getSlugFromPermalink(fp.permalink)}`"
+                  :to="`/product/${getSlugFromPermalink(fp?.permalink)}`"
                   flat
                 />
               </q-card-actions>
             </q-card>
+          </div>
           </div>
         </div>
       </q-carousel-slide>
@@ -415,16 +424,20 @@ if (process.env.SERVER) {
 const visibleStaticItems = computed(() => {
   const ids = homeSettings.value?.featured_products || []
 
-  let items = []
+  let items = ids.length
+    ? productsStore.getByIds(ids)
+    : productsStore.products.value
 
-  if (ids.length) {
-    items = productsStore.getByIds(ids)
-  } else {
-    items = productsStore.products.value
+  items = items.slice(0, 3)
+
+  // pad to always 3
+  while (items.length < 3) {
+    items.push({ __placeholder: true, id: `placeholder-${items.length}` })
   }
 
-  return items.length >= 3 ? items.slice(0, 3) : [{}, {}, {}]
+  return items
 })
+
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
 
@@ -458,12 +471,18 @@ const recomputeSlides = async (forceRemount = false) => {
   const ids = homeSettings.value?.featured_products || []
   const allProducts = productsStore.products.value || []
 
-  const items = ids.length
+  let items = ids.length
   ? ids.map(id => allProducts.find(p => p.id == id)).filter(Boolean)
   : allProducts.slice(0, 6)
 
   const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
 
+  if(chunkSize === 3) {
+    // pad to always 3
+    while (items.length < 3) {
+      items.push({__placeholder: true, id: `placeholder-${items.length}`})
+    }
+  }
   if (forceRemount) carouselKey.value++
 
   slideChunks.value = getChunks(items, chunkSize)
