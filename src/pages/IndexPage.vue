@@ -308,7 +308,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed, useSSRContext, nextTick } from 'vue'
+import { ref, onMounted, watch, computed, useSSRContext } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
 import { useRoute } from 'vue-router' // Standard import is tiny
 import cart from 'src/stores/cart'
@@ -359,7 +359,7 @@ defineOptions({
       productsStore.preFetchProducts()
     ])
 
-    console.log(configData);
+    //console.log(configData);
     // 2. Prepare the "Lean" data
     // We only need the first 6 for the homepage carousel
     //const leanProducts = productsStore.products.value.slice(0, 6)
@@ -385,37 +385,32 @@ defineOptions({
 })
 
 const homeSettings = ref(null)
+const seoData = ref(null)
+
+// 3. APPLY META
+useMeta(() => {
+  const seo = seoData.value;
+  return {
+    title: seo?.title || 'NaturaBloom',
+    meta: {
+      robots: {name: 'robots', content: seo?.robots || 'index, follow'},
+      description: {name: 'description', content: seo?.description},
+      'og:title': {property: 'og:title', content: seo?.title},
+      'og:description': {property: 'og:description', content: seo?.description},
+      'og:image': {property: 'og:image', content: seo?.og_image},
+      'og:type': {property: 'og:type', content: 'website'},
+    }
+  };
+});
 // 1. THE SERVER FIX (Force the HTML to populate)
 if (process.env.SERVER) {
   const ssr = useSSRContext()
   homeSettings.value = ssr?.pageConfig || null
+  seoData.value = ssr?.seoData || null
 }
 
-// 2. THE CLIENT FIX (Keep the Hydration)
-if (process.env.CLIENT && window.__PAGE_CONFIG__) {
-  homeSettings.value = window.__PAGE_CONFIG__
-}
-
-const seoData = ref(null)
-// --- featuredProducts prefilled SSR-safe ---
-const featuredProducts = ref('');
-// --- computed version (reactive) ---
-/*const featuredProductsComputed = computed(() => {
-  const list = productsStore.products.value
-  if (!Array.isArray(list)) return []
-  return list.filter(p => p.id).slice(0, 6)
-})*/
-
-const featuredProductsComputed = computed(() => {
-  const ids = homeSettings.value?.featured_products || []
-
-  if (!ids.length) return []
-
-  return productsStore.getByIds(ids)
-})
 
 // --- fill SSR payload first (if exists) ---
-featuredProducts.value = featuredProductsComputed.value
 
 const visibleStaticItems = computed(() => {
   const ids = homeSettings.value?.featured_products || []
@@ -464,8 +459,8 @@ const recomputeSlides = async (forceRemount = false) => {
   const allProducts = productsStore.products.value || []
 
   const items = ids.length
-    ? ids.map(id => allProducts.find(p => p.id === id)).filter(Boolean)
-    : allProducts.slice(0, 6)
+  ? ids.map(id => allProducts.find(p => p.id == id)).filter(Boolean)
+  : allProducts.slice(0, 6)
 
   const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
 
@@ -510,13 +505,13 @@ const getSlugFromPermalink = (permalink) =>
 
 
 // ----------------- Mounted -----------------
-onMounted(() => {
+onMounted(async() => {
 
 isHydrated.value = false
   if (process.env.CLIENT) {
     // If it's a SPA navigation, hydrate immediately for UX
     //const hasSsrData = !!window.__PRODUCTS_DATA__;
-   /* if (productsStore.products.value.length > 0 && !hasSsrData) {
+    /* if (productsStore.products.value.length > 0 && !hasSsrData) {
       isHydrated.value = true
       recomputeSlides()
       return
@@ -535,12 +530,30 @@ isHydrated.value = false
       recomputeSlides()
     }
 
-    window.addEventListener('scroll', hydrateOnInteraction, { passive: true })
-    window.addEventListener('mousemove', hydrateOnInteraction, { passive: true })
-    window.addEventListener('touchstart', hydrateOnInteraction, { passive: true })
+    window.addEventListener('scroll', hydrateOnInteraction, {passive: true})
+    window.addEventListener('mousemove', hydrateOnInteraction, {passive: true})
+    window.addEventListener('touchstart', hydrateOnInteraction, {passive: true})
 
     // Safety fallback: Hydrate after 5 seconds if no interaction
     setTimeout(hydrateOnInteraction, 3000)
+
+    if (window.__PAGE_CONFIG__) {
+      homeSettings.value = window.__PAGE_CONFIG__
+    } else {
+      const isPreview = route.query.preview === 'true'
+      // Use it directly
+      const freshConfig = await loadPageConfig('home', isPreview)
+      if (freshConfig) homeSettings.value = freshConfig
+    }
+
+    if (window.__SEO_DATA__) {
+      seoData.value = window.__SEO_DATA__
+    } else {
+      // 1. DATA FETCHING (Parallel)
+      const {fetchSeoForPath} = await import('src/composables/useSeo');
+      // 2. SEO UPDATE
+      seoData.value = await fetchSeoForPath('homepage');
+    }
   }
 })
 
@@ -548,40 +561,6 @@ watch(isHydrated, async (val) => {
   if (!val) return;
 
   try {
-    const isPreview = route.query.preview === 'true'
-    // Use it directly
-    const freshConfig = await loadPageConfig('home', isPreview)
-    console.log(freshConfig)
-    if (freshConfig) homeSettings.value = freshConfig
-
-    await nextTick()
-
-    // 1. DATA FETCHING (Parallel)
-    // We do these together to save time.
-    // We only fetch products if the store is empty (SPA navigation)
-    const [ { fetchSeoForPath } ] = await Promise.all([
-      import('src/composables/useSeo'),
-      !productsStore.products.value.length ? productsStore.preFetchProducts('', true) : Promise.resolve()
-    ]);
-
-    // 2. SEO UPDATE
-    seoData.value = await fetchSeoForPath('homepage');
-
-    // 3. APPLY META
-    useMeta(() => {
-      const seo = seoData.value;
-      return {
-        title: seo?.title || 'NaturaBloom',
-        meta: {
-          robots: { name: 'robots', content: seo?.robots || 'index, follow' },
-          description: { name: 'description', content: seo?.description },
-          'og:title': { property: 'og:title', content: seo?.title },
-          'og:description': { property: 'og:description', content: seo?.description },
-          'og:image': { property: 'og:image', content: seo?.og_image },
-          'og:type': { property: 'og:type', content: 'website' },
-        }
-      };
-    });
 
     // 4. UI INITIALIZATION
     // Now that data is guaranteed to be in the store, we setup the carousel
