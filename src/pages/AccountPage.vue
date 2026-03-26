@@ -38,6 +38,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { fetchWithToken } from '/src/composables/useApiFetch.js';
 import LoginForm from 'components/LoginForm.vue'
 import OrdersSection from 'components/OrdersSection.vue'
 import AccountDetails from 'components/AccountDetails.vue'
@@ -58,7 +59,6 @@ if(process.env.CLIENT) {
   async function onLogin(newToken) {
     token.value = newToken
     if(process.env.CLIENT) {
-
       localStorage.setItem('jwt_token', newToken)
     }
     //alert(localStorage.getItem('jwt_token'));
@@ -67,13 +67,9 @@ if(process.env.CLIENT) {
   }
 
   async function fetchUser() {
-    console.log('fech');
-    const res = await fetch('https://nuxt.meidanm.com/wp-json/wp/v2/users/me', {
-      credentials: 'include', // crucial for cookie auth
-      headers: {Authorization: `Bearer ${token.value}`}
-    })
+    const res = await fetchWithToken('https://nuxt.meidanm.com/wp-json/wp/v2/users/me', )
+    if (!res.ok) return // 🚨 STOP if error
     userData.value = await res.json()
-    console.log(userData.value);
     cart.state.user = userData.value
   }
 

@@ -117,8 +117,8 @@
       @mousedown.stop
       v-model="slide"
       animated
-      infinite
-      navigation
+      :infinite="showCarouselControls"
+      :navigation="showCarouselControls"
       swipeable
       :arrows="false"
       height="100%"
@@ -178,7 +178,7 @@
       </q-carousel-slide>
 
   <!-- Keep the look: bind btnProps, add aria-label, keep visual style -->
-  <template #navigation-icon="{ active, btnProps, onClick, index }">
+  <template v-if="showCarouselControls" #navigation-icon="{ active, btnProps, onClick, index }">
     <q-btn
       v-bind="btnProps"
       :flat="false"
@@ -194,7 +194,7 @@
   </template>
 
   <!-- Custom arrows using q-carousel-control (positions match default) -->
-  <template #control>
+  <template v-if="showCarouselControls" #control>
     <q-carousel-control position="left" class="flex items-center">
       <q-btn
         :icon="matChevronLeft"
@@ -487,7 +487,9 @@ const recomputeSlides = async (forceRemount = false) => {
 
   slideChunks.value = getChunks(items, chunkSize)
 }
-
+const showCarouselControls = computed(() => {
+  return slideChunks.value.length > 1
+})
 // ----------------- Testimonials & Instagram -----------------
 const avatarSVG =
   '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>'
@@ -525,7 +527,23 @@ const getSlugFromPermalink = (permalink) =>
 
 // ----------------- Mounted -----------------
 onMounted(async() => {
+    if (window.__PAGE_CONFIG__ && Object.keys(window.__PAGE_CONFIG__).length) {
+      homeSettings.value = window.__PAGE_CONFIG__
+    } else {
+      const isPreview = route.query.preview === 'true'
+      // Use it directly
+      const freshConfig = await loadPageConfig('home', isPreview)
+      if (freshConfig) homeSettings.value = freshConfig
+    }
 
+    if (window.__SEO_DATA__ && Object.keys(window.__SEO_DATA__).length) {
+      seoData.value = window.__SEO_DATA__
+    } else {
+      // 1. DATA FETCHING (Parallel)
+      const {fetchSeoForPath} = await import('src/composables/useSeo');
+      // 2. SEO UPDATE
+      seoData.value = await fetchSeoForPath('homepage');
+    }
 isHydrated.value = false
   if (process.env.CLIENT) {
     // If it's a SPA navigation, hydrate immediately for UX
@@ -556,23 +574,6 @@ isHydrated.value = false
     // Safety fallback: Hydrate after 5 seconds if no interaction
     setTimeout(hydrateOnInteraction, 3000)
 
-    if (window.__PAGE_CONFIG__) {
-      homeSettings.value = window.__PAGE_CONFIG__
-    } else {
-      const isPreview = route.query.preview === 'true'
-      // Use it directly
-      const freshConfig = await loadPageConfig('home', isPreview)
-      if (freshConfig) homeSettings.value = freshConfig
-    }
-
-    if (window.__SEO_DATA__) {
-      seoData.value = window.__SEO_DATA__
-    } else {
-      // 1. DATA FETCHING (Parallel)
-      const {fetchSeoForPath} = await import('src/composables/useSeo');
-      // 2. SEO UPDATE
-      seoData.value = await fetchSeoForPath('homepage');
-    }
   }
 })
 

@@ -20,7 +20,7 @@ export async function fetchWithToken(url, options = {}) {
   });
 
   // 3. Handle Expired Token (Interception)
-  if (response.status === 401 && isClient) {
+  if ((response.status === 401 || response.status === 403) && isClient) {
 // 🟢 CRITICAL CHECK:
     // Is this a data fetch or a JS/CSS file?
     // We ONLY redirect if it's a data request (usually starts with http or /wp-json)
@@ -33,7 +33,7 @@ export async function fetchWithToken(url, options = {}) {
       const {clearUser} = await import('src/stores/user');
       clearUser();
 
-      window.location.href = '/login?reason=expired';
+      window.location.href = '/my-account?reason=expired';
     }
   }
 
