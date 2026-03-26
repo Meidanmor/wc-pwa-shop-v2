@@ -1,0 +1,37 @@
+{
+    "announcement": {
+        "text": "",
+        "bg_color": "#000000",
+        "text_color": "#ffffff"
+    },
+    "navigation": [
+        {
+            "key": "home",
+            "label": "Home",
+            "enabled": true
+        },
+        {
+            "key": "products",
+            "label": "Products",
+            "enabled": true
+        },
+        {
+            "key": "cart",
+            "label": "Cart",
+            "enabled": true
+        },
+        {
+            "key": "checkout",
+            "label": "Checkout",
+            "enabled": true
+        },
+        {
+            "key": "account",
+            "label": "My Account",
+            "enabled": true
+        }
+    ],
+    "settings": {
+        "sticky": "1"
+    }
+}
