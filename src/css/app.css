@@ -266,6 +266,20 @@ i.q-icon.on-left.notranslate.material-icons {
     overflow: auto;
 }
 
+.q-slider__track.relative-position.no-outline {
+  background: grey;
+}
+.q-slider__selection.absolute.text-primary {
+    height: 100%;
+    background: var(--q-primary);
+}
+.q-slider__thumb.q-slider__thumb--h.q-slider__thumb--h-ltr.absolute.text-primary {
+    transform: translate(-7px, -7px);
+}
+.q-card.q-pa-md.q-mb-md.price-range-wrap {
+    padding-bottom: 30px;
+}
+
 @media (max-width: 767px) {
     body section {
         padding-top: 40px;

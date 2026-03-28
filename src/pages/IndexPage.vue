@@ -339,8 +339,8 @@ const isHydrated = ref(false)
 const $q = useQuasar()
 
 // Sync data immediately so the static HTML is correct
-if (process.env.CLIENT && window.__PRODUCTS_DATA__ && Array.isArray(window.__PRODUCTS_DATA__)) {
-  productsStore.products.value = window.__PRODUCTS_DATA__
+if (process.env.CLIENT && window.__HOME_PRODUCTS_DATA__ && Array.isArray(window.__HOME_PRODUCTS_DATA__)) {
+  productsStore.products.value = window.__HOME_PRODUCTS_DATA__
 }
 
 const route = useRoute();
@@ -381,7 +381,7 @@ defineOptions({
       // Initialize the state object if it doesn't exist
       ssrContext.seoData = seo
       // INJECT PRODUCTS HERE:
-      ssrContext.productsData = leanProducts
+      ssrContext.homeProductsData = leanProducts
       ssrContext.pageConfig = configData
       // 2. Attach it to the rendered state (for the component)
       ssrContext.heroData = {

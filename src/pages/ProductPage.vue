@@ -252,10 +252,19 @@ const seoData = ref(null)
 
 // This only runs in the browser
 if (process.env.CLIENT) {
-  if (window.__SEO_DATA__) {
-    seoData.value = window.__SEO_DATA__
-    product.value = window.__PRODUCT_DATA__
+if (window.__SEO_DATA__) {
+  seoData.value = window.__SEO_DATA__
+}
+
+if (window.__PRODUCT_DATA__) {
+  const ssrProduct = window.__PRODUCT_DATA__
+
+  const ssrSlug = ssrProduct?.permalink?.split('/').filter(Boolean).pop()
+
+  if (ssrSlug === route.params.slug) {
+    product.value = ssrProduct
   }
+}
 
   useMeta(() => {
     const seo = seoData.value;
@@ -408,24 +417,37 @@ const getSlugFromPermalink = (permalink) => {
 }
 
 async function fetchProduct(slug) {
-  if(!productsStore.products.value.length) {
-    await productsStore.preFetchProducts()
-  }
-  const products = productsStore.products.value;
-  product.value = products.find(p => getSlugFromPermalink(p.permalink) === slug)
-  console.log(products)
-  console.log(product.value)
-  console.log('Product Value Before', product.value);
+  // 1. Try from store first (fast path)
+  let existing = productsStore.products.value.find(p => {
+    const pSlug = getSlugFromPermalink(p.permalink)
+    return pSlug === slug
+  })
 
-  if(!product.value?.categories.length) {
-    product.value.categories = [product.value.extensions["mpress"].default_category]
+  if (existing) {
+    product.value = existing
+  } else {
+    // 2. Fallback to API (THIS is the important part)
+    product.value = await productsStore.fetchSingleProduct(slug)
   }
-  console.log('Product Value', product.value);
+
+  // ❗ Safety check (important)
+  if (!product.value) {
+    console.error('Product not found:', slug)
+    return
+  }
+
+  // Fix categories fallback (your logic)
+  if (!product.value?.categories?.length) {
+    product.value.categories = [
+      product.value.extensions?.mpress?.default_category
+    ]
+  }
+
   quantity.value = 1
   activeSlide.value = 0
   lightbox.value.open = false
+
   await resetVariations()
-  //console.log(products)
   await fetchWishlistData()
 }
 

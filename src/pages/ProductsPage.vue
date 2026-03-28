@@ -10,14 +10,14 @@
       <h2>Products</h2>
       <!-- Search and Filter -->
       <div class="row q-col-gutter-md q-mb-md">
-        <div class="col-xs-12 col-md-6" v-if="!isClient">
+        <div class="col-xs-12 col-md-6" v-if="!isHydrated">
           <q-skeleton type="rect" class="q-mb-md"/>
         </div>
         <div class="col-xs-12 col-md-6" v-else>
             <q-input filled v-model="search" label="Search products..." debounce="300" />
         </div>
 
-        <div class="col-xs-12 col-md-6"  v-if="!isClient">
+        <div class="col-xs-12 col-md-6"  v-if="!isHydrated">
           <q-skeleton type="rect" class="q-mb-md"/>
         </div>
 
@@ -38,12 +38,12 @@
 
       </div>
 
-      <div class="q-pa-md q-mb-md" v-if="!isClient">
+      <div class="q-pa-md q-mb-md" v-if="!isHydrated">
         <q-skeleton type="rect" class="q-mb-md"/>
       </div>
 
         <q-card
-            class="q-pa-md q-mb-md"
+            class="price-range-wrap q-pa-md q-mb-md"
             v-else
         >
           <div class="text-subtitle1 q-mb-sm">Filter by Price</div>
@@ -55,18 +55,46 @@
               label
               dense
               color="primary"
-              @change="paginatedProducts"
-              step="0.01"
+              :step="0.01"
+              @change="onPriceChange"
           />
         </q-card>
 
       <!-- Total Products -->
-      <div v-if="filteredProducts && filteredProducts.length" class="text-subtitle1 q-mb-sm">
-        Found {{ filteredProducts.length }} product{{ filteredProducts.length === 1 ? '' : 's' }}
+      <div v-if="totalProducts" class="text-subtitle1 q-mb-sm">
+        Found {{ totalProducts || 0 }} product{{ totalProducts === 1 ? '' : 's' }}
       </div>
 
-      <!-- Product Grid -->
-      <div class="row q-col-gutter-md">
+      <div v-if="productsStore.productsLoading.value && isHydrated" class="row q-col-gutter-md">
+  <div
+    v-for="n in 6"
+    :key="'skeleton-' + n"
+    class="col-xs-12 col-sm-6 col-md-4"
+  >
+    <q-card class="my-card full-height">
+
+      <!-- Image skeleton -->
+      <q-skeleton height="300px" square />
+
+      <q-card-section>
+        <!-- Title -->
+        <q-skeleton type="text" width="70%" />
+
+        <!-- Price -->
+        <q-skeleton type="text" width="40%" />
+      </q-card-section>
+
+      <q-card-actions class="q-gutter-sm">
+        <!-- Buttons -->
+        <q-skeleton type="rect" width="100px" height="36px" />
+        <q-skeleton type="rect" width="70px" height="36px" />
+      </q-card-actions>
+
+    </q-card>
+  </div>
+</div>
+      <div v-else-if="paginatedProducts.length" class="row q-col-gutter-md">
+        <!-- Product Grid -->
         <div
           v-for="product in paginatedProducts"
           :key="product.id"
@@ -106,6 +134,10 @@
             </q-card-actions>
           </q-card>
         </div>
+      </div>
+      <!-- Empty -->
+      <div v-else class="text-center q-mt-lg">
+        No products found
       </div>
 
       <!-- Pagination -->
@@ -165,9 +197,29 @@ defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.path)
     const seo = await fetchSeoForPath('shop')
+
+    const products = await productsStore.preFetchProducts({
+      api: true,
+      page: 1,
+      per_page: 6,
+    })
+    const productsTotal = productsStore.totalProducts.value
+    const pagesTotal = productsStore.totalPages.value
+    // ✅ NEW: fetch categories
+    const categories = await api.getCategories()
+
+    // ✅ NEW: fetch price meta
+    const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/products-meta')
+    const priceMeta = await res.json()
     if (ssrContext) {
       // Initialize the state object if it doesn't exist
       ssrContext.seoData = seo
+      ssrContext.productsData = products
+      ssrContext.productsTotal = productsTotal
+      ssrContext.pagesTotal = pagesTotal
+      // ✅ NEW
+      ssrContext.categoriesData = categories
+      ssrContext.priceMetaData = priceMeta
     }
   }
 })
@@ -203,22 +255,49 @@ if (process.env.CLIENT) {
     }
   })
 }
+const hasInitialData = computed(() => {
+  return (
+    categories.value.length &&
+    priceMin.value !== null &&
+    productsStore.products.value.length
+  )
+})
+const paginatedProducts = computed(() => {
+  return productsStore.products.value || []
+})
 
+const isReady = ref(false)
+// Price filter
+const priceMin = ref(null)
+const priceMax = ref(null)
+const priceRange = ref({ min: 0, max: 1000 })
+
+if (process.env.CLIENT) {
+  if (window.__PRODUCTS_DATA__ && Array.isArray(window.__PRODUCTS_DATA__)) {
+    productsStore.products.value = window.__PRODUCTS_DATA__
+    productsStore.initialized.value = true
+  }
+
+  if (window.__CATEGORIES_DATA__) {
+    categories.value = window.__CATEGORIES_DATA__
+  }
+
+  if (window.__PRICE_META__) {
+    priceMin.value = window.__PRICE_META__.min_price
+    priceMax.value = window.__PRICE_META__.max_price
+    priceRange.value = {
+      min: window.__PRICE_META__.min_price,
+      max: window.__PRICE_META__.max_price
+    }
+  }
+
+  // 🔥 THIS CHANGES EVERYTHING
+  isReady.value = true
+}
 // Fetch categories
 const fetchCategories = async () => {
   categories.value = await api.getCategories()
 }
-const isServer = import.meta.env.SSR
-const isClient = ref(false)
-
-if (isServer) {
-  fetchCategories()
-}
-
-// Price filter
-const priceMin = ref(0)
-const priceMax = ref(1000)
-const priceRange = ref({ min: 0, max: 1000 })
 
 const decodeHtml = (html) => {
   const txt = document.createElement("textarea");
@@ -234,49 +313,17 @@ const categoryOptions = computed(() =>
     }))
 )
 
-// Computed: filtered products (Synchronous!)
-const filteredProducts = computed(() => {
-  // Access the value directly from the store
-  const allProducts = productsStore.products.value || []
 
-  return allProducts.filter((p) => {
-    // 1. Search Match
-    const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
-
-    // 2. Category Match
-    const matchCategory =
-        !selectedCategory.value ||
-        p.categories?.some((c) => c.id === selectedCategory.value) ||
-        p.extensions?.["mpress"]?.default_category?.id === selectedCategory.value ||
-        p.extensions?.["mpress"]?.default_category?.slug === selectedCategory.value
-
-    // 3. Price Logic
-    const pMin = parseFloat(p.prices?.price_range?.min_amount || p.prices?.price || 0) / 100
-    const pMax = parseFloat(p.prices?.price_range?.max_amount || p.prices?.price || 0) / 100
-
-    const filterMin = priceRange.value.min
-    const filterMax = priceRange.value.max
-
-    // Overlap check
-    const matchPrice = pMin <= filterMax && pMax >= filterMin
-
-    return matchSearch && matchCategory && matchPrice
-  })
-})
 
 // Computed: pagination
-const totalPages = computed(() => {
-  return Math.ceil((filteredProducts.value?.length || 0) / perPage)
-})
-
-
-const paginatedProducts = computed(() => {
-  // Safety check: if filteredProducts isn't ready, return empty array
-  if (!filteredProducts.value) return []
-  const start = (currentPage.value - 1) * perPage
-  return filteredProducts.value.slice(start, start + perPage)
-})
-
+const totalPages = computed(() => productsStore.totalPages.value)
+const totalProducts = computed(() => productsStore.totalProducts.value)
+if (process.env.CLIENT && window.__PRODUCTS_TOTAL__) {
+  productsStore.totalProducts.value = window.__PRODUCTS_TOTAL__
+}
+if (process.env.CLIENT && window.__PAGES_TOTAL__) {
+  productsStore.totalPages.value = window.__PAGES_TOTAL__
+}
 
 // Add to cart handler
 const addToCart = (product) => {
@@ -289,90 +336,114 @@ const getSlugFromPermalink = (permalink) => {
   return permalink.split('/').filter(Boolean).pop()
 }
 
+const priceChanged = ref(0)
+
+function onPriceChange() {
+  priceChanged.value++ // trigger watcher manually
+}
+const isHydrated = ref(false)
 // Watch price range
-watch(priceRange, (val) => {
-  console.log('🧪 priceRange changed:', val, 'min:', priceMin.value, 'max:', priceMax.value)
-})
 
+const isFetching = ref(false)
+const pendingPriceRange = ref(null)
+watch(
+  () => ({
+    category: selectedCategory.value,
+    search: search.value,
+    page: currentPage.value,
+    priceTrigger: priceChanged.value // ✅ only trigger when user releases slider
+  }),
+  async (filters, prev) => {
+    if (!isReady.value) return
+    if (isFetching.value) return
 
-// Lifecycle
-onMounted(async() => {
-  if (process.env.CLIENT) {
-    isClient.value = true;
-    console.log('PWA Shell detected: Fetching SEO data from API...')
-    try {
-      // Use your existing fetch function
-      const data = await fetchSeoForPath(`shop`)
-      seoData.value = data
-    } catch (e) {
-      console.error('PWA SEO fetch failed', e)
+    const categoryChanged = prev && filters.category !== prev.category
+
+    if (categoryChanged) {
+      console.log('Category changed → fetching price meta')
+
+      productsStore.productsLoading.value = true
+      await fetchPriceMeta(filters.category)
+
+      //return
     }
+
+    if (
+        prev &&
+        (filters.search !== prev.search ||
+            filters.priceTrigger !== prev.priceTrigger)
+    ) {
+      if (currentPage.value !== 1) {
+        currentPage.value = 1
+        return
+      }
+    }
+
+    isFetching.value = true
+
+    console.log('Products fetch watcher triggered!!!')
+const source = categoryChanged
+  ? pendingPriceRange.value
+  : priceRange.value
+
+const min = Math.floor(source.min * 100)
+const max = Math.ceil(source.max * 100)
+    await productsStore.preFetchProducts({
+      api: true,
+      page: filters.page,
+      per_page: perPage,
+      min_price: min,
+      max_price: max,
+      category: filters.category,
+      search: filters.search
+    })
+
+    // 4. NOW update UI together 💥
+if (categoryChanged) {
+  priceMin.value = pendingPriceRange.value.min
+  priceMax.value = pendingPriceRange.value.max
+  priceRange.value = pendingPriceRange.value
+}
+    isFetching.value = false
   }
-
-  await productsStore.preFetchProducts('', true)
-
-  // 🟢 Now this runs on the FULL dataset
-  updatePriceLimits(productsStore.products.value)
-
-  if (process.env.CLIENT) {
+)
+// Lifecycle
+onMounted(async () => {
+  console.log('after mount', hasInitialData)
+  isHydrated.value = true
+  if (!categories.value.length) {
+    console.log('CATEGORIES VALUE IS', categories.value)
     await fetchCategories()
   }
-})
 
+  if (!priceMin.value) {
+    console.log('priceMin.value VALUE IS', categories.value)
+
+    await fetchPriceMeta()
+  }
+
+  isReady.value = true
+})
 // Function to recalculate price limits based on a product list
-const updatePriceLimits = (productsList) => {
-    if (!productsList || productsList.length === 0) return;
 
-    const available = productsList.filter(p => {
-        // Use optional chaining on categories in case an admin product is missing them
-        const matchCat = !selectedCategory.value ||
-                         p.categories?.some(c => c.id === selectedCategory.value);
-        const matchSearch = p.name?.toLowerCase().includes(search.value.toLowerCase());
-        return matchCat && matchSearch;
-    });
+async function fetchPriceMeta(category = null) {
+  let url = 'https://nuxt.meidanm.com/wp-json/wc/store/v1/products-meta'
 
-    if (available.length === 0) return;
+  if (category) {
+    url += `?category=${category}`
+  }
 
-    const prices = available.flatMap(p => {
-        // 1. Get potential values (handling both Store API and normalized Admin formats)
-        // We divide by 100 because your store uses millicents/cents logic
-        const min = p.prices?.price_range?.min_amount ?? p.prices?.price ?? p.price ?? 0;
-        const max = p.prices?.price_range?.max_amount ?? p.prices?.price ?? p.price ?? 0;
+  const res = await fetch(url)
+  const data = await res.json()
 
-        return [parseFloat(min) / 100, parseFloat(max) / 100];
-    }).filter(val => !isNaN(val) && val !== null); // Remove any broken data
+  // ❗ DON'T update UI yet
+  pendingPriceRange.value = {
+    min: data.min_price,
+    max: data.max_price
+  }
 
-    if (prices.length === 0) return;
-
-    const trueMin = Math.floor(Math.min(...prices));
-    const trueMax = Math.ceil(Math.max(...prices));
-
-    // Only update if the values actually changed to avoid unnecessary re-renders
-    if (priceMin.value !== trueMin || priceMax.value !== trueMax) {
-        priceMin.value = trueMin;
-        priceMax.value = trueMax;
-        // Reset handles to the new outer limits
-        priceRange.value = { min: trueMin, max: trueMax };
-    }
+  return data
 }
-
-// Watch the selected category and update limits
-watch(selectedCategory, async() => {
-    await productsStore.preFetchProducts('', true)
-
-    // When the category changes, recalculate limits based on the full product set
-    updatePriceLimits(productsStore.products.value)
-    // Also reset the current page to 1
-    currentPage.value = 1
-}, { immediate: true }) // immediate: true ensures it runs on initial load if selectedCategory has a default value
-
-// Watch the search filter as well, since it also narrows the possible price range
-watch(search, async() => {
-    await productsStore.preFetchProducts('', true)
-
-    updatePriceLimits(productsStore.products.value)
-    currentPage.value = 1
-})
 </script>
 
 <style scoped>

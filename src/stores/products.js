@@ -11,6 +11,8 @@ const productsLoading = ref(false)
 const initialized = ref(false)
 let loadingPromise = null // The "Gatekeeper"
 const SSR_KEY = '__PRODUCTS_DATA__'
+export const totalProducts = ref(0)
+export const totalPages = ref(1);
 
 function getByIds(ids = []) {
   if (!Array.isArray(ids) || !ids.length) return []
@@ -23,7 +25,87 @@ function getByIds(ids = []) {
 }
 
 // --- core fetchers ---
-export async function preFetchProducts(ctx, force=false) {
+export async function preFetchProducts(ctx = {}, force = false) {
+  // 🟢 NEW: detect if we are using API mode
+  const isApiMode = typeof ctx === 'object' && ctx !== null && ctx.api === true;
+
+  // =========================
+  // 🟢 NEW API MODE (ProductsPage)
+  // =========================
+  if (isApiMode) {
+    try {
+      productsLoading.value = true;
+
+      const {
+        page = 1,
+        per_page = 6,
+        min_price,
+        max_price,
+        category,
+        search
+      } = ctx;
+
+      const query = new URLSearchParams();
+
+      query.append('page', page);
+      query.append('per_page', per_page);
+
+      if (min_price !== undefined) {
+        query.append('min_price', Math.round(min_price));
+      }
+
+      if (max_price !== undefined) {
+        query.append('max_price', Math.round(max_price));
+      }
+
+      if (category) {
+        query.append('category', category);
+      }
+
+      if (search) {
+        query.append('search', search);
+      }
+
+      const url = `https://nuxt.meidanm.com/wp-json/wc/store/v1/products?${query.toString()}`;
+
+      let data = [];
+      let total = 1;
+      let totalPagesHeader = 1;
+
+      try {
+        const res = await fetch(url);
+
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
+        }
+
+        data = await res.json();
+
+        total = res.headers.get('X-WP-Total');
+        totalPagesHeader = res.headers.get('X-WP-TotalPages');
+
+      } catch (err) {
+        console.error('[SSR API ERROR]', err);
+      }
+      products.value = data || [];
+      totalProducts.value = total ? parseInt(total) : 0;
+      totalPages.value = totalPagesHeader ? parseInt(totalPagesHeader) : 1;
+
+      return products.value
+
+    } catch (err) {
+      console.error('[products store] API fetch error', err);
+      products.value = [];
+      totalProducts.value = 0;
+      return [];
+    } finally {
+      productsLoading.value = false;
+    }
+  }
+
+  // =========================
+  // 🔵 ORIGINAL LOGIC (UNCHANGED)
+  // =========================
   if (import.meta.env.SSR) {
 
     try {
@@ -32,11 +114,10 @@ export async function preFetchProducts(ctx, force=false) {
 
       const filePath = path.join(process.cwd(), 'public/data/products.json')
 
-      // 1️⃣ Try reading local JSON safely
       try {
         if (fs.existsSync(filePath)) {
           const raw = fs.readFileSync(filePath, 'utf-8')
-          if (raw.trim()) { // make sure it's not empty
+          if (raw.trim()) {
             allProducts = JSON.parse(raw)
             if (Array.isArray(allProducts) && allProducts.length) {
               console.log('Products loaded from products.json')
@@ -50,12 +131,10 @@ export async function preFetchProducts(ctx, force=false) {
         console.warn('Failed to read products.json, will fetch API', err)
       }
 
-      // 2️⃣ Fallback: fetch WooCommerce API if JSON missing or empty
       if (!allProducts.length) {
         console.log('Fetching products from API...')
         allProducts = await api.getProducts()
 
-        // ✅ Write products.json directly
         try {
           fs.mkdirSync(path.dirname(filePath), {recursive: true})
           fs.writeFileSync(filePath, JSON.stringify(allProducts, null, 2), 'utf-8')
@@ -68,7 +147,6 @@ export async function preFetchProducts(ctx, force=false) {
       products.value = allProducts
       initialized.value = true
 
-      // SSR hydration support
       if (ctx?.ssrContext) {
         ctx.ssrContext[SSR_KEY] = allProducts
       } else if (typeof window !== 'undefined') {
@@ -81,17 +159,15 @@ export async function preFetchProducts(ctx, force=false) {
     } finally {
       productsLoading.value = false
     }
+
   } else {
-    // CLIENT: do NOT fetch
     initFromSSR()
 
-    // 1. If a fetch is already in flight, don't start a new one.
-    // This solves the 4x fetch problem.
     if (loadingPromise) {
       await loadingPromise
       return products.value
     }
-    // 2. Only fetch if we aren't initialized OR we are forced
+
     if (!initialized.value || force) {
       loadingPromise = (async () => {
         try {
@@ -99,7 +175,6 @@ export async function preFetchProducts(ctx, force=false) {
           const res = await fetch('/data/products.json')
           const data = await res.json()
 
-          // Ensure JSON products have a date for sorting
           const normalizedData = data.map(p => ({
             ...p,
             date_created: p.date_created || new Date(0).toISOString()
@@ -252,5 +327,7 @@ export default {
   fetchProductsIfNeeded,
   getById,
   getByIds,
-  fetchSingleProduct
+  fetchSingleProduct,
+  totalProducts,
+  totalPages
 }

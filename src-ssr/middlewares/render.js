@@ -33,8 +33,13 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
                 const seoData = ssrContext.seoData || {};
                 const productData = ssrContext.productData || {};
                 const productsData = ssrContext.productsData || {};
+                const productsTotal = ssrContext.productsTotal || 0;
+                const pagesTotal = ssrContext.pagesTotal || 1;
+                const homeProductsData = ssrContext.homeProductsData || {};
                 const heroData = ssrContext.heroData || {};
                 const pageConfig = ssrContext.pageConfig || {};
+                const categoriesData = ssrContext.categoriesData || {};
+                const priceMetaData = ssrContext.priceMetaData || {};
 
                 const safeTitle = escapeHTML(seoData?.title || 'NaturaBloom');
                 const safeDesc = escapeHTML(seoData?.description || "Let's Bloom Together");
@@ -102,6 +107,11 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
                 const bodyBottom = `
     <script>window.__SEO_DATA__ = ${JSON.stringify(seoData).replace(/</g, '\\u003c')}</script>
     <script>window.__PRODUCTS_DATA__ = ${JSON.stringify(productsData).replace(/</g, '\\u003c')}</script>
+    <script>window.__PRODUCTS_TOTAL__ = ${productsTotal}</script>
+    <script>window.__PAGES_TOTAL__ = ${pagesTotal}</script>
+    <script>window.__CATEGORIES_DATA__ = ${JSON.stringify(categoriesData)}</script>
+    <script>window.__PRICE_META__ = ${JSON.stringify(priceMetaData)}</script>
+    <script>window.__HOME_PRODUCTS_DATA__ = ${JSON.stringify(homeProductsData).replace(/</g, '\\u003c')}</script>
     <script>window.__PRODUCT_DATA__ = ${JSON.stringify(productData).replace(/</g, '\\u003c')}</script>
     <script>window.__PAGE_CONFIG__ = ${JSON.stringify(pageConfig).replace(/</g, '\\u003c')}</script>
   `;
