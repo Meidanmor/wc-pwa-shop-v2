@@ -212,7 +212,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, useSSRContext } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
@@ -228,6 +228,18 @@ const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
 
+if (process.env.SERVER) {
+  const ssrContext = useSSRContext()
+
+  if (ssrContext?.productData) {
+    product.value = ssrContext.productData
+  }
+}
+if (process.env.CLIENT) {
+  if (window.__PRODUCT_DATA__ && window.__PRODUCT_DATA__.id) {
+    product.value = window.__PRODUCT_DATA__
+  }
+}
 
 // 🟢 Run on SSR only
 // Inside your Page or Layout
@@ -235,12 +247,11 @@ defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     console.log('--- PreFetch Running for:', currentRoute.params.slug)
     // FETCH DATA: This is the key change
-    const [seo, productData] = await Promise.all([
-      fetchSeoForPath(currentRoute.path),
-      productsStore.fetchSingleProduct(currentRoute.params.slug) // New specific fetcher
-    ])
+    const seo = await fetchSeoForPath(currentRoute.path)
+
     //const seo = await fetchSeoForPath(currentRoute.path)
     if (ssrContext) {
+      const productData = await productsStore.fetchSingleProduct(currentRoute.params.slug) // New specific fetcher
       // Initialize the state object if it doesn't exist
       ssrContext.seoData = seo
       ssrContext.productData = productData
@@ -254,16 +265,6 @@ const seoData = ref(null)
 if (process.env.CLIENT) {
 if (window.__SEO_DATA__) {
   seoData.value = window.__SEO_DATA__
-}
-
-if (window.__PRODUCT_DATA__) {
-  const ssrProduct = window.__PRODUCT_DATA__
-
-  const ssrSlug = ssrProduct?.permalink?.split('/').filter(Boolean).pop()
-
-  if (ssrSlug === route.params.slug) {
-    product.value = ssrProduct
-  }
 }
 
   useMeta(() => {
@@ -573,6 +574,10 @@ console.log(selectedVariation.value ? selectedVariation.value.id : product.value
 }
 onMounted(async() => {
   if (process.env.CLIENT) {
+      // If no SSR data → fetch
+  if (!product.value || !product.value.id) {
+    await fetchProduct(route.params.slug)
+  }
     console.log('PWA Shell detected: Fetching SEO data from API...')
     try {
       // Use your existing fetch function
@@ -584,7 +589,6 @@ onMounted(async() => {
   }
 
   if (process.env.CLIENT) {
-    await fetchProduct(route.params.slug);
     await fetchWishlistData()
   }
 })

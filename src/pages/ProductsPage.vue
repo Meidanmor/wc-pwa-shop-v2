@@ -17,7 +17,7 @@
             <q-input filled v-model="search" label="Search products..." debounce="300" />
         </div>
 
-        <div class="col-xs-12 col-md-6"  v-if="!isHydrated">
+        <div class="col-xs-12 col-md-6"  v-if="!isHydrated || isHydrated && !Array.isArray(categories)">
           <q-skeleton type="rect" class="q-mb-md"/>
         </div>
 
@@ -38,7 +38,7 @@
 
       </div>
 
-      <div class="q-pa-md q-mb-md" v-if="!isHydrated">
+      <div class="q-pa-md q-mb-md" v-if="!isHydrated || isHydrated && !priceMin">
         <q-skeleton type="rect" class="q-mb-md"/>
       </div>
 
@@ -198,28 +198,34 @@ defineOptions({
     console.log('--- PreFetch Running for:', currentRoute.path)
     const seo = await fetchSeoForPath('shop')
 
-    const products = await productsStore.preFetchProducts({
-      api: true,
-      page: 1,
-      per_page: 6,
-    })
-    const productsTotal = productsStore.totalProducts.value
-    const pagesTotal = productsStore.totalPages.value
-    // ✅ NEW: fetch categories
-    const categories = await api.getCategories()
+    // ✅ ALWAYS fetch SEO (lightweight)
 
-    // ✅ NEW: fetch price meta
-    const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/products-meta')
-    const priceMeta = await res.json()
+    let products = []
+    let categories = []
+    let priceMeta = null
+
     if (ssrContext) {
-      // Initialize the state object if it doesn't exist
-      ssrContext.seoData = seo
+      // 🟢 ONLY BLOCK SSR
+      products = await productsStore.preFetchProducts({
+        api: true,
+        page: 1,
+        per_page: 6,
+      })
+
+      categories = await api.getCategories()
+
+      const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/products-meta')
+      priceMeta = await res.json()
+
       ssrContext.productsData = products
-      ssrContext.productsTotal = productsTotal
-      ssrContext.pagesTotal = pagesTotal
-      // ✅ NEW
       ssrContext.categoriesData = categories
       ssrContext.priceMetaData = priceMeta
+      ssrContext.productsTotal = productsStore.totalProducts.value
+      ssrContext.pagesTotal = productsStore.totalPages.value
+    }
+
+    if (ssrContext) {
+      ssrContext.seoData = seo
     }
   }
 })
@@ -255,13 +261,7 @@ if (process.env.CLIENT) {
     }
   })
 }
-const hasInitialData = computed(() => {
-  return (
-    categories.value.length &&
-    priceMin.value !== null &&
-    productsStore.products.value.length
-  )
-})
+
 const paginatedProducts = computed(() => {
   return productsStore.products.value || []
 })
@@ -273,21 +273,24 @@ const priceMax = ref(null)
 const priceRange = ref({ min: 0, max: 1000 })
 
 if (process.env.CLIENT) {
-  if (window.__PRODUCTS_DATA__ && Array.isArray(window.__PRODUCTS_DATA__)) {
+
+  if (Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length) {
     productsStore.products.value = window.__PRODUCTS_DATA__
     productsStore.initialized.value = true
   }
 
-  if (window.__CATEGORIES_DATA__) {
+  if (Array.isArray(window.__CATEGORIES_DATA__)) {
     categories.value = window.__CATEGORIES_DATA__
+  } else {
+    categories.value = [] // 🔥 critical fallback
   }
 
-  if (window.__PRICE_META__) {
-    priceMin.value = window.__PRICE_META__.min_price
-    priceMax.value = window.__PRICE_META__.max_price
+  if (Array.isArray(window.__CATEGORIES_DATA__)) {
+    priceMin.value = Number(window.__PRICE_META__.min_price)
+    priceMax.value = Number(window.__PRICE_META__.max_price)
     priceRange.value = {
-      min: window.__PRICE_META__.min_price,
-      max: window.__PRICE_META__.max_price
+      min: Number(window.__PRICE_META__.min_price),
+      max: Number(window.__PRICE_META__.max_price)
     }
   }
 
@@ -306,12 +309,14 @@ const decodeHtml = (html) => {
 };
 
 // Computed: category options
-const categoryOptions = computed(() =>
-    categories.value.map((cat) => ({
-      label: decodeHtml(cat.name),
-      value: cat.id
-    }))
-)
+const categoryOptions = computed(() => {
+  if (!Array.isArray(categories.value)) return []
+
+  return categories.value.map((cat) => ({
+    label: decodeHtml(cat.name),
+    value: cat.id
+  }))
+})
 
 
 
@@ -354,7 +359,11 @@ watch(
     priceTrigger: priceChanged.value // ✅ only trigger when user releases slider
   }),
   async (filters, prev) => {
-    if (!isReady.value) return
+    if (
+  !isReady.value ||
+  priceRange.value.min === null ||
+  priceRange.value.max === null
+    ) return
     if (isFetching.value) return
 
     const categoryChanged = prev && filters.category !== prev.category
@@ -407,20 +416,36 @@ if (categoryChanged) {
     isFetching.value = false
   }
 )
+const hasSSRProducts =
+  process.env.CLIENT &&
+  Array.isArray(window.__PRODUCTS_DATA__) &&
+  window.__PRODUCTS_DATA__.length > 0
 // Lifecycle
 onMounted(async () => {
-  console.log('after mount', hasInitialData)
   isHydrated.value = true
-  if (!categories.value.length) {
-    console.log('CATEGORIES VALUE IS', categories.value)
-    await fetchCategories()
+
+  // 🟢 Fetch missing data only if needed
+  if (!hasSSRProducts) {
+    productsStore.products.value = []
+    productsStore.preFetchProducts({
+      api: true,
+      page: 1,
+      per_page: perPage
+    })
   }
 
   if (!priceMin.value) {
-    console.log('priceMin.value VALUE IS', categories.value)
-
     await fetchPriceMeta()
+    priceRange.value = pendingPriceRange.value
+    priceMin.value = pendingPriceRange.value.min
+    priceMax.value = pendingPriceRange.value.max
   }
+
+  if (!Array.isArray(categories.value) || !categories.value.length) {
+    await fetchCategories()
+  }
+
+
 
   isReady.value = true
 })
@@ -438,8 +463,8 @@ async function fetchPriceMeta(category = null) {
 
   // ❗ DON'T update UI yet
   pendingPriceRange.value = {
-    min: data.min_price,
-    max: data.max_price
+    min: Number(data.min_price),
+    max: Number(data.max_price)
   }
 
   return data
