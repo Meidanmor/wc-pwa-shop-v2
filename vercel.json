@@ -17,6 +17,8 @@
     {
       "source": "/(.*)",
       "destination": "/api/server.js"
-    }
+    },
+    { "source": "/robots.txt", "destination": "/api/robots" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
   ]
 }
