@@ -7,6 +7,14 @@
   },
   "rewrites": [
     {
+      "source": "/robots.txt",
+      "destination": "/api/robots.js"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap.js"
+    },
+    {
       "source": "/_quasar/(.*)",
       "destination": "/dist/ssr/client/_quasar/$1"
     },
@@ -17,8 +25,6 @@
     {
       "source": "/(.*)",
       "destination": "/api/server.js"
-    },
-    { "source": "/robots.txt", "destination": "/api/robots.js" },
-    { "source": "/sitemap.xml", "destination": "/api/sitemap.js" }
+    }
   ]
 }
