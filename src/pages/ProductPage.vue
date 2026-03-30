@@ -42,8 +42,7 @@
             :sizes="product.images[0]?.sizes"
             spinner-color="primary"
             fit="contain"
-            style="cursor: zoom-in"
-            :ratio="1"
+            style="cursor: zoom-in; max-height: 500px"
             @click="openLightbox(0)"
           />
         </div>
@@ -64,10 +63,13 @@
           <router-link
               v-for="cat in product.categories"
               :key="cat.id"
-              :to="`/product-category/${cat.slug}`">
+              :to="`/product-category/${cat.slug}`"
+          class="no-decoration"
+          >
           <q-chip
             color="primary"
             text-color="white"
+            class="category-chip"
             dense
             clickable
           >
@@ -251,7 +253,14 @@ defineOptions({
 
     //const seo = await fetchSeoForPath(currentRoute.path)
     if (ssrContext) {
-      const productData = await productsStore.fetchSingleProduct(currentRoute.params.slug) // New specific fetcher
+      let productData = await productsStore.fetchSingleProduct(currentRoute.params.slug)
+
+// ✅ Normalize categories on SSR
+      if (!productData?.categories?.length) {
+        productData.categories = [
+          productData?.extensions?.mpress?.default_category
+        ].filter(Boolean)
+      }
       // Initialize the state object if it doesn't exist
       ssrContext.seoData = seo
       ssrContext.productData = productData
@@ -669,5 +678,8 @@ img {
   display: block;
   max-width: 100%;
   max-height: 100%;
+}
+.category-chip {
+  display: inline-flex;
 }
 </style>

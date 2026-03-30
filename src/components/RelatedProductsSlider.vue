@@ -1,5 +1,5 @@
 <template>
-  <div class="q-mt-xl">
+  <div class="related-products q-mt-xl">
     <h3 class="text-h5 q-mb-md text-center">Related Products</h3>
 
     <!-- GRID MODE (for few products) -->
@@ -87,7 +87,7 @@
                   :src="product.images?.[0]?.src"
                   :alt="product.name"
                   class="q-mb-sm"
-                  style="height: 200px; object-fit: contain;"
+                  style="height: 200px; object-fit: cover;"
                 />
                 <q-card-section>
                   <div class="text-subtitle1 ellipsis text-secondary">{{ product.name }}</div>
@@ -249,3 +249,22 @@ onMounted(fetchRelatedProducts)
 
 watch([() => props.productId, () => props.categoryId], fetchRelatedProducts)
 </script>
+
+<style scoped>
+.related-products .col-3.q-mb-md.relative-position {
+    padding: 0 5px;
+}
+.related-products .col-3 {
+    transition: 0.3s ease;
+}
+
+.related-products .col-3:hover {
+    transform: scale(1.02) translateY(-10px);
+    opacity: 0.8;
+    z-index: 1;
+}
+.related-products .q-img__container img {
+    object-fit: cover;
+    height: 100%;
+}
+</style>

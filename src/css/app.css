@@ -243,6 +243,7 @@ i.q-icon.on-left.notranslate.material-icons {
     top: 38%;
     background: #fff;
     bottom: unset;
+    z-index: 2;
     border-radius: 50%;
 }
 .q-carousel__control.absolute.absolute-left.flex.items-center {
@@ -278,6 +279,27 @@ i.q-icon.on-left.notranslate.material-icons {
 }
 .q-card.q-pa-md.q-mb-md.price-range-wrap {
     padding-bottom: 30px;
+}
+.q-breadcrumbs a.q-breadcrumbs__el.q-link {
+    color: var(--q-primary);
+}
+
+div#q-portal--dialog--1 {
+    z-index: 9991;
+}
+.q-dialog.q-dialog--modal {
+    display: flex;
+    justify-content: center;
+}
+.q-dialog__backdrop.fixed-full {
+    background: #00000044;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+.q-dialog button.q-btn {
+  background: #ffffff;
+  pointer-events: auto;
 }
 
 @media (max-width: 767px) {
