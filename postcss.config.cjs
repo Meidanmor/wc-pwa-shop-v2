@@ -50,6 +50,7 @@ safelist: {
     'row', 'column', 'flex', 'items-center', 'justify-center', 'no-wrap',
     /q-item/,           // Protects q-item, q-item-section, q-item-label
     /q-list/,
+    /^q-img/,
     /q-separator/,      // If you use lines between menu items
     'q-router-link--active', // Highlights the current page in the menu
     'q-link',           // Base link styles
@@ -90,7 +91,7 @@ safelist: {
     /^q-transition/,
   ],
   deep: [
-    /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /q-carousel/, /q-spinner/, /q-menu/, /q-select/
+    /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /q-carousel/, /q-spinner/, /q-menu/, /q-select/, /q-img/
   ],
   greedy: [/q-transition/, /rotate/]
 },
