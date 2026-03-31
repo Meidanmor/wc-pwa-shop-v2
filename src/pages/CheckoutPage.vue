@@ -167,7 +167,7 @@
         <div>Synchronizing cart, please wait...</div>
       </div>
 
-      <div v-else-if="itemsCount === '0'">
+      <div v-else-if="checkoutReady && itemsCount === '0'">
         Your cart is empty!
         <router-link to="/products/">Go to shop</router-link>
       </div>

@@ -100,7 +100,10 @@
               v-model="selectedVariations[attribute.name]"
               :options="attribute.options"
               dense
+              :dropdown-icon="matArrowDropDown"
               clearable
+              :placeholder="`Select a ${attribute.name}`"
+              :label="`Select a ${attribute.name}`"
               emit-value
               map-options
               @update:model-value="onVariationChange"
@@ -222,7 +225,7 @@ import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { matFavoriteBorder, matFavorite, matAdd, matClose, matRemove, matLens } from '@quasar/extras/material-icons'
+import { matFavoriteBorder, matFavorite, matAdd, matClose, matRemove, matLens, matArrowDropDown } from '@quasar/extras/material-icons'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -678,6 +681,7 @@ img {
   display: block;
   max-width: 100%;
   max-height: 100%;
+  height: 100%;
 }
 .category-chip {
   display: inline-flex;

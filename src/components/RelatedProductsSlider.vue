@@ -3,7 +3,7 @@
     <h3 class="text-h5 q-mb-md text-center">Related Products</h3>
 
     <!-- GRID MODE (for few products) -->
-    <div v-if="products.length <= perSlide" class="row justify-center">
+    <div v-if="products.length <= perSlide" class="related-product-wrapper row justify-center">
       <div
         v-for="product in products"
         :key="product.id"
@@ -23,7 +23,8 @@
               :src="product.images?.[0]?.thumbnail"
               :alt="product.name"
               class="q-mb-sm"
-              style="height: 200px; object-fit: contain;"
+              width="200"
+              height="200"
             />
             <q-card-section>
               <div class="text-subtitle1 ellipsis text-secondary">{{ product.name }}</div>
@@ -66,7 +67,7 @@
         :key="index"
         :name="index"
       >
-        <div class="row justify-center">
+        <div class="related-product-wrapper row justify-center">
           <div
             v-for="product in group"
             :key="product.id"
@@ -87,7 +88,8 @@
                   :src="product.images?.[0]?.src"
                   :alt="product.name"
                   class="q-mb-sm"
-                  style="height: 200px; object-fit: cover;"
+                  width="200"
+                  height="200"
                 />
                 <q-card-section>
                   <div class="text-subtitle1 ellipsis text-secondary">{{ product.name }}</div>
@@ -251,20 +253,21 @@ watch([() => props.productId, () => props.categoryId], fetchRelatedProducts)
 </script>
 
 <style scoped>
-.related-products .col-3.q-mb-md.relative-position {
+.related-products .related-product-wrapper > div {
     padding: 0 5px;
 }
-.related-products .col-3 {
+.related-products .related-product-wrapper > div {
     transition: 0.3s ease;
 }
 
-.related-products .col-3:hover {
+.related-products .related-product-wrapper > div:hover {
     transform: scale(1.02) translateY(-10px);
     opacity: 0.8;
     z-index: 1;
+  box-shadow: 0px 10px 25px #00000020;
 }
-.related-products .q-img__container img {
+.related-products img.q-img__image {
     object-fit: cover;
-    height: 100%;
+  height: 100%;
 }
 </style>
