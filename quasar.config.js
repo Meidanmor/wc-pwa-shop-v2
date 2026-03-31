@@ -33,6 +33,7 @@ export default defineConfig((ctx) => {
       head: (val) => val.trim()
     },
     boot: [
+        { path: 'loading-bar', client: true } ,
         //{ path: 'push', client: true } ,
         //{ path: 'woocommerce', client: true } ,
         //{ path: 'products' } ,
@@ -223,7 +224,7 @@ export default defineConfig((ctx) => {
 
 
       // Quasar plugins
-      plugins: ['Notify','Meta'],
+      plugins: ['Notify','Meta','LoadingBar'],
       //removeDefaultCss: true
     },
 

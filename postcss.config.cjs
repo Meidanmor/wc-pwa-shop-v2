@@ -54,6 +54,7 @@ safelist: {
     /q-separator/,      // If you use lines between menu items
     'q-router-link--active', // Highlights the current page in the menu
     'q-link',           // Base link styles
+    /^q-loading-bar/,
 
     // --- Select Specifics ---
     'q-select',
