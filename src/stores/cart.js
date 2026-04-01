@@ -566,8 +566,24 @@ async function fetchCart(force = false) {
   }
 }
 
+let productsJsonCache = null
+
+async function getProductFromJson(productId) {
+  try {
+    if (!productsJsonCache) {
+      const res = await fetch('/data/products.json')
+      const data = await res.json()
+      productsJsonCache = Array.isArray(data) ? data : []
+    }
+
+    return productsJsonCache.find(p => Number(p.id) === Number(productId)) || null
+  } catch (err) {
+    console.warn('[cart] getProductFromJson failed', err)
+    return null
+  }
+}
 /* --------- All Public Cart Mutations call markCartChanged ---------- */
-async function add(productId, quantity = 1, variationId = null, variation = {}, $q = null) {
+async function add(productId, quantity = 1, variationId = null, variation = {}, $q = null, productDataFromUI = null) {
   markCartChanged() // <--- NEW
   state.loading.cart = true
   state.error = null
@@ -632,8 +648,19 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
   }
 
   // fallback: create local-only item using cached product metadata if possible
-  let productData = null
-  try { productData = await getCachedProduct(productId) } catch (err) { console.error(err); productData = null }
+
+  let productData = productDataFromUI
+  if (!productData) {
+    try {
+      productData = await getCachedProduct(productId)
+    } catch (err) {
+      productData = null
+    }
+  }
+  if (!productData) {
+    productData = await getProductFromJson(productId)
+  }
+
   const sourceProduct = productData || { id: productId, name: '', images: [], prices: {}, add_to_cart: { minimum: 1, maximum: null }, stock_availability: { text: '' } }
   const localItemNew = buildLocalItemFromProduct(sourceProduct, variationArr, quantity)
   const maxAllowedNew = getMaxAllowed(localItemNew)

@@ -180,7 +180,7 @@ async function addToWishlist(objID = 0) {
 }
 
 const addToCart = (product) => {
-  cart.add(product.id)
+  cart.add(product.id, 1, null, {}, null, product)
 }
 
 const getSlugFromPermalink = (permalink) => {
