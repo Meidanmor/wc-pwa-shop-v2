@@ -229,10 +229,12 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Platform } from 'quasar';
 import AiAssistant from "src/components/AiAssistant.vue";
 import initPush, { subscribeToWebPush, initNativePush, checkNativePermission } from 'src/boot/push.js'
+import { initLoadingBar } from 'boot/loading-bar'
+
 import { matShoppingCart,
   matFavoriteBorder,
   matMenu,
@@ -371,6 +373,7 @@ async function handleSubscribe() {
 const storeReady = ref(process.env.SERVER) // Immediate sync
 const uiHydrated = ref(false)              // Deferred functional UI
 const route = useRoute()
+const router = useRouter()
 
 const noDelayRoutes = ['/checkout', '/cart']
 
@@ -426,6 +429,8 @@ onMounted(() => {
       console.error("Hydration prefetch failed", e)
       uiHydrated.value = true // Fallback
     }
+
+    initLoadingBar(router)
     // 1. ALWAYS initialize tracking (Abandoned Cart logic)
     // This doesn't ask for permission, it just sets up listeners.
     if ( typeof window !== 'undefined' || Platform.is.capacitor ) {

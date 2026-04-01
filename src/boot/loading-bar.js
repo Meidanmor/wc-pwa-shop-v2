@@ -1,14 +1,21 @@
+// boot/loading-bar.js
 import { LoadingBar } from 'quasar'
 
-export default ({ router }) => {
+let initialized = false
+
+export function initLoadingBar(router) {
+  if (initialized) return
+  initialized = true
+
   LoadingBar.setDefaults({
     color: 'black',
     size: '5px',
     position: 'top'
   })
 
-  router.beforeEach(() => {
-      LoadingBar.start()
+  router.beforeEach((to, from, next) => {
+    LoadingBar.start()
+    next()
   })
 
   router.afterEach(() => {
