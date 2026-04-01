@@ -653,7 +653,7 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
   if (!productData) {
     try {
       productData = await getCachedProduct(productId)
-    } catch (err) {
+    } catch {
       productData = null
     }
   }
