@@ -1,5 +1,5 @@
 <template>
-  <div class="container" v-if="product != null && product != ''">
+  <div class="container" v-if="product">
     <div class="q-pa-md row q-col-gutter-lg">
       <!-- Product Images -->
       <div class="col-12 col-md-6">
@@ -437,9 +437,8 @@ async function fetchProduct(slug) {
   })
 
   if (existing) {
-    product.value = existing
+    product.value = JSON.parse(JSON.stringify(existing)) // 🔥 avoid reference reuse
   } else {
-    // 2. Fallback to API (THIS is the important part)
     product.value = await productsStore.fetchSingleProduct(slug)
   }
 
@@ -607,20 +606,24 @@ onMounted(async() => {
 
 watch(
   () => route.params.slug,
-  async (newSlug, oldSLug) => {
-    if (newSlug != oldSLug) {
-      product.value = '';
+  async (newSlug, oldSlug) => {
+    if (newSlug === oldSlug) return
 
-      try {
-        // Use your existing fetch function
-        const data = await fetchSeoForPath(`product/${newSlug}`)
-        seoData.value = data
-      } catch (e) {
-        console.error('PWA SEO fetch failed', e)
-      }
+    // ✅ Reset EVERYTHING properly
+    product.value = null
+    selectedVariation.value = null
+    selectedVariations.value = {}
+    variationError.value = ''
+    quantity.value = 1
+    activeSlide.value = 0
 
-      await fetchProduct(newSlug)
-    }
+    // ✅ Fetch product FIRST
+    await fetchProduct(newSlug)
+
+    // ✅ Then fetch SEO (doesn’t block UI)
+    fetchSeoForPath(`product/${newSlug}`)
+      .then(data => { seoData.value = data })
+      .catch(e => console.error('SEO fetch failed', e))
   }
 )
 
