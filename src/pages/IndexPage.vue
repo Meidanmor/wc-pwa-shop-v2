@@ -622,6 +622,7 @@ div.q-img__loading > svg{
 
 .my-card img {
   object-fit: cover;
+  pointer-events: none;
 }
 
 .hero-content button:hover .q-focus-helper:after {

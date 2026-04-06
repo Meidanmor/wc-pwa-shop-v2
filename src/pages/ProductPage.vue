@@ -233,6 +233,11 @@ const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
 
+const getSlugFromPermalink = (permalink) => {
+  const match = permalink.match(/product\/([^/]+)\/?$/)
+  return match ? match[1] : ''
+}
+
 if (process.env.SERVER) {
   const ssrContext = useSSRContext()
 
@@ -242,7 +247,10 @@ if (process.env.SERVER) {
 }
 if (process.env.CLIENT) {
   if (window.__PRODUCT_DATA__ && window.__PRODUCT_DATA__.id) {
-    product.value = window.__PRODUCT_DATA__
+    const ssrProductSlug = getSlugFromPermalink(window.__PRODUCT_DATA__.permalink)
+    if(ssrProductSlug === route.params.slug) {
+      product.value = window.__PRODUCT_DATA__
+    }
   }
 }
 
@@ -422,11 +430,6 @@ function increaseQty() {
 
 function decreaseQty() {
   if (quantity.value > 1) quantity.value--
-}
-
-const getSlugFromPermalink = (permalink) => {
-  const match = permalink.match(/product\/([^/]+)\/?$/)
-  return match ? match[1] : ''
 }
 
 async function fetchProduct(slug) {

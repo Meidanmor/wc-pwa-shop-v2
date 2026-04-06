@@ -252,7 +252,7 @@ onMounted(fetchRelatedProducts)
 watch([() => props.productId, () => props.categoryId], fetchRelatedProducts)
 </script>
 
-<style scoped>
+<style>
 .related-products .related-product-wrapper > div {
     padding: 0 5px;
 }
@@ -261,13 +261,16 @@ watch([() => props.productId, () => props.categoryId], fetchRelatedProducts)
 }
 
 .related-products .related-product-wrapper > div:hover {
-    transform: scale(1.02) translateY(-10px);
-    opacity: 0.8;
-    z-index: 1;
+  transform: scale(1.02) translateY(-10px);
+  opacity: 0.8;
+  z-index: 1;
   box-shadow: 0px 10px 25px #00000020;
 }
 .related-products img.q-img__image {
-    object-fit: cover;
+  object-fit: cover;
   height: 100%;
+}
+.related-products .q-img.q-img--menu.q-mb-sm {
+    height: 200px;
 }
 </style>
