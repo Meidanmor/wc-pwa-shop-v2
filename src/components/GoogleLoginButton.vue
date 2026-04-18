@@ -2,7 +2,7 @@
 <q-btn
     label="Sign in with Google"
     :icon="matLogin"
-    color="primary"
+    color="secondary"
     :loading="loading"
     @click="handleLogin"
   />

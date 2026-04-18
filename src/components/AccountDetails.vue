@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-h4">Account Details</h2>
+    <h1 class="text-h4">Account Details</h1>
     <div v-if="account.user_email">
     <q-form @submit.prevent="updateDetails">
       <q-input v-model="account.first__name" label="First Name" />

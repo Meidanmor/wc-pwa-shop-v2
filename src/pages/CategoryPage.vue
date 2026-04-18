@@ -6,8 +6,7 @@
           <q-breadcrumbs-el><span v-html="selectedCategoryOBJ?.name"></span></q-breadcrumbs-el>
         </q-breadcrumbs>
 
-      <h2 v-if="selectedCategoryOBJ?.name" v-html="selectedCategoryOBJ?.name"></h2>
-      <h2 v-else>Products</h2>
+      <h2 v-html="selectedCategoryOBJ?.name || 'Products'"></h2>
       <!-- Search and Filter -->
       <div class="row q-col-gutter-md q-mb-md">
         <div class="col-xs-12 col-md-6" v-if="!isHydrated">
@@ -160,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, useSSRContext } from 'vue'
 import api from 'src/boot/woocommerce'
 import cart from 'src/stores/cart'
 import { useQuasar, useMeta, scroll } from 'quasar'
@@ -211,15 +210,16 @@ defineOptions({
     if (ssrContext) {
 
       categories = await api.getCategories()
-      let currentCat = categories.filter(c => c.slug == currentRoute.params.slug);
 
-      // 🟢 ONLY BLOCK SSR
-      products = await productsStore.preFetchProducts({
+      let currentCat = categories.find(c => c.slug === currentRoute.params.slug) || null;
+      const productsQuery = {
         api: true,
         page: 1,
         per_page: 6,
         category: currentCat ? currentCat.id : null
-      })
+      }
+      // 🟢 ONLY BLOCK SSR
+      products = await productsStore.preFetchProducts(productsQuery)
       const res = await fetch(
   currentCat
     ? `https://nuxt.meidanm.com/wp-json/wc/store/v1/products-meta?category=${currentCat.id}`
@@ -230,6 +230,8 @@ defineOptions({
 
       ssrContext.productsData = products
       ssrContext.categoriesData = categories
+      ssrContext.selectedCategoryData = currentCat || null
+      ssrContext.ssrQuery = productsQuery || null
       ssrContext.priceMetaData = priceMeta
       ssrContext.productsTotal = productsStore.totalProducts.value
       ssrContext.pagesTotal = productsStore.totalPages.value
@@ -245,14 +247,38 @@ const seoData = ref({
   title: 'Products',
   description: 'Products description'
 });
-// This only runs in the browser
+const isReady = ref(false)
+// Price filter
+const priceMin = ref(null)
+const priceMax = ref(null)
+const priceRange = ref({ min: 0, max: 1000 })
+const priceChanged = ref(0)
+
+function onPriceChange() {
+  priceChanged.value++ // trigger watcher manually
+}
+const isHydrated = ref(false)
+// Watch price range
+
+const isFetching = ref(false)
+const pendingPriceRange = ref(null)
+if(process.env.SERVER) {
+  const ssr = useSSRContext()
+  categories.value = ssr.categoriesData
+  selectedCategoryOBJ.value = ssr.selectedCategoryData
+  selectedCategory.value = ssr.selectedCategoryData.id
+}
+
 if (process.env.CLIENT) {
+  // ----------------------------------
+  // 1. SEO
+  // ----------------------------------
   if (window.__SEO_DATA__) {
     seoData.value = window.__SEO_DATA__
   }
 
   useMeta(() => {
-    const seo = seoData.value;
+    const seo = seoData.value
     return {
       title: seo?.title || 'NaturaBloom',
       meta: {
@@ -271,43 +297,101 @@ if (process.env.CLIENT) {
       }
     }
   })
-}
 
+  // ----------------------------------
+  // 2. Categories (base data)
+  // ----------------------------------
+  categories.value = Array.isArray(window.__CATEGORIES_DATA__)
+    ? window.__CATEGORIES_DATA__
+    : []
+
+  const currentCat =
+    categories.value.find(c => c.slug === route.params.slug) || null
+
+  // ----------------------------------
+  // 3. Selected Category (SSR or fallback)
+  // ----------------------------------
+  if (
+    window.__SELECTED_CATEGORY_DATA__ &&
+    window.__SELECTED_CATEGORY_DATA__.slug === route.params.slug
+  ) {
+    selectedCategoryOBJ.value = window.__SELECTED_CATEGORY_DATA__
+  } else {
+    selectedCategoryOBJ.value = currentCat
+  }
+
+  selectedCategory.value = selectedCategoryOBJ.value?.id || null
+
+  // ----------------------------------
+  // 4. Decide: SSR reuse OR fresh fetch
+  // ----------------------------------
+  const ssrQuery = window.__SSR_QUERY__ || null
+
+  const isSameCategory =
+    (ssrQuery?.category || null) === (currentCat?.id || null)
+
+  const hasSSRProducts =
+    Array.isArray(window.__PRODUCTS_DATA__) &&
+    window.__PRODUCTS_DATA__.length
+
+  // ----------------------------------
+  // 5A. SSR MATCH → hydrate everything
+  // ----------------------------------
+  if (hasSSRProducts && isSameCategory) {
+    productsStore.products.value = window.__PRODUCTS_DATA__
+    productsStore.initialized.value = true
+
+    if (window.__PRICE_META__) {
+      priceMin.value = Number(window.__PRICE_META__.min_price)
+      priceMax.value = Number(window.__PRICE_META__.max_price)
+      priceRange.value = {
+        min: priceMin.value,
+        max: priceMax.value
+      }
+    }
+  }
+
+  // ----------------------------------
+  // 5B. DIFFERENT CATEGORY → fetch fresh
+  // ----------------------------------
+  else if (currentCat) {
+    productsStore.products.value = []
+    productsStore.initialized.value = false
+    productsStore.productsLoading.value = true
+
+    // 🔥 run BOTH in parallel
+    const pricePromise = fetchPriceMeta(currentCat.id)
+    const productsPromise = productsStore.preFetchProducts({
+      api: true,
+      page: 1,
+      per_page: perPage,
+      category: currentCat.id
+    })
+
+// wait for BOTH (but independently started)
+    Promise.all([pricePromise, productsPromise])
+        .then(() => {
+          // ✅ update price AFTER it arrives
+          if (pendingPriceRange.value) {
+            priceMin.value = pendingPriceRange.value.min
+            priceMax.value = pendingPriceRange.value.max
+            priceRange.value = {...pendingPriceRange.value}
+          }
+        })
+        .finally(() => {
+          productsStore.productsLoading.value = false
+        })
+  }
+
+  // ----------------------------------
+  // DONE
+  // ----------------------------------
+  isReady.value = true
+}
 const paginatedProducts = computed(() => {
   return productsStore.products.value || []
 })
 
-const isReady = ref(false)
-// Price filter
-const priceMin = ref(null)
-const priceMax = ref(null)
-const priceRange = ref({ min: 0, max: 1000 })
-
-if (process.env.CLIENT) {
-
-  if (Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length) {
-    productsStore.products.value = window.__PRODUCTS_DATA__
-    productsStore.initialized.value = true
-  }
-
-  if (Array.isArray(window.__CATEGORIES_DATA__)) {
-    categories.value = window.__CATEGORIES_DATA__
-  } else {
-    categories.value = [] // 🔥 critical fallback
-  }
-
-  if (Array.isArray(window.__CATEGORIES_DATA__)) {
-    priceMin.value = Number(window.__PRICE_META__.min_price)
-    priceMax.value = Number(window.__PRICE_META__.max_price)
-    priceRange.value = {
-      min: Number(window.__PRICE_META__.min_price),
-      max: Number(window.__PRICE_META__.max_price)
-    }
-  }
-
-  // 🔥 THIS CHANGES EVERYTHING
-  isReady.value = true
-}
 // Fetch categories
 const fetchCategories = async () => {
   categories.value = await api.getCategories()
@@ -352,16 +436,6 @@ const getSlugFromPermalink = (permalink) => {
   return permalink.split('/').filter(Boolean).pop()
 }
 
-const priceChanged = ref(0)
-
-function onPriceChange() {
-  priceChanged.value++ // trigger watcher manually
-}
-const isHydrated = ref(false)
-// Watch price range
-
-const isFetching = ref(false)
-const pendingPriceRange = ref(null)
 watch(
   () => ({
     category: selectedCategory.value,
@@ -442,6 +516,27 @@ watch(
     if (cat) {
       selectedCategory.value = cat.id
       selectedCategoryOBJ.value = cat
+
+      // 🔥 FIX STARTS HERE
+      productsStore.products.value = []
+      productsStore.productsLoading.value = true
+
+      // 1. fetch price meta FIRST
+      await fetchPriceMeta(cat.id)
+
+      priceMin.value = pendingPriceRange.value.min
+      priceMax.value = pendingPriceRange.value.max
+      priceRange.value = { ...pendingPriceRange.value }
+
+      // 2. fetch products AFTER price is ready
+      await productsStore.preFetchProducts({
+        api: true,
+        page: 1,
+        per_page: perPage,
+        category: cat.id
+      })
+
+      productsStore.productsLoading.value = false
     }
   }
 )

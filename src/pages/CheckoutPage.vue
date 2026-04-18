@@ -1,11 +1,11 @@
 <template>
     <div class="container">
-      <h2>Checkout</h2>
+      <h1>Checkout</h1>
       <div v-if="isLoggedIn === false && checkoutReady && itemsCount !== '0'">
         <GoogleLoginButton />
       </div>
 
-      <q-form v-if="checkoutReady && itemsCount !== '0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
+      <q-form class="flex" v-if="checkoutReady && itemsCount !== '0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
       <div class="float-left">
       <!-- Personal Info -->
       <q-card class="q-mb-md">
@@ -516,7 +516,6 @@ onMounted(async () => {
   transform: translateY(-5px);
 }
 /* purgecss end ignore */
-
 
 .q-form .float-left,
 .q-form .float-right {

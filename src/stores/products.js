@@ -42,7 +42,9 @@ export async function preFetchProducts(ctx = {}, force = false) {
         min_price,
         max_price,
         category,
-        search
+        search,
+        orderby,
+        order
       } = ctx;
 
       const query = new URLSearchParams();
@@ -64,6 +66,14 @@ export async function preFetchProducts(ctx = {}, force = false) {
 
       if (search) {
         query.append('search', search);
+      }
+
+      if (orderby && orderby !== 'menu_order') {
+        query.append('orderby', orderby);
+      }
+
+      if (order) {
+        query.append('order', order);
       }
 
       const url = `https://nuxt.meidanm.com/wp-json/wc/store/v1/products?${query.toString()}`;

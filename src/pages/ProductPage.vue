@@ -67,7 +67,7 @@
           class="no-decoration"
           >
           <q-chip
-            color="primary"
+            color="secondary"
             text-color="white"
             class="category-chip"
             dense
@@ -133,7 +133,7 @@
         <q-btn
           label="Add to Cart"
           class="q-mr-sm"
-          color="primary"
+          color="secondary"
           :disable="shouldDisableCartButtons"
           @click="addToCartHandler"
           :loading="cart.state.loading.cart"
@@ -146,6 +146,8 @@
         <q-btn
           label="Quick Checkout"
           color="black"
+          to="/checkout"
+          class="quick-checkout-btn"
           :disable="shouldDisableCartButtons"
           @click="addToCartHandler"
           :loading="cart.state.loading.quickbuy"
@@ -211,14 +213,14 @@
     />
   </div>
 
-  <div v-else class="q-pa-md flex items-center justify-center">
-    <q-spinner color="primary" size="6em" />
+  <div v-else-if="product === null" class="q-pa-md flex items-center justify-center">
+    <q-spinner color="secondary" size="6em" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, useSSRContext } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, computed, useSSRContext } from 'vue'
+import { useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
@@ -232,7 +234,6 @@ const route = useRoute()
 const product = ref(null)
 const activeSlide = ref(0)
 const quantity = ref(1)
-
 const getSlugFromPermalink = (permalink) => {
   const match = permalink.match(/product\/([^/]+)\/?$/)
   return match ? match[1] : ''
@@ -607,28 +608,46 @@ onMounted(async() => {
   }
 })
 
+onBeforeRouteUpdate(async (to) => {
+  try {
+    await fetchProduct(to.params.slug)
+
+    fetchSeoForPath(`product/${to.params.slug}`)
+        .then(data => {
+          seoData.value = data
+        })
+        .catch(err => {
+          console.error('SEO fetch failed', err)
+        })
+
+  } catch (e) {
+    console.error(e)
+  }
+})
+
+/*const pageLoading = ref(false)
+
 watch(
   () => route.params.slug,
   async (newSlug, oldSlug) => {
     if (newSlug === oldSlug) return
 
-    // ✅ Reset EVERYTHING properly
-    product.value = null
+    pageLoading.value = true
+
     selectedVariation.value = null
     selectedVariations.value = {}
     variationError.value = ''
     quantity.value = 1
     activeSlide.value = 0
 
-    // ✅ Fetch product FIRST
     await fetchProduct(newSlug)
 
-    // ✅ Then fetch SEO (doesn’t block UI)
+    pageLoading.value = false
+
     fetchSeoForPath(`product/${newSlug}`)
-      .then(data => { seoData.value = data })
-      .catch(e => console.error('SEO fetch failed', e))
+      .then(data => seoData.value = data)
   }
-)
+)*/
 
 const wheelZoom = (e) => {
   e.preventDefault()

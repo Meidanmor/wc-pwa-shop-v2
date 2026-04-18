@@ -7,9 +7,10 @@
         </q-breadcrumbs>
 
 
-      <h2>Products</h2>
+      <h1>Products</h1>
+      <div class="archive-layout flex no-wrap">
+      <div class="filters-wrap flex">
       <!-- Search and Filter -->
-      <div class="row q-col-gutter-md q-mb-md">
         <div class="col-xs-12 col-md-6" v-if="!isHydrated">
           <q-skeleton type="rect" class="q-mb-md"/>
         </div>
@@ -22,7 +23,7 @@
         </div>
 
         <div class="col-xs-12 col-md-6" v-else>
-          <q-select
+         <q-select
             filled
             v-model="selectedCategory"
             :options="categoryOptions"
@@ -34,9 +35,18 @@
             :loading-icon="matAutorenew"
             :clear-icon="matClose"
           />
+          <q-card class="q-pa-md q-mb-md">
+            <div class="text-subtitle1 q-mb-sm">
+              Filter by Category
+            </div>
+            <q-option-group
+                v-model="selectedCategory"
+                :options="categoryOptions"
+                type="checkbox"
+                color="secondary"
+            />
+          </q-card>
         </div>
-
-      </div>
 
       <div class="q-pa-md q-mb-md" v-if="!isHydrated || isHydrated && !priceMin">
         <q-skeleton type="rect" class="q-mb-md"/>
@@ -54,17 +64,35 @@
               label-always
               label
               dense
-              color="primary"
+              color="secondary"
               :step="0.01"
               @change="onPriceChange"
           />
         </q-card>
 
+      </div>
+
+      <div class="products-wrap">
+        <div class="flex justify-between q-mb-md">
       <!-- Total Products -->
       <div v-if="totalProducts" class="text-subtitle1 q-mb-sm">
         Found {{ totalProducts || 0 }} product{{ totalProducts === 1 ? '' : 's' }}
       </div>
 
+          <q-select
+  filled
+  v-model="sortBy"
+  label="Sort by"
+  emit-value
+  map-options
+  :options="sortOptions"
+  :dropdown-icon="matArrowDropDown"
+  :loading-icon="matAutorenew"
+  :clear-icon="matClose"
+  color="secondary"
+
+/>
+        </div>
       <div v-if="productsStore.productsLoading.value && isHydrated" class="row q-col-gutter-md">
   <div
     v-for="n in 6"
@@ -100,9 +128,10 @@
           :key="product.id"
           class="col-xs-12 col-sm-6 col-md-4 relative-position"
         >
+          <router-link :to="`/product/${getSlugFromPermalink(product.permalink)}`">
           <div class="item-loop-wl absolute">
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
           </div>
 
           <q-card class="my-card full-height">
@@ -116,23 +145,18 @@
             width="auto"
             class="rounded-borders"
             />
-            <q-card-section>
-              <div class="text-h6">{{ product.name }}</div>
+            <div class="flex q-pa-md">
+              <div class="full-width q-mb-sm">
+              <div>{{ product.name }}</div>
               <div class="text-subtitle2" v-html="product.price_html" />
-            </q-card-section>
-            <q-card-actions>
+              </div>
               <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
-              <q-btn v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="primary" @click="addToCart(product)" />
-              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" :to="`/product/${getSlugFromPermalink(product.permalink)}`" label="Choose options" color="primary" />
+              <q-btn v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(product)" />
+              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" :to="`/product/${getSlugFromPermalink(product.permalink)}`" label="Choose options" color="secondary" />
               <div v-else>Out of stock</div>
-              <q-btn
-                label="View"
-                color="secondary"
-                :to="`/product/${getSlugFromPermalink(product.permalink)}`"
-                flat
-              />
-            </q-card-actions>
+              </div>
           </q-card>
+          </router-link>
         </div>
       </div>
       <!-- Empty -->
@@ -150,9 +174,13 @@
             direction-links
             :icon-prev="matKeyboardArrowLeft"
             :icon-next="matKeyboardArrowRight"
-            color="primary"
+            color="secondary"
             @update:model-value="scrollToTop"
         />
+      </div>
+
+      </div>
+
       </div>
 
     </div>
@@ -185,11 +213,21 @@ function scrollToTop() {
 }
 // Refs and state
 const categories = ref([])
-const selectedCategory = ref(null)
+const selectedCategory = ref([])
 const search = ref('')
 const currentPage = ref(1)
 const perPage = 6
-
+const sortBy = ref('menu_order')
+const sortOptions = [
+  { label: 'Default', value: 'menu_order' },
+  { label: 'Newest', value: 'date_desc' },
+  { label: 'Price: Low to High', value: 'price_asc' },
+  { label: 'Price: High to Low', value: 'price_desc' },
+  { label: 'Name: A to Z', value: 'title_asc' },
+  { label: 'Name: Z to A', value: 'title_desc' },
+  { label: 'Popularity', value: 'popularity' },
+  { label: 'Rating', value: 'rating' }
+]
 // Fetch SEO data during SSR
 // 🟢 Run on SSR only
 // Inside your Page or Layout
@@ -349,13 +387,43 @@ function onPriceChange() {
 const isHydrated = ref(false)
 // Watch price range
 
+function getSortParams(sort) {
+  switch (sort) {
+    case 'price_asc':
+      return { orderby: 'price', order: 'asc' }
+
+    case 'price_desc':
+      return { orderby: 'price', order: 'desc' }
+
+    case 'date_desc':
+      return { orderby: 'date', order: 'desc' }
+
+    case 'title_asc':
+      return { orderby: 'title', order: 'asc' }
+
+    case 'title_desc':
+      return { orderby: 'title', order: 'desc' }
+
+    case 'popularity':
+      return { orderby: 'popularity', order: 'desc' }
+
+    case 'rating':
+      return { orderby: 'rating', order: 'desc' }
+
+    default:
+      return { orderby: 'menu_order', order: 'desc' }
+  }
+}
+
 const isFetching = ref(false)
 const pendingPriceRange = ref(null)
+let requestId = 0
 watch(
   () => ({
     category: selectedCategory.value,
     search: search.value,
     page: currentPage.value,
+    sort: sortBy.value,
     priceTrigger: priceChanged.value // ✅ only trigger when user releases slider
   }),
   async (filters, prev) => {
@@ -366,15 +434,31 @@ watch(
     ) return
     if (isFetching.value) return
 
-    const categoryChanged = prev && filters.category !== prev.category
+    const currentRequest = ++requestId
 
-    if (categoryChanged) {
+const categoryChanged =
+  prev &&
+  JSON.stringify([...filters.category].sort()) !==
+  JSON.stringify([...prev.category].sort())
+    /*if (categoryChanged) {
       console.log('Category changed → fetching price meta')
 
       productsStore.productsLoading.value = true
       await fetchPriceMeta(filters.category)
 
       //return
+    }*/
+    if (categoryChanged) {
+      productsStore.productsLoading.value = true
+
+      await fetchPriceMeta(filters.category)
+
+      priceMin.value = pendingPriceRange.value.min
+      priceMax.value = pendingPriceRange.value.max
+      priceRange.value = {
+        min: pendingPriceRange.value.min,
+        max: pendingPriceRange.value.max
+      }
     }
 
     if (
@@ -389,22 +473,38 @@ watch(
     }
 
     isFetching.value = true
-
+if (currentRequest !== requestId) return
     console.log('Products fetch watcher triggered!!!')
-const source = categoryChanged
+/*const source = categoryChanged
   ? pendingPriceRange.value
-  : priceRange.value
+  : priceRange.value*/
+    const source = priceRange.value
 
 const min = Math.floor(source.min * 100)
 const max = Math.ceil(source.max * 100)
+console.log('========== FILTER DEBUG ==========')
+console.log('selectedCategory:', filters.category)
+console.log('joined category:', filters.category.join(','))
+console.log('search:', filters.search)
+console.log('page:', filters.page)
+console.log('priceRange:', priceRange.value)
+console.log('min/max:', min, max)
+console.log('categoryChanged:', categoryChanged)
+console.log('requestId:', currentRequest)
+
+    const sortParams = getSortParams(filters.sort)
+    console.log(sortParams)
     await productsStore.preFetchProducts({
       api: true,
       page: filters.page,
       per_page: perPage,
       min_price: min,
       max_price: max,
-      category: filters.category,
-      search: filters.search
+      category: filters.category.length
+          ? filters.category.join(',')
+          : null,
+      search: filters.search,
+      ...sortParams
     })
 
     // 4. NOW update UI together 💥
@@ -420,12 +520,17 @@ const hasSSRProducts =
   process.env.CLIENT &&
   Array.isArray(window.__PRODUCTS_DATA__) &&
   window.__PRODUCTS_DATA__.length > 0
+const hasSelectedCategory =
+  process.env.CLIENT &&
+  window.__SELECTED_CATEGORY_DATA__ &&
+  Object.keys(window.__SELECTED_CATEGORY_DATA__).length > 0
 // Lifecycle
 onMounted(async () => {
   isHydrated.value = true
 
+  console.log(hasSelectedCategory)
   // 🟢 Fetch missing data only if needed
-  if (!hasSSRProducts) {
+  if (!hasSSRProducts || hasSelectedCategory) {
     productsStore.products.value = []
     productsStore.preFetchProducts({
       api: true,
@@ -472,9 +577,28 @@ async function fetchPriceMeta(category = null) {
 </script>
 
 <style scoped>
+.q-breadcrumbs,
+h1{
+  margin: 20px 0;
+}
+.archive-layout.flex {
+  column-gap: 20px;
+}
 .my-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
+.products-wrap {
+    flex: 1;
+}
+.filters-wrap {
+  width: 25%;
+  row-gap: 25px;
+  flex-direction: column;
+  position: sticky;
+  top: 70px;
+  height: fit-content;
+}
+
 </style>

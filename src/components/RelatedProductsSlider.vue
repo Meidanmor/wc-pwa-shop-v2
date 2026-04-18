@@ -1,5 +1,6 @@
 <template>
-  <div class="related-products q-mt-xl">
+  <section class="related-products">
+  <div class="container">
     <h3 class="text-h5 q-mb-md text-center">Related Products</h3>
 
     <!-- GRID MODE (for few products) -->
@@ -9,41 +10,36 @@
         :key="product.id"
         class="col-xs-12 col-sm-6 col-md-3 q-mb-md relative-position"
       >
-        <div class="item-loop-wl absolute">
-          <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
-          <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
-        </div>
+        <router-link :to="`/product/${getSlugFromPermalink(product.permalink)}`">
+          <div class="item-loop-wl absolute">
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
+          </div>
 
-        <q-card class="q-pa-sm full-height">
-          <router-link
-            :to="`/product/${getSlugFromPermalink(product.permalink)}`"
-            class="no-decoration full-width"
-          >
+          <q-card class="my-card full-height">
             <q-img
-              :src="product.images?.[0]?.thumbnail"
-              :alt="product.name"
-              class="q-mb-sm"
-              width="200"
-              height="200"
+            :img-src="product.images[0]?.src"
+            :src="product.images[0]?.src"
+            :srcset="product.images[0]?.srcset"
+            :sizes="product.images[0]?.sizes"
+            :alt="product.name"
+            height="250px"
+            width="100%"
+            class="rounded-borders"
             />
-            <q-card-section>
-              <div class="text-subtitle1 ellipsis text-secondary">{{ product.name }}</div>
-              <div class="text-caption text-grey">
-                <span v-html="product.price_html" />
+            <div class="flex q-pa-md">
+              <div class="full-width q-mb-sm">
+              <div>{{ product.name }}</div>
+              <div class="text-subtitle2" v-html="product.price_html" />
               </div>
-            </q-card-section>
+              <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
+              <q-btn v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(product)" />
+              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" :to="`/product/${getSlugFromPermalink(product.permalink)}`" label="Choose options" color="secondary" />
+              <div v-else>Out of stock</div>
+              </div>
+          </q-card>
           </router-link>
-          <q-card-actions>
-            <q-btn
-              v-if="product.is_in_stock"
-              color="primary"
-              size="sm"
-              label="Add to Cart"
-              @click.stop="addToCart(product)"
-            />
-            <div v-else>Out of stock</div>
-          </q-card-actions>
-        </q-card>
+
       </div>
     </div>
 
@@ -74,41 +70,36 @@
             :class="[colClass, 'q-mb-md', 'relative-position']"
           >
 
-            <div class="item-loop-wl absolute">
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
-            </div>
+        <router-link :to="`/product/${getSlugFromPermalink(product.permalink)}`">
+          <div class="item-loop-wl absolute">
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
+          </div>
 
-            <q-card class="q-pa-sm full-height flex column">
-              <router-link
-                :to="`/product/${product.slug}`"
-                class="no-decoration full-width"
-              >
-                <q-img
-                  :src="product.images?.[0]?.src"
-                  :alt="product.name"
-                  class="q-mb-sm"
-                  width="200"
-                  height="200"
-                />
-                <q-card-section>
-                  <div class="text-subtitle1 ellipsis text-secondary">{{ product.name }}</div>
-                  <div class="text-caption text-grey">
-                    <span v-html="product.price_html" />
-                  </div>
-                </q-card-section>
-              </router-link>
-              <q-card-actions class="q-mt-auto">
-                <q-btn
-                  v-if="product.is_in_stock"
-                  color="primary"
-                  size="sm"
-                  label="Add to Cart"
-                  @click.stop="addToCart(product)"
-                />
-                <div v-else>Out of stock</div>
-              </q-card-actions>
-            </q-card>
+          <q-card class="my-card full-height">
+            <q-img
+            :img-src="product.images[0]?.src"
+            :src="product.images[0]?.src"
+            :srcset="product.images[0]?.srcset"
+            :sizes="product.images[0]?.sizes"
+            :alt="product.name"
+            height="250px"
+            width="100%"
+            class="rounded-borders"
+            />
+            <div class="flex q-pa-md">
+              <div class="full-width q-mb-sm">
+              <div>{{ product.name }}</div>
+              <div class="text-subtitle2" v-html="product.price_html" />
+              </div>
+              <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
+              <q-btn v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(product)" />
+              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" :to="`/product/${getSlugFromPermalink(product.permalink)}`" label="Choose options" color="secondary" />
+              <div v-else>Out of stock</div>
+              </div>
+          </q-card>
+          </router-link>
+
           </div>
         </div>
       </q-carousel-slide>
@@ -118,7 +109,7 @@
         <q-btn
             v-bind="btnProps"
             :flat="false"
-            :color="active ? 'primary' : (btnProps.color || 'grey-5')"
+            :color="active ? 'secondary' : (btnProps.color || 'grey-5')"
             size="sm"
             :icon="null"
             style="font-size: 5px;padding: 0"
@@ -138,7 +129,7 @@
             flat
             round
             dense
-            color="primary"
+            color="secondary"
             @click="prevSlide"
           />
         </q-carousel-control>
@@ -149,13 +140,14 @@
             flat
             round
             dense
-            color="primary"
+            color="secondary"
             @click="nextSlide"
           />
         </q-carousel-control>
       </template>
     </q-carousel>
   </div>
+    </section>
 </template>
 
 <script setup>
@@ -254,18 +246,23 @@ watch([() => props.productId, () => props.categoryId], fetchRelatedProducts)
 
 <style>
 .related-products .related-product-wrapper > div {
-    padding: 0 5px;
+    padding: 20px 5px;
 }
-.related-products .related-product-wrapper > div {
+.related-products .related-product-wrapper > div,
+.related-products .related-product-wrapper > div .q-card{
     transition: 0.3s ease;
 }
 
 .related-products .related-product-wrapper > div:hover {
-  transform: scale(1.02) translateY(-10px);
-  opacity: 0.8;
+  transform: translateY(-10px);
   z-index: 1;
+}
+
+.related-products .related-product-wrapper > div:hover .q-card {
+  opacity: 0.8;
   box-shadow: 0px 10px 25px #00000020;
 }
+
 .related-products img.q-img__image {
   object-fit: cover;
   height: 100%;

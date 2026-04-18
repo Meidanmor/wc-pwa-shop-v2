@@ -4,9 +4,9 @@
   <div class="hero-section container hero-margin row">
 
     <div class="hero-content col-12 col-md-6 q-mb-lg">
-      <h1 class="text-h1 text-secondary stable-text">{{ homeSettings?.hero_title }}</h1>
+      <h1 class="text-h1 text-secondary stable-text" v-html="homeSettings?.hero_title"></h1>
       <p class="text-h6 text-secondary text-weight-light">
-        We encompass products that are organic, cruelty-free, and environmentally friendly
+        Ethically sourced botanical formulations designed to nurture your skin’s natural radiance with high-potency organic ingredients.
       </p>
 
       <button class="hero-btn q-btn">
@@ -35,7 +35,7 @@
 <!-- Featured Products Slider -->
 <section ref="productSection" class="featured-products">
   <div class="container">
-    <h2 class="text-h4 text-weight-light text-center q-mb-md">Featured Products</h2>
+    <h2 class="text-weight-normal q-mb-md" style="color: #1D1C13; font-size: 41px;">Featured Products</h2>
 <div v-if="!isHydrated && productsStore.products.value.length" class="q-carousel q-panel-parent q-carousel--without-padding q-carousel--navigation-bottom rounded-borders" style="height: 100%;">
   <div class="q-carousel__slides-container">
     <div class="q-panel scroll" role="tabpanel" style="--q-transition-duration: 300ms;">
@@ -62,7 +62,7 @@
                 :alt="product?.name || ''"
               >
               <div class="q-card__section q-card__section--vert">
-                <div class="text-h6">{{ product?.name }}</div>
+                <div>{{ product?.name }}</div>
                 <div class="text-subtitle2" v-html="product?.price_html"></div>
               </div>
               <div class="q-card__actions justify-start q-card__actions--horiz row">
@@ -124,6 +124,8 @@
       height="100%"
       control-color="primary"
       class="rounded-borders"
+        tabindex="0"
+        @keydown="onKeydown_products"
     >
 
       <q-carousel-slide
@@ -142,37 +144,37 @@
             <div v-if="fp.__placeholder" class="q-card invisible-card"></div>
 
             <div v-else>
-            <div class="item-loop-wl absolute">
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => fp.id === obj.id)" @click="addToWishlist(fp.id)" color="accent" :icon="matFavorite" />
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist(fp.id)" color="accent" :icon="matFavoriteBorder" />
-            </div>
 
-            <q-card class="my-card full-height">
-              <img
-                :key="`img-${fp.id}-${fp.images?.[0]?.src || 'noimg'}`"
-                width="300"
-                height="300"
-                :src="fp.images?.[0]?.src"
-                :srcset="fp.images?.[0]?.srcset"
-                :sizes="fp.images?.[0]?.sizes"
-                :alt="fp.name"
-              />
-              <q-card-section>
-                <div class="text-h6">{{ fp.name }}</div>
-                <div class="text-subtitle2" v-html="fp.price_html" />
-              </q-card-section>
-              <q-card-actions>
-                <q-btn v-if="fp.is_in_stock" label="Add to Cart" color="primary" @click="addToCart(fp)" />
-                <div v-else>Out of stock</div>
-                <q-btn
-                  label="View"
-                  color="secondary"
-                  :to="`/product/${getSlugFromPermalink(fp?.permalink)}`"
-                  flat
-                />
-              </q-card-actions>
-            </q-card>
+              <router-link :to="`/product/${getSlugFromPermalink(fp.permalink)}`">
+          <div class="item-loop-wl absolute">
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => fp.id === obj.id)" @click.prevent="addToWishlist(fp.id)" color="accent" :icon="matFavorite" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click.prevent="addToWishlist(fp.id)" color="accent" :icon="matFavoriteBorder" />
           </div>
+
+          <q-card class="my-card full-height">
+            <q-img
+            :img-src="fp.images[0]?.src"
+            :src="fp.images[0]?.src"
+            :srcset="fp.images[0]?.srcset"
+            :sizes="fp.images[0]?.sizes"
+            :alt="fp.name"
+            height="250px"
+            width="100%"
+            class="rounded-borders"
+            />
+            <div class="flex q-pa-md">
+              <div class="full-width q-mb-sm">
+              <div>{{ fp.name }}</div>
+              <div class="text-subtitle2" v-html="fp.price_html" />
+              </div>
+              <div v-if="fp.status && fp.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
+              <q-btn v-else-if="fp.is_in_stock && fp.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(fp)" />
+              <q-btn v-else-if="fp.is_in_stock && fp.type === 'variable'" :to="`/product/${getSlugFromPermalink(fp.permalink)}`" label="Choose options" color="secondary" />
+              <div v-else>Out of stock</div>
+              </div>
+          </q-card>
+          </router-link>
+            </div>
           </div>
         </div>
       </q-carousel-slide>
@@ -182,10 +184,10 @@
     <q-btn
       v-bind="btnProps"
       :flat="false"
-      :color="active ? 'primary' : (btnProps.color || 'grey-5')"
+      :color="active ? 'secondary' : 'primary'"
       size="sm"
       :icon="null"
-      style="font-size: 5px;padding: 0"
+      style="background: var(--q-secondary); font-size: 5px;padding: 0"
       round
       dense
       :aria-label="`Go to slide ${index + 1}`"
@@ -202,7 +204,7 @@
         flat
         round
         dense
-        color="primary"
+        color="secondary"
         @click="slide = (Number(slide) - 1 + slideChunks.length) % slideChunks.length"
       />
     </q-carousel-control>
@@ -214,7 +216,7 @@
         flat
         round
         dense
-        color="primary"
+        color="secondary"
         @click="slide = (Number(slide) + 1) % slideChunks.length"
       />
     </q-carousel-control>
@@ -226,15 +228,24 @@
 </section>
 
     <!-- CTA Section -->
-    <section class="cta-section q-pa-md">
+    <section class="cta-section">
       <div class="container">
         <div class="cta-overlay">
+          <div class="cta-img">
+            <img src="/cta-img.png" width="728" height="728" />
+          </div>
           <div class="cta-content">
-            <h2 class="text-h4 text-white q-mb-md">Discover Our Full Collection</h2>
+            <span class="text-white pre-title">The Botanical Ethos</span>
+            <h2 class="text-h4 text-white q-mb-md">Grown with Care, Crafted with Soul.</h2>
+           <p class="text-white desc">Our journey began in a small glasshouse, driven by the desire to merge
+ancient herbal wisdom with modern dermatological science. Every
+ingredient is ethically harvested at its peak potency.</p>
             <q-btn
               ref="ctaBtn"
-              label="Browse All Products"
+              label="Explore Our Roots"
               color="primary"
+              text-color="secondary"
+              :rounded="true"
               size="lg"
               to="/products"
             />
@@ -244,73 +255,152 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section class="testimonials-section container q-pa-md q-my-xl">
-      <h2 class="text-h4 text-weight-light text-center q-mb-lg">What Our Customers Say</h2>
-      <div class="row q-col-gutter-md">
-        <div class="col-12 col-md-4" v-for="(testimonial, index) in testimonials" :key="index">
-          <div class="q-card q-pa-md">
-            <div class="q-avatar q-mb-sm" style="font-size:56px;">
-              <div class="q-avatar__content row flex-center overflow-hidden">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="40" cy="40" r="40" fill="#E8F5E9"></circle>
-                  <circle cx="40" cy="30" r="12" fill="#81C784"></circle>
-                  <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"></path>
-                </svg>
-              </div>
-            </div>
-            <div class="text-subtitle1 q-mb-sm">{{ testimonial.name }}</div>
-            <i class="q-icon text-grey-5" style="font-size:24px;" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path style="fill:none;" d="M0 0h24v24H0z"></path>
-                <path style="" d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"></path>
-              </svg>
-            </i>
-            <p class="text-body2">{{ testimonial.feedback }}</p>
-          </div>
+<section class="testimonials-section">
+ <div class="container">
+  <h2 class="text-h4 text-weight-light text-center q-mb-lg">
+    What Our Customers Say
+  </h2>
+
+<q-carousel
+    tabindex="0"
+    v-if="isHydrated"
+    :key="testimonialCarouselKey"
+  v-model="testimonialsSlide"
+  @touchstart.stop
+      @mousedown.stop
+      animated
+      :infinite="showTestimonialCarouselControls"
+      :navigation="showTestimonialCarouselControls"
+      swipeable
+      :arrows="false"
+  height="auto"
+      @keydown="onKeydown_testimonials"
+
+>
+  <q-carousel-slide
+    v-for="(group, slideIndex) in testimonialSlideChunks"
+    :key="slideIndex"
+    :name="slideIndex"
+  >
+    <div class="row q-col-gutter-md">
+      <div
+        class="col-12 col-md-4"
+        v-for="(testimonial, index) in group"
+        :key="index"
+      >
+        <div class="q-card q-pa-md">
+<article
+  itemscope
+  itemtype="https://schema.org/Review"
+>
+  <!-- Author -->
+  <h3
+    class="text-subtitle1 q-mb-sm"
+    itemprop="author"
+    itemscope
+    itemtype="https://schema.org/Person"
+  >
+    <span itemprop="name">{{ testimonial.name }}</span>
+  </h3>
+
+  <!-- Rating -->
+  <div
+    itemprop="reviewRating"
+    itemscope
+    itemtype="https://schema.org/Rating"
+    class="q-mb-sm"
+  >
+    <meta itemprop="ratingValue" :content="testimonial.rating" />
+    <meta itemprop="bestRating" content="5" />
+
+    <q-rating
+      :model-value="testimonial.rating ?? 0"
+      size="20px"
+      color="amber"
+      :icon="matStar"
+      readonly
+    />
+  </div>
+
+  <!-- Review text -->
+  <p itemprop="reviewBody" class="text-body2">
+    {{ testimonial.feedback }}
+  </p>
+</article>
         </div>
       </div>
-    </section>
+    </div>
+  </q-carousel-slide>
 
-    <!-- Sustainability Section -->
-    <section class="sustainability-section container q-pa-md q-my-xl" v-once>
-      <div class="row items-center">
-        <div class="col-12 col-md-6">
-          <img src="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-300x300.png" srcset="https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1.png 1000w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-768x384.png 800w, https://nuxt.meidanm.com/wp-content/uploads/2022/11/IAYAArtboard-1-600x300.png 600w" alt="Sustainability" sizes="100vw" width="946" height="473" loading="lazy" class="full-width" />        </div>
-        <div class="col-12 col-md-6">
-          <h2 class="text-h4 text-weight-light q-mb-md">Our Commitment to Sustainability</h2>
-          <p class="text-body1">
-            At NaturaBloom, we prioritize eco-friendly practices, from sourcing organic ingredients to using recyclable packaging.
-          </p>
+    <!-- Keep the look: bind btnProps, add aria-label, keep visual style -->
+  <template v-if="showTestimonialCarouselControls" #navigation-icon="{ active, btnProps, onClick, index }">
+    <q-btn
+      v-bind="btnProps"
+      :flat="false"
+      :color="active ? 'secondary' : 'primary'"
+      size="sm"
+      :icon="null"
+      style="background: var(--q-secondary); font-size: 5px;padding: 0"
+      round
+      dense
+      :aria-label="`Go to slide ${index + 1}`"
+      @click="onClick"
+    />
+  </template>
+
+  <!-- Custom arrows using q-carousel-control (positions match default) -->
+  <template v-if="showTestimonialCarouselControls" #control>
+    <q-carousel-control position="left" class="flex items-center">
+      <q-btn
+        :icon="matChevronLeft"
+        aria-label="Previous slide"
+        flat
+        round
+        dense
+        color="secondary"
+        @click="testimonialsSlide = (Number(testimonialsSlide) - 1 + testimonialSlideChunks.length) % testimonialSlideChunks.length"
+      />
+    </q-carousel-control>
+
+    <q-carousel-control position="right" class="flex items-center">
+      <q-btn
+        :icon="matChevronRight"
+        aria-label="Next slide"
+        flat
+        round
+        dense
+        color="secondary"
+        @click="testimonialsSlide = (Number(testimonialsSlide) + 1) % testimonialSlideChunks.length"
+      />
+    </q-carousel-control>
+  </template>
+
+</q-carousel>
+  </div>
+</section>
+
+    <!-- Instagram Feed Section -->
+    <section class="instagram-section" v-once>
+      <div class="container">
+      <h2 class="text-h4 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
+      <div class="row q-col-gutter-md">
+        <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
+          <img width="200" height="200" :src="post.image" :alt="post.caption" class="rounded-borders full-width" />
         </div>
+      </div>
       </div>
     </section>
 
     <!-- Newsletter Signup Section -->
-    <section class="newsletter-section container q-my-xl text-center">
-      <h2 class="text-h4 text-weight-light q-mb-md">Stay Updated</h2>
-      <p class="text-body1 q-mb-lg">Subscribe to our newsletter for the latest products and offers.</p>
+    <section class="newsletter-section">
+      <div class="container text-center">
+      <h2 class="text-h4 text-weight-light q-mb-md">Join the Garden</h2>
+      <p class="text-body1 q-mb-lg">Receive our monthly Journal on botanical wellness, plus 15% off your first ritual.</p>
       <label v-if="!isHydrated" class="q-field row no-wrap items-start q-field--filled q-input q-field--labeled subscribe-email-input q-mb-md" style=""><!----><div class="q-field__inner relative-position col self-stretch"><div class="q-field__control relative-position row no-wrap" tabindex="-1"><div class="q-field__control-container col relative-position row no-wrap q-anchor--skip"><input class="q-field__native q-placeholder" style="" tabindex="0" aria-label="Your Email" type="text" value=""><div class="q-field__label no-pointer-events absolute ellipsis">Your Email</div><!----></div></div><!----></div><!----></label>
-      <q-input v-else filled v-model="email" label="Your Email" class="subscribe-email-input q-mb-md" />
-      <button v-if="!isHydrated" class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-primary text-white q-btn--actionable q-focusable q-hoverable" style="" tabindex="0" type="button"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">Subscribe</span></span></button>
-      <q-btn v-else label="Subscribe" color="primary" @click="subscribeNewsletter" />
-    </section>
-
-    <!-- Instagram Feed Section -->
-    <section class="instagram-section container q-my-xl" v-once>
-      <h2 class="text-h4 text-weight-light text-center q-mb-lg">Follow Us on Instagram</h2>
-      <div class="row q-col-gutter-md">
-        <div class="col-6 col-md-3" v-for="(post, index) in instagramPosts" :key="index">
-          <img width="300" height="300" :src="post.image" :alt="post.caption" class="rounded-borders full-width" />
-        </div>
-      </div>
-    </section>
-
-    <!-- Enhanced About Section -->
-    <section class="about-section container q-pa-md q-my-xl" v-once>
-      <h2 class="text-h4 text-weight-light q-mb-md">About NaturaBloom</h2>
-      <p class="text-body1">
-        NaturaBloom blends modern technology with nature's purity, offering organic, cruelty-free, and environmentally friendly products.
-      </p>
+      <q-input v-else filled v-model="email" label="Your email address" class="subscribe-email-input q-mb-md" />
+      <button v-if="!isHydrated" class="rounded q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-secondary text-white q-btn--actionable q-focusable q-hoverable" style="" tabindex="0" type="button"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">Subscribe</span></span></button>
+      <q-btn v-else :rounded="true" label="Subscribe" color="secondary" text-color="primary" @click="subscribeNewsletter" />
+   </div>
     </section>
 
   </div>
@@ -322,17 +412,17 @@ import { useQuasar, useMeta } from 'quasar'
 import { useRoute } from 'vue-router' // Standard import is tiny
 import cart from 'src/stores/cart'
 import productsStore from 'src/stores/products'
-import { matChevronLeft, matChevronRight, matFavoriteBorder, matFavorite } from '@quasar/extras/material-icons'
+import { matChevronLeft, matChevronRight, matFavoriteBorder, matFavorite, matStar } from '@quasar/extras/material-icons'
 import { defineAsyncComponent } from 'vue'
-import { loadPageConfig } from 'src/utils/config-loader' // Add this here
+import { loadPageConfig } from 'src/utils/config-loader'
+import { useCarouselKeyboard } from 'src/composables/useCarouselKeyboard'
+// Add this here
 
 // Instead of standard imports, do this:
 const QCarousel = defineAsyncComponent(() => import('quasar').then(m => m.QCarousel))
 const QCarouselSlide = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselSlide))
 const QCarouselControl = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselControl))
 const QCard = defineAsyncComponent(() => import('quasar').then(m => m.QCard))
-const QCardSection = defineAsyncComponent(() => import('quasar').then(m => m.QCardSection))
-const QCardActions = defineAsyncComponent(() => import('quasar').then(m => m.QCardActions))
 const QInput = defineAsyncComponent(() => import('quasar').then(m => m.QInput))
 
 const isHydrated = ref(false)
@@ -446,8 +536,10 @@ async function addToWishlist(objID = 0) {
 }
 
 const slideChunks = ref([])
+const testimonialSlideChunks = ref([])
 const slide = ref(0)
 const carouselKey = ref(0)
+const testimonialCarouselKey = ref(0)
 const productSection = ref(null)
 const ctaBtn = ref(null)
 const email = ref('')
@@ -490,15 +582,51 @@ const recomputeSlides = async (forceRemount = false) => {
 const showCarouselControls = computed(() => {
   return slideChunks.value.length > 1
 })
+
+const totalProductSlides = computed(() => slideChunks.value.length)
+
+const { onKeydown: onKeydown_products } = useCarouselKeyboard(
+  slide,
+  totalProductSlides
+)
 // ----------------- Testimonials & Instagram -----------------
-const avatarSVG =
+//const avatarSVG =
   '<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="40" fill="#E8F5E9"/> <circle cx="40" cy="30" r="12" fill="#81C784"/> <path d="M20 60c0-10 9-18 20-18s20 8 20 18H20z" fill="#81C784"/> </svg>'
 
 const testimonials = ref([
-  { name: 'Alice Johnson', feedback: 'NaturaBloom products have transformed my skincare routine!', avatar: avatarSVG },
-  { name: 'Mark Thompson', feedback: 'I love the organic ingredients and sustainable packaging.', avatar: avatarSVG },
-  { name: 'Sophie Lee', feedback: 'Fast shipping and excellent customer service.', avatar: avatarSVG }
+  { name: 'Alice Johnson', feedback: 'NaturaBloom products have transformed my skincare routine!' },
+  { name: 'Mark Thompson', feedback: 'I love the organic ingredients and sustainable packaging.' },
+  { name: 'Sophie Lee', feedback: 'Fast shipping and excellent customer service.' },
+  { name: 'John Doe', feedback: 'Amazing quality!' },
+  { name: 'Jane Smith', feedback: 'Will buy again.' }
 ])
+
+const testimonialsSlide = ref(0)
+
+const recomputeTestimonialSlides = async (forceRemount = false) => {
+  if (!isHydrated.value) return
+
+  if (!testimonials.value.length) {
+    return;
+  }
+
+  const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
+
+  if (forceRemount) testimonialCarouselKey.value++
+
+  testimonialSlideChunks.value = getChunks(testimonials.value, chunkSize)
+}
+
+const showTestimonialCarouselControls = computed(() => {
+  return testimonialSlideChunks.value.length > 1
+})
+// assuming you already have testimonialSlideChunks
+const totalTestimonialSlides = computed(() => testimonialSlideChunks.value.length)
+
+const { onKeydown: onKeydown_testimonials } = useCarouselKeyboard(
+  testimonialsSlide,
+  totalTestimonialSlides
+)
 
 const instagramPosts = ref([
   { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Our latest product launch!' },
@@ -506,6 +634,7 @@ const instagramPosts = ref([
   { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Customer favorites this month.' },
   { image: `${API_BASE}/wp-content/uploads/2025/05/procudts-catalog-img.png`, caption: 'Sustainable packaging in action.' }
 ])
+
 
 // ----------------- Helpers -----------------
 const subscribeNewsletter = () => {
@@ -525,8 +654,10 @@ const getSlugFromPermalink = (permalink) =>
   permalink.split('/').filter(Boolean).pop()
 
 
+
 // ----------------- Mounted -----------------
 onMounted(async() => {
+
     if (window.__PAGE_CONFIG__ && Object.keys(window.__PAGE_CONFIG__).length) {
       homeSettings.value = window.__PAGE_CONFIG__
     } else {
@@ -558,13 +689,18 @@ isHydrated.value = false
     const hydrateOnInteraction = () => {
       if (isHydrated.value) return
 
-      // Cleanup listeners
-      window.removeEventListener('scroll', hydrateOnInteraction)
-      window.removeEventListener('mousemove', hydrateOnInteraction)
-      window.removeEventListener('touchstart', hydrateOnInteraction)
+      requestIdleCallback(() => {
 
-      isHydrated.value = true
-      recomputeSlides()
+        // Cleanup listeners
+        window.removeEventListener('scroll', hydrateOnInteraction)
+        window.removeEventListener('mousemove', hydrateOnInteraction)
+        window.removeEventListener('touchstart', hydrateOnInteraction)
+
+        isHydrated.value = true
+        recomputeSlides()
+        recomputeTestimonialSlides();
+
+      })
     }
 
     window.addEventListener('scroll', hydrateOnInteraction, {passive: true})
@@ -586,6 +722,7 @@ watch(isHydrated, async (val) => {
     // Now that data is guaranteed to be in the store, we setup the carousel
     await recomputeSlides(true);
 
+    await recomputeTestimonialSlides(true);
     // 5. RESPONSIVE LISTENER
     // We only start listening to screen/store changes AFTER initial hydration is done
 
@@ -599,12 +736,14 @@ watch(
   () => {
     if (!isHydrated.value) return
     recomputeSlides(true)
+    recomputeTestimonialSlides(true);
+
   }
 )
 </script>
 
 <style scoped>
-.hero-section-sec{--text:#1e1e1e;--muted:#6f6f6f;/*--primary1:#f6f2e7;--primary2:#e9ddc4;--primary3:#d0c1a3;--primary4:#bfa07c;--primary5:#a88360;*/--card-shadow:0 12px 40px rgba(16,16,16,0.08);position:relative;inset:0;/*display:flex;align-items:center}.hero-section-sec:before{content:"";position:absolute;width:100%;height:100%;z-index:0;top:0;left:0;background:radial-gradient(circle at 20% 30%,#fff 0,transparent 60%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.7) 0,transparent 60%),radial-gradient(circle at 50% 50%,rgba(255,255,255,.38) 0,#00000000 60%);background-size:200% 200%*/ background: #f6f2e7;}.hero-section{padding:0 20px;position:relative;overflow:hidden;z-index:1;width:100%}.hero-content h1{overflow-wrap:anywhere;text-indent:-4px;font-weight:600;font-size:14vw;line-height:1.1;margin-top:0;margin-bottom:12px;display:block}.hero-content .text-h6{max-width:400px;margin-bottom:24px!important}.lcp-wrapper{display:block;width:100%;aspect-ratio:3/2;position:relative;overflow:hidden;border-radius:50px;/*background:rgba(0,0,0,.03);contain:paint;transform:translateZ(0)*/}.hero-img{width:100%;height:100%;display:block;object-fit:cover}.hero-content button.hero-btn{border-radius:50px;padding:10px 24px;color:#fff;background:var(--primary-gradient);border:none;cursor:pointer;position:relative;font-weight:600;height:44px;display:inline-flex;align-items:center;justify-content:center}.hero-content button:before{content:"";display:block;position:absolute;inset:0;border-radius:inherit;box-shadow:0 1px 5px rgba(0,0,0,.2),0 2px 2px rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.12);transition:box-shadow .3s cubic-bezier(.25,.8,.5,1)}.hero-content button:hover .q-focus-helper{opacity:1}@media (min-width:768px){.lcp-wrapper{width:50%}.hero-content h1{font-size:4rem}}
+.hero-section-sec{--text:#1e1e1e;--muted:#6f6f6f;/*--primary1:#f6f2e7;--primary2:#e9ddc4;--primary3:#d0c1a3;--primary4:#bfa07c;--primary5:#a88360;*/--card-shadow:0 12px 40px rgba(16,16,16,0.08);position:relative;inset:0;/*display:flex;align-items:center}.hero-section-sec:before{content:"";position:absolute;width:100%;height:100%;z-index:0;top:0;left:0;background:radial-gradient(circle at 20% 30%,#fff 0,transparent 60%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.7) 0,transparent 60%),radial-gradient(circle at 50% 50%,rgba(255,255,255,.38) 0,#00000000 60%);background-size:200% 200%*/ background: var(--q-primary);}.hero-section{padding:0 20px;position:relative;overflow:hidden;z-index:1;width:100%}.hero-content h1{overflow-wrap:anywhere;text-indent:-4px;font-weight:400;font-size:14vw;line-height:1.1;margin-top:0;margin-bottom:12px;display:block}.hero-content .text-h6{max-width:450px;margin-bottom:24px!important}.lcp-wrapper{display:block;width:100%;aspect-ratio:3/2;position:relative;overflow:hidden;border-radius:50px;/*background:rgba(0,0,0,.03);contain:paint;transform:translateZ(0)*/}.hero-img{width:100%;height:100%;display:block;object-fit:cover}.hero-content button.hero-btn{border-radius:50px;padding:10px 24px;color:#fff;background:var(--primary-gradient);border:none;cursor:pointer;position:relative;font-weight:400;height:44px;display:inline-flex;align-items:center;justify-content:center}.hero-content button:before{content:"";display:block;position:absolute;inset:0;border-radius:inherit;box-shadow:0 1px 5px rgba(0,0,0,.2),0 2px 2px rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.12);transition:box-shadow .3s cubic-bezier(.25,.8,.5,1)}.hero-content button:hover .q-focus-helper{opacity:1}@media (min-width:768px){.lcp-wrapper{width:50%}.hero-content h1{font-size:4rem}}
 
 @keyframes gradientAnimation {
   0% {background-position: 0% 50%;}
@@ -614,6 +753,7 @@ watch(
 
 section.featured-products {
     min-height: 664px;
+  background: #F8F3E4;
 }
 
 div.q-img__loading > svg{
@@ -623,6 +763,7 @@ div.q-img__loading > svg{
 .my-card img {
   object-fit: cover;
   pointer-events: none;
+  border-radius: 20px;
 }
 
 .hero-content button:hover .q-focus-helper:after {
@@ -634,7 +775,7 @@ div.q-img__loading > svg{
   visibility: hidden;
 }
 
-.newsletter-section, .instagram-section, .about-section {
+.newsletter-section, .instagram-section {
   content-visibility: auto;
 }
 
@@ -642,22 +783,27 @@ div.q-img__loading > svg{
 .cta-section {
   position: relative;
   overflow: hidden;
-  border-radius: 20px;
-  height: 400px;
-  margin-bottom: 40px;
+  min-height: 400px;
   /*padding: 0;*/
+  background: #345646;
 }
 .cta-section .container {
   height: 100%;
+  max-width: 1500px;
 }
-
+.cta-section .cta-img {
+  width: 50%;
+}
+.cta-section .cta-img img {
+  max-width: 100%;
+}
 .cta-overlay {
   position: relative;
-  z-index: 1;
+  /*z-index: 1;
   height: 100%;
   background: linear-gradient(-45deg, #4c6e5d96, var(--q-primary), #4c6e5d96);
   background-size: 600% 600%;
-  animation: none;
+  animation: none;*/
   display: flex;
   align-items: center;
   justify-content: center;
@@ -699,11 +845,14 @@ div.q-img__loading > svg{
 .cta-content {
   max-width: 600px;
   margin: 0 auto auto;
-  text-align: center;
+  padding: 40px 20px;
 }
-
-.sustainability-section img {
-  aspect-ratio: 946 / 473;
+.cta-content .pre-title {
+ text-transform: uppercase;
+}
+.cta-content .desc {
+  font-size: 20px;
+  margin-bottom: 30px;
 }
 @media(max-width: 767px) {
   .hero-content h1.text-h1 {
@@ -711,7 +860,7 @@ div.q-img__loading > svg{
   }
 
   .hero-section {
-    padding: 0px 20px;
+    padding: 0px;
   }
 
 }
@@ -723,6 +872,9 @@ div.q-img__loading > svg{
 @media(min-width: 1024px) {
   .row.justify-between .col-md-4 {
     width: calc(100% / 3 - 10px);
+  }
+  .hero-content.col-12.col-md-6.q-mb-lg {
+    padding-right: 35px;
   }
 }
 
@@ -751,35 +903,42 @@ div.q-img__loading > svg{
     animation: gradientAnimation 25s ease infinite;
 }
 
-.about-section {
-  max-width: 700px;
+.testimonials-section {
+  background: var(--q-primary);
 }
-.testimonials-section q-card {
+.testimonials-section .q-card {
   transition: transform 0.3s;
+  background: #F8F3E4;
 }
 .testimonials-section q-card:hover {
   transform: translateY(-5px);
 }
-.sustainability-section img {
-  border-radius: 8px;
-  height: auto;
-}
+
 .newsletter-section {
-  background-color: #f9f9f9;
-  padding: 40px 20px;
-  border-radius: 8px;
+  background-color: #FEF9EA;
 }
-.instagram-section q-img {
+.newsletter-section .container {
+  max-width: 896px;
+  background: #e7e2d4;
+  border-radius: 28px;
+  padding: 70px 16px;
+}
+.newsletter-section :deep(.q-field__control) {
+  border-radius: 28px;
+}
+
+.instagram-section {
+  background: #F8F3E4;
+}
+.instagram-section img {
   cursor: pointer;
   transition: transform 0.3s;
+  object-fit: cover;
 }
-.instagram-section q-img:hover {
+.instagram-section img:hover {
   transform: scale(1.05);
 }
-.about-section {
-  max-width: 700px;
-  margin: 0 auto;
-}
+
 .subscribe-email-input {
   max-width: 500px;
   width: 100%;
