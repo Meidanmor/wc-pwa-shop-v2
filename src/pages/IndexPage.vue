@@ -94,14 +94,14 @@
   </div>
 
   <div class="q-carousel__control absolute absolute-left flex items-center" style="margin: 18px;">
-    <button class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--dense" type="button">
+    <button aria-label="Previous slide" class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--dense" type="button">
       <span class="q-btn__content text-center col items-center justify-center row">
         <i class="q-icon"><svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg></i>
       </span>
     </button>
   </div>
   <div class="q-carousel__control absolute absolute-right flex items-center" style="margin: 18px;">
-    <button class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--dense" type="button">
+    <button aria-label="Next slide" class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--round text-primary q-btn--dense" type="button">
       <span class="q-btn__content text-center col items-center justify-center row">
         <i class="q-icon"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></i>
       </span>
