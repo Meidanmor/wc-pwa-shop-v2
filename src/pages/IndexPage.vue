@@ -190,7 +190,7 @@
       style="background: var(--q-secondary); font-size: 5px;padding: 0"
       round
       dense
-      :aria-label="`Go to slide ${index + 1}`"
+      :aria-label="`Go to slide ${name + 1}`"
       @click="onClick"
     />
   </template>
@@ -232,7 +232,7 @@
       <div class="container">
         <div class="cta-overlay">
           <div class="cta-img">
-            <img loading="lazy" src="/cta-img.png" width="500" height="500" />
+            <img loading="lazy" alt="Forest view" src="/cta-img.png" width="500" height="500" />
           </div>
           <div class="cta-content">
             <span class="text-white pre-title">The Botanical Ethos</span>
@@ -343,7 +343,7 @@ ingredient is ethically harvested at its peak potency.</p>
       style="background: var(--q-secondary); font-size: 5px;padding: 0"
       round
       dense
-      :aria-label="`Go to slide ${index + 1}`"
+      :aria-label="`Go to slide ${name + 1}`"
       @click="onClick"
     />
   </template>
