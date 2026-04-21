@@ -158,7 +158,7 @@
             :srcset="fp.images[0]?.srcset"
             :sizes="fp.images[0]?.sizes"
             :alt="fp.name"
-            height="250px"
+            height="150px"
             width="100%"
             class="rounded-borders"
             />
@@ -180,11 +180,11 @@
       </q-carousel-slide>
 
   <!-- Keep the look: bind btnProps, add aria-label, keep visual style -->
-  <template v-if="showCarouselControls" #navigation-icon="{ active, btnProps, onClick, index }">
+  <template v-if="showCarouselControls" #navigation-icon="{ name, onClick, btnProps }">
     <q-btn
       v-bind="btnProps"
       :flat="false"
-      :color="active ? 'secondary' : 'primary'"
+      :color="slide === name ? 'secondary' : (btnProps.color || 'grey-5')"
       size="sm"
       :icon="null"
       style="background: var(--q-secondary); font-size: 5px;padding: 0"
@@ -232,7 +232,7 @@
       <div class="container">
         <div class="cta-overlay">
           <div class="cta-img">
-            <img src="/cta-img.png" width="728" height="728" />
+            <img loading="lazy" src="/cta-img.png" width="500" height="500" />
           </div>
           <div class="cta-content">
             <span class="text-white pre-title">The Botanical Ethos</span>
@@ -333,11 +333,11 @@ ingredient is ethically harvested at its peak potency.</p>
   </q-carousel-slide>
 
     <!-- Keep the look: bind btnProps, add aria-label, keep visual style -->
-  <template v-if="showTestimonialCarouselControls" #navigation-icon="{ active, btnProps, onClick, index }">
+  <template v-if="showTestimonialCarouselControls" #navigation-icon="{ name, onClick, btnProps }">
     <q-btn
       v-bind="btnProps"
       :flat="false"
-      :color="active ? 'secondary' : 'primary'"
+      :color="testimonialsSlide === name ? 'secondary' : 'primary'"
       size="sm"
       :icon="null"
       style="background: var(--q-secondary); font-size: 5px;padding: 0"
@@ -791,11 +791,11 @@ div.q-img__loading > svg{
   height: 100%;
   max-width: 1500px;
 }
-.cta-section .cta-img {
-  width: 50%;
-}
+
 .cta-section .cta-img img {
   max-width: 100%;
+  object-fit: cover;
+  border-radius: 25px;
 }
 .cta-overlay {
   position: relative;
@@ -845,7 +845,7 @@ div.q-img__loading > svg{
 .cta-content {
   max-width: 600px;
   margin: 0 auto auto;
-  padding: 40px 20px;
+  padding-top: 40px;
 }
 .cta-content .pre-title {
  text-transform: uppercase;
@@ -864,6 +864,14 @@ div.q-img__loading > svg{
   }
 
 }
+@media(max-width: 1023px){
+  .cta-overlay {
+    flex-direction: column;
+  }
+  .cta-section .cta-img img {
+    max-height: 200px;
+  }
+}
 @media(min-width: 600px) {
   .row.justify-between .col-md-4 {
     width: calc(100% / 2 - 10px);
@@ -875,6 +883,13 @@ div.q-img__loading > svg{
   }
   .hero-content.col-12.col-md-6.q-mb-lg {
     padding-right: 35px;
+  }
+
+  .cta-section .cta-img {
+    width: 50%;
+  }
+  .cta-content {
+    padding: 40px 20px;
   }
 }
 

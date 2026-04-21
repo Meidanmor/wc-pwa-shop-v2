@@ -18,12 +18,13 @@
 
           <q-card class="my-card full-height">
             <q-img
+                fit="contain"
             :img-src="product.images[0]?.src"
             :src="product.images[0]?.src"
             :srcset="product.images[0]?.srcset"
             :sizes="product.images[0]?.sizes"
             :alt="product.name"
-            height="250px"
+            height="150px"
             width="100%"
             class="rounded-borders"
             />
@@ -78,12 +79,13 @@
 
           <q-card class="my-card full-height">
             <q-img
+                fit="contain"
             :img-src="product.images[0]?.src"
             :src="product.images[0]?.src"
             :srcset="product.images[0]?.srcset"
             :sizes="product.images[0]?.sizes"
             :alt="product.name"
-            height="250px"
+            height="150px"
             width="100%"
             class="rounded-borders"
             />
@@ -105,11 +107,11 @@
       </q-carousel-slide>
 '
       <!-- Custom navigation dots -->
-      <template #navigation-icon="{ active, btnProps, onClick, index }">
+      <template #navigation-icon="{ name, onClick, btnProps }">
         <q-btn
             v-bind="btnProps"
             :flat="false"
-            :color="active ? 'secondary' : (btnProps.color || 'grey-5')"
+            :color="slide === name ? 'secondary' : (btnProps.color || 'grey-5')"
             size="sm"
             :icon="null"
             style="font-size: 5px;padding: 0"
@@ -264,7 +266,6 @@ watch([() => props.productId, () => props.categoryId], fetchRelatedProducts)
 }
 
 .related-products img.q-img__image {
-  object-fit: cover;
   height: 100%;
 }
 .related-products .q-img.q-img--menu.q-mb-sm {

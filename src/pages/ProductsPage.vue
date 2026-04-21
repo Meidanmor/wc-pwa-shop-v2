@@ -23,18 +23,6 @@
         </div>
 
         <div class="col-xs-12 col-md-6" v-else>
-         <q-select
-            filled
-            v-model="selectedCategory"
-            :options="categoryOptions"
-            label="Filter by category"
-            emit-value
-            map-options
-            clearable
-            :dropdown-icon="matArrowDropDown"
-            :loading-icon="matAutorenew"
-            :clear-icon="matClose"
-          />
           <q-card class="q-pa-md q-mb-md">
             <div class="text-subtitle1 q-mb-sm">
               Filter by Category
@@ -102,7 +90,7 @@
     <q-card class="my-card full-height">
 
       <!-- Image skeleton -->
-      <q-skeleton height="300px" square />
+      <q-skeleton height="250px" square />
 
       <q-card-section>
         <!-- Title -->
@@ -141,7 +129,7 @@
             :srcset="product.images[0]?.srcset"
             :sizes="product.images[0]?.sizes"
             :alt="product.name"
-            height="300px"
+            height="250px"
             width="auto"
             class="rounded-borders"
             />
@@ -599,6 +587,10 @@ h1{
   position: sticky;
   top: 70px;
   height: fit-content;
+}
+
+.q-checkbox[aria-checked="true"] .q-checkbox__label {
+    font-weight: 600;
 }
 
 </style>

@@ -31,8 +31,7 @@
     </div>
   </div>
 </div>
-  <div class="q-layout__shadow absolute-full overflow-hidden no-pointer-events">
-  </div><!---->
+<!---->
 </header>
 
     <main>
