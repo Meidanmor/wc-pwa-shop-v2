@@ -1,7 +1,7 @@
 <template>
-  <div class="container">
+  <div class="container q-pa-md">
     <h2>Your Cart</h2>
-    <div v-if="cartItems.length === 0">
+    <div v-if="cartItems.length === 0" class="empty-cart-msg">
       Your cart is empty. <router-link to="/products/">Go to shop</router-link>
     </div>
     <div v-else>
@@ -34,3 +34,14 @@ import { computed } from 'vue';
 
 const cartItems = computed(() => cart.state.items);
 </script>
+
+<style scoped>
+.empty-cart-msg {
+  padding: 20px 0;
+  font-size: 20px;
+}
+.empty-cart-msg a {
+  text-decoration: underline;
+  font-weight: 600;
+}
+</style>

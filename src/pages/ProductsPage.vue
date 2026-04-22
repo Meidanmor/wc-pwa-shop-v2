@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-md">
+  <div class="main-wrapper-div">
     <div class="container">
       <q-breadcrumbs>
           <q-breadcrumbs-el label="Home" to="/" />
@@ -9,7 +9,13 @@
 
       <h1>Products</h1>
       <div class="archive-layout flex no-wrap">
-      <div class="filters-wrap flex">
+      <div class="filters-wrap flex" :class="{ 'shown': filtersOpen }" >
+        <q-btn
+  v-if="isHydrated && $q.screen.width <= 767"
+  :icon="matClose"
+  color="secondary"
+  @click="filtersOpen = false"
+/>
       <!-- Search and Filter -->
         <div class="col-xs-12 col-md-6" v-if="!isHydrated">
           <q-skeleton type="rect" class="q-mb-md"/>
@@ -61,12 +67,15 @@
       </div>
 
       <div class="products-wrap">
-        <div class="flex justify-between q-mb-md">
+        <div class="flex justify-between q-mb-md total-products">
       <!-- Total Products -->
       <div v-if="totalProducts" class="text-subtitle1 q-mb-sm">
         Found {{ totalProducts || 0 }} product{{ totalProducts === 1 ? '' : 's' }}
       </div>
 
+        </div>
+
+        <div class="flex justify-between q-mb-md sticky">
           <q-select
   filled
   v-model="sortBy"
@@ -80,7 +89,15 @@
   color="secondary"
 
 />
+          <q-btn
+  v-if="isHydrated && $q.screen.width <= 767"
+  :icon="matFilterList"
+  label="Filters"
+  color="secondary"
+  @click="filtersOpen = !filtersOpen"
+/>
         </div>
+
       <div v-if="productsStore.productsLoading.value && isHydrated" class="row q-col-gutter-md">
   <div
     v-for="n in 6"
@@ -153,7 +170,7 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="q-mt-lg flex flex-center">
+      <div v-if="totalPages > 1" class="q-mt-lg flex flex-center pagination-btns">
         <q-pagination
             v-model="currentPage"
             :max="totalPages || 1"
@@ -182,7 +199,7 @@ import cart from 'src/stores/cart'
 import { useQuasar, useMeta, scroll } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFavorite, matFavoriteBorder } from '@quasar/extras/material-icons'
+import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFavorite, matFavoriteBorder, matFilterList } from '@quasar/extras/material-icons'
 
 const $q = useQuasar()
 const { setVerticalScrollPosition } = scroll
@@ -206,6 +223,7 @@ const search = ref('')
 const currentPage = ref(1)
 const perPage = 6
 const sortBy = ref('menu_order')
+const filtersOpen = ref(false)
 const sortOptions = [
   { label: 'Default', value: 'menu_order' },
   { label: 'Newest', value: 'date_desc' },
@@ -569,6 +587,14 @@ async function fetchPriceMeta(category = null) {
 h1{
   margin: 20px 0;
 }
+
+.q-breadcrumbs,
+h1,
+.products-wrap > row,
+.total-products {
+    padding: 0 16px;
+}
+
 .archive-layout.flex {
   column-gap: 20px;
 }
@@ -589,8 +615,61 @@ h1{
   height: fit-content;
 }
 
+.products-wrap .q-select {
+  min-width: 160px;
+}
+
 .q-checkbox[aria-checked="true"] .q-checkbox__label {
     font-weight: 600;
 }
 
+@media(max-width: 767px){
+  .filters-wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 10px;
+    z-index: 9999;
+    height: 100dvh;
+    background: var(--q-primary);
+    width: 85%;
+    box-shadow: 0 0 50px #00000050;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition: 0.3s ease;
+  }
+  .filters-wrap.shown {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .flex.justify-between.q-mb-md.sticky {
+    position: sticky;
+    top: 58px;
+    z-index: 9;
+    background: var(--q-primary);
+    padding: 10px;
+  }
+
+}
+
+@media(min-width: 768px){
+  .products-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .flex.justify-between.q-mb-md {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+  }
+  .pagination-btns {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+}
 </style>

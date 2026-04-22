@@ -1,5 +1,5 @@
 <template>
-    <div class="container">
+    <div class="container q-pa-md">
       <h1>Checkout</h1>
       <div v-if="isLoggedIn === false && checkoutReady && itemsCount !== '0'">
         <GoogleLoginButton />

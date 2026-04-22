@@ -55,7 +55,7 @@
               <img
                   loading="lazy"
                 width="300"
-                height="300"
+                height="150"
                 :src="product.images?.[0]?.src|| ''"
                 :srcset="product.images?.[0]?.srcset || ''"
                 :sizes="product.images?.[0]?.sizes || ''"
@@ -69,22 +69,13 @@
                 <div v-if="!product?.is_in_stock">Out of stock</div>
                 <button
                   v-else
-                  class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-primary text-white q-btn--actionable"
+                  class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-secondary text-white q-btn--actionable"
                   type="button"
                 >
                   <span class="q-btn__content text-center col items-center justify-center row">
                     <span class="block">Add to Cart</span>
                   </span>
                 </button>
-
-                <a
-                  class="q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-secondary q-btn--actionable"
-                  :href="`/product/${getSlugFromPermalink(product?.permalink || '')}`"
-                >
-                  <span class="q-btn__content text-center col items-center justify-center row">
-                    <span class="block">View</span>
-                  </span>
-                </a>
               </div>
             </div>
           </div>
@@ -232,7 +223,7 @@
       <div class="container">
         <div class="cta-overlay">
           <div class="cta-img">
-            <img loading="lazy" alt="Forest view" src="/cta-img.png" width="500" height="500" />
+            <img loading="lazy" alt="Forest view" src="/cta-img.png" width="728" height="500" />
           </div>
           <div class="cta-content">
             <span class="text-white pre-title">The Botanical Ethos</span>
