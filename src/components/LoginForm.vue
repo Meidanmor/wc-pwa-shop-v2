@@ -3,7 +3,7 @@
     <q-input v-model="username" label="Username or Email" filled />
     <q-input v-model="password" type="password" label="Password" filled />
 
-    <q-btn label="Login" type="submit" color="primary" />
+    <q-btn label="Login" type="submit" color="secondary" />
     <div v-if="error" class="text-negative q-mt-md">{{ error }}</div>
   </q-form>
 </template>

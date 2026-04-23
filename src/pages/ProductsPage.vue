@@ -98,7 +98,7 @@
 />
         </div>
 
-      <div v-if="productsStore.productsLoading.value && isHydrated" class="row q-col-gutter-md">
+      <div v-if="productsStore.productsLoading.value && isHydrated" class="products-inner row q-col-gutter-md">
   <div
     v-for="n in 6"
     :key="'skeleton-' + n"
@@ -126,7 +126,7 @@
     </q-card>
   </div>
 </div>
-      <div v-else-if="paginatedProducts.length" class="row q-col-gutter-md">
+      <div v-else-if="paginatedProducts.length" class="products-inner row q-col-gutter-md">
         <!-- Product Grid -->
         <div
           v-for="product in paginatedProducts"
@@ -604,7 +604,12 @@ h1,
   justify-content: flex-start;
 }
 .products-wrap {
-    flex: 1;
+  flex: 1;
+  padding-bottom: 20px;
+}
+
+.products-inner {
+  flex: 100%;
 }
 .filters-wrap {
   width: 25%;
@@ -652,6 +657,10 @@ h1,
     z-index: 9;
     background: var(--q-primary);
     padding: 10px;
+  }
+
+  .products-inner {
+    padding: 20px 16px 0;
   }
 
 }

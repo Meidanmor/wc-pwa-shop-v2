@@ -140,7 +140,7 @@
       >
         <div class="text-subtitle1">Enable push notifications?</div>
         <template v-slot:action>
-          <q-btn dense color="white" text-color="primary" label="Enable" @click="handleSubscribe" />
+          <q-btn dense color="white" text-color="secondary" label="Enable" @click="handleSubscribe" />
         </template>
       </q-banner>
       </q-scroll-area>
@@ -194,7 +194,7 @@
 
         <router-link to="/checkout/">
          <q-btn
-          color="primary"
+          color="secondary"
           label="Checkout"
         />
         </router-link>
@@ -204,7 +204,7 @@
           <h5>seems like your cart is empty</h5>
           <router-link to="/products/">
             <q-btn
-                color="primary"
+                color="secondary"
                 label="Shop now!"
             />
           </router-link>

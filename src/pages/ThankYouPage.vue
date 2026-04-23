@@ -111,7 +111,7 @@
       </div>
 
       <div v-else class="text-center q-my-xl">
-        <q-spinner color="primary" size="lg"/>
+        <q-spinner color="secondary" size="lg"/>
         <div class="q-mt-md">Loading your order...</div>
       </div>
     </div>

@@ -16,7 +16,7 @@
         <q-input v-model="product.sku" label="SKU" />
         <!-- Add more fields as needed -->
 
-        <q-btn label="Save" color="primary" @click="updateProduct" class="q-mt-md" />
+        <q-btn label="Save" color="secondary" @click="updateProduct" class="q-mt-md" />
       </q-card-section>
     </q-card>
   </q-page>

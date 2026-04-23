@@ -6,10 +6,10 @@
       <q-input v-model="account.first__name" label="First Name" />
       <q-input v-model="account.last__name" label="Last Name" />
       <q-input disable readonly v-model="account.user_email" label="Email" type="email" />
-      <q-btn type="submit" label="Save Changes" color="primary" />
+      <q-btn type="submit" label="Save Changes" color="secondary" />
     </q-form>
     </div>
-    <div v-else> <q-spinner color="primary" size="2em" /> </div>
+    <div v-else> <q-spinner color="secondary" size="2em" /> </div>
   </div>
 </template>
 

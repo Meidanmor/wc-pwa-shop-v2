@@ -446,7 +446,6 @@ defineOptions({
     const [seo, configData] = await Promise.all([
       fetchSeoForPath('homepage'),
       loadPageConfig('home', isPreview), // The helper we'll create
-      productsStore.preFetchProducts()
     ])
 
     //console.log(configData);
@@ -455,7 +454,7 @@ defineOptions({
     //const leanProducts = productsStore.products.value.slice(0, 6)
     const featuredIds = configData?.featured_products || []
     const leanProducts = featuredIds.length
-  ? productsStore.getByIds(featuredIds)
+  ? await productsStore.getByIds(featuredIds)
   : productsStore.products.value.slice(0, 6)
 
     if (ssrContext) {
@@ -480,6 +479,30 @@ const seoData = ref(null)
 // 3. APPLY META
 useMeta(() => {
   const seo = seoData.value;
+
+  // If data isn't ready yet, return an empty object or just the default title.
+  // This prevents the "Flicker" and avoids the Vue warning.
+  if (!seo) {
+    return {
+      // You can return a generic title or nothing at all
+      title: ''
+    };
+  }
+
+  // Once seoData.value is populated, Quasar will automatically
+  // detect the change and update the DOM.
+  return {
+    title: seo.title,
+    meta: {
+      robots: { name: 'robots', content: seo.robots, key: 'robots' },
+      description: { name: 'description', content: seo.description, key: 'description' },
+      'og:title': { property: 'og:title', content: seo.title },
+      'og:image': { property: 'og:image', content: seo.og_image },
+    }
+  };
+});
+/*(() => {
+  const seo = seoData.value;
   return {
     title: seo?.title || 'NaturaBloom',
     meta: {
@@ -491,7 +514,7 @@ useMeta(() => {
       'og:type': {property: 'og:type', content: 'website'},
     }
   };
-});
+});*/
 // 1. THE SERVER FIX (Force the HTML to populate)
 if (process.env.SERVER) {
   const ssr = useSSRContext()
@@ -504,21 +527,30 @@ if (process.env.SERVER) {
 
 const visibleStaticItems = computed(() => {
   const ids = homeSettings.value?.featured_products || []
+  let items = []
 
-  let items = ids.length
-    ? productsStore.getByIds(ids)
-    : productsStore.products.value
-
-  items = items.slice(0, 3)
-
-  // pad to always 3
-  while (items.length < 3) {
-    items.push({ __placeholder: true, id: `placeholder-${items.length}` })
+  if (ids && ids.length) {
+    // ✅ SYNC FIND: This avoids the Promise issue and forces the order of the 'ids' array
+    items = ids.map(id => {
+      return productsStore.products.value.find(p => Number(p.id) === Number(id))
+    }).filter(Boolean)
   }
 
-  return items
-})
+  // Fallback to first 6 if no IDs are found (to match recomputeSlides logic)
+  if (!items.length) {
+    items = (productsStore.products.value || []).slice(0, 6)
+  }
 
+  // We only show 3 in the static view
+  const result = items.slice(0, 3)
+
+  // Pad placeholders
+  while (result.length < 3) {
+    result.push({ __placeholder: true, id: `placeholder-${result.length}` })
+  }
+
+  return result
+})
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
 
@@ -552,7 +584,7 @@ const recomputeSlides = async (forceRemount = false) => {
   }
 
   const ids = homeSettings.value?.featured_products || []
-  const allProducts = productsStore.products.value || []
+  const allProducts = await productsStore.getByIds(ids) || []
 
   let items = ids.length
   ? ids.map(id => allProducts.find(p => p.id == id)).filter(Boolean)
@@ -648,7 +680,6 @@ const getSlugFromPermalink = (permalink) =>
 
 // ----------------- Mounted -----------------
 onMounted(async() => {
-
     if (window.__PAGE_CONFIG__ && Object.keys(window.__PAGE_CONFIG__).length) {
       homeSettings.value = window.__PAGE_CONFIG__
     } else {
@@ -658,14 +689,11 @@ onMounted(async() => {
       if (freshConfig) homeSettings.value = freshConfig
     }
 
-    if (window.__SEO_DATA__ && Object.keys(window.__SEO_DATA__).length) {
-      seoData.value = window.__SEO_DATA__
-    } else {
       // 1. DATA FETCHING (Parallel)
       const {fetchSeoForPath} = await import('src/composables/useSeo');
       // 2. SEO UPDATE
       seoData.value = await fetchSeoForPath('homepage');
-    }
+
 isHydrated.value = false
   if (process.env.CLIENT) {
     // If it's a SPA navigation, hydrate immediately for UX

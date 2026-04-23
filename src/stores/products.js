@@ -14,7 +14,7 @@ const SSR_KEY = '__PRODUCTS_DATA__'
 export const totalProducts = ref(0)
 export const totalPages = ref(1);
 
-function getByIds(ids = []) {
+/*function getByIds(ids = []) {
   if (!Array.isArray(ids) || !ids.length) return []
 
   const map = new Map(products.value.map(p => [p.id, p]))
@@ -22,6 +22,35 @@ function getByIds(ids = []) {
   return ids
     .map(id => map.get(Number(id))) // ✅ FIX
     .filter(Boolean)
+}*/
+
+async function getByIds(ids = []) {
+  if (!Array.isArray(ids) || !ids.length) return []
+
+  const masterMap = new Map(products.value.map(p => [p.id, p]))
+  const existing = ids.map(id => masterMap.get(Number(id))).filter(Boolean)
+  const missingIds = ids.filter(id => !masterMap.has(Number(id)))
+
+  if (missingIds.length === 0) return existing
+
+  try {
+    // Parallel fetch for the missing items using the Store API endpoint
+    const fetchPromises = missingIds.map(id =>
+      fetch(`https://nuxt.meidanm.com/wp-json/wc/store/v1/products/${id}`)
+        .then(res => res.ok ? res.json() : null)
+    )
+
+    const fetchedMissing = (await Promise.all(fetchPromises)).filter(Boolean)
+
+    // Merge into the Master List
+    fetchedMissing.forEach(p => masterMap.set(p.id, p))
+    products.value = Array.from(masterMap.values())
+
+  } catch (err) {
+    console.error('[products store] Store API getByIds failed', err)
+  }
+
+  return ids.map(id => masterMap.get(Number(id))).filter(Boolean)
 }
 
 // --- core fetchers ---

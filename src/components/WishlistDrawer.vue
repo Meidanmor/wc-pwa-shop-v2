@@ -11,7 +11,7 @@
           <img v-if="product.image" :src="product.image" :alt="product.name" style="width: 100px; height: 100px; object-fit: cover" />
           <div class="q-ml-sm column">
             <div>{{ product.name }}</div>
-            <q-btn label="Add to Cart" color="primary" @click="addToCart(product)" />
+            <q-btn label="Add to Cart" color="secondary" @click="addToCart(product)" />
           </div>
         </router-link>
         <q-btn class="absolute absolute-top-right" :icon="matClose" flat @click.stop.prevent="removeFromWishlist(product.id)" />

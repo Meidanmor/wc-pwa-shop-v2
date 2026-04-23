@@ -40,7 +40,7 @@
             :src="product.images[0]?.src"
             :srcset="product.images[0]?.srcset"
             :sizes="product.images[0]?.sizes"
-            spinner-color="primary"
+            spinner-color="secondary"
             fit="contain"
             style="cursor: zoom-in; max-height: 500px"
             @click="openLightbox(0)"

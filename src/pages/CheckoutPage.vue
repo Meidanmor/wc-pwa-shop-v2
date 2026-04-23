@@ -61,7 +61,7 @@
               <q-input v-model="couponCode" label="Coupon code" filled />
             </div>
             <div class="col-auto">
-              <q-btn label="Apply" color="primary" @click="applyCoupon" />
+              <q-btn label="Apply" color="secondary" @click="applyCoupon" />
               <q-btn
                   v-if="couponApplied"
                   label="Remove Coupon"
@@ -78,7 +78,7 @@
           </div>
           <div v-if="cart.state.coupons.length">
             <div v-for="coupon in cart.state.coupons" :key="coupon.code" class="q-mb-sm row items-center">
-              <q-chip color="primary" text-color="white" class="q-mr-sm">
+              <q-chip color="secondary" text-color="white" class="q-mr-sm">
                 {{ coupon.code }}
               </q-chip>
               <q-btn flat color="negative" label="Remove" @click="removeCoupon(coupon.code)" />
@@ -156,14 +156,14 @@
           <div class="text-h6">Total: {{ cartTotal }}</div>
         </q-card-section>
         <q-card-actions>
-          <q-btn label="Place Order" type="submit" color="primary" />
+          <q-btn label="Place Order" type="submit" color="secondary" />
         </q-card-actions>
       </q-card>
         </div>
     </q-form>
       <!-- Render loader and sync retry state -->
-      <div v-else-if="!checkoutReady && needsSync" class="centered">
-        <q-spinner color="primary" size="2em" />
+      <div v-else-if="!checkoutReady" class="centered">
+        <q-spinner color="secondary" size="2em" />
         <div>Synchronizing cart, please wait...</div>
       </div>
 
@@ -174,7 +174,7 @@
 
       <div v-if="syncError" class="text-negative q-mt-md text-center">
         {{ syncError }}
-        <q-btn label="Retry Sync" color="primary" @click="syncCart" class="q-ml-md" />
+        <q-btn label="Retry Sync" color="secondary" @click="syncCart" class="q-ml-md" />
       </div>
     </div>
 </template>
@@ -183,8 +183,31 @@
 import { ref, computed, reactive, onMounted } from 'vue';
 import cart from 'src/stores/cart';
 import { useRouter } from 'vue-router';
+import { useMeta } from 'quasar';
 import { fetchWithToken } from 'src/composables/useApiFetch.js';
 import GoogleLoginButton from 'src/components/GoogleLoginButton.vue';
+defineOptions({
+  async preFetch ({ ssrContext }) {
+    //const seo = await fetchSeoForPath('checkout')
+    const seo = {
+      title: 'Checkout',
+      description: 'Checkout page',
+      robots: 'noindex, follow'
+    }
+    if (ssrContext) {
+      ssrContext.seoData = seo
+    }
+  }
+})
+useMeta(() => {
+  return {
+    title: 'Checkout',
+    meta: {
+      robots: {name: 'robots', content: 'noindex, follow'},
+      description: {name: 'description', content: 'Checkout page'},
+    }
+  };
+});
 
 const syncError = ref(null);
 const token = ref('');
@@ -192,38 +215,67 @@ if(process.env.CLIENT) {
   token.value = localStorage.getItem('jwt_token');
   console.log(!!token.value);
 }
+/*defineOptions({
+  async preFetch () {
+    try {
+      // Force the blocking sync here so the state is
+      // already populated when the component renders
+      const cartFetch = await cart.fetchCartOnce(true)
+      console.log(cartFetch);
+    } catch (err) {
+      console.error('PreFetch sync failed:', err)
+    }
+  }
+})*/
 const checkoutReady = ref(false)
 const isLoggedIn = ref(!!token.value)
 const router = useRouter();
 
+// 2. FORM INITIALIZATION: Do it immediately based on the store
 const form = reactive({
-  first_name: '',
-  last_name: '',
-  email: '',
-  phone: '',
+  first_name: cart.state.cart_array?.shipping_address?.first_name || '',
+  last_name: cart.state.cart_array?.shipping_address?.last_name || '',
+  email: cart.state.cart_array?.billing_address?.email || '',
+  phone: cart.state.cart_array?.billing_address?.phone || '',
   shipping: {
-    address_1: '',
-    city: '',
-    postcode: '',
+    address_1: cart.state.cart_array?.shipping_address?.address_1 || '',
+    city: cart.state.cart_array?.shipping_address?.city || '',
+    postcode: cart.state.cart_array?.shipping_address?.postcode || '',
     country: 'IL',
   },
   billing: {
-    address_1: '',
-    city: '',
-    postcode: '',
+    address_1: cart.state.cart_array?.billing_address?.address_1 || '',
+    city: cart.state.cart_array?.billing_address?.city || '',
+    postcode: cart.state.cart_array?.billing_address?.postcode || '',
     country: 'IL',
   }
 });
 
+// 3. COMPUTED OPTIONS: Make shipping and payment methods computed
+// so they react instantly to the cart_array fetched in preFetch
+const shippingOptions = computed(() => {
+  const rates = cart.state.cart_array?.shipping_rates?.[0]?.shipping_rates || [];
+  return rates.map(rate => ({
+    label: `${rate.name} – ${formatCurrency(rate.price, { minorUnit: 2, prefix: '₪' })}`,
+    value: rate.rate_id
+  }));
+});
+
+const paymentMethods = computed(() => {
+  const methods = cart.state.cart_array?.payment_methods || [];
+  return methods.map(method => ({
+    label: method === 'bacs' ? 'Bank transfer' : method,
+    value: method
+  }));
+});
+
+const itemsCount = computed(() => cart.state.cart_array?.items_count || '0');
 const billingSameAsShipping = ref(true)
 const couponCode = ref('');
 const couponApplied = ref(false);
-const itemsCount = ref("0");
 const couponError = ref(null);
 const paymentMethod = ref('bacs');
-const paymentMethods = ref([]);
 const selectedShippingRateId = ref(null);
-const shippingOptions = ref([]);
 const cartItems = computed(() => cart.state.cart_array.items);
 const cartTotal = computed(() => {
   const total = cart.state.totals?.total_price || '0';
@@ -246,18 +298,18 @@ const initializeFormFromCart = async () => {
     return
   }
 
-  paymentMethods.value = []
+  //paymentMethods.value = []
 
-  if (Array.isArray(cartData.payment_methods)) {
+  /*if (Array.isArray(cartData.payment_methods)) {
     cartData.payment_methods.forEach(method => {
       paymentMethods.value.push({
         label: method === 'bacs' ? 'Bank transfer' : method,
         value: method
       })
     })
-  }
+  }*/
 
-  itemsCount.value = cartData.items_count || '0'
+  //itemsCount.value = cartData.items_count || '0'
 
   const billing = cartData.billing_address || {}
   const shipping = cartData.shipping_address || {}
@@ -346,16 +398,16 @@ const removeCoupon = () => cart.removeCoupon(couponCode.value);
 const fetchShippingRates = async () => {
   if (!cart.state.cart_array) return
 
-  const rates = cart.state.cart_array.shipping_rates?.[0]?.shipping_rates || []
+  //const rates = cart.state.cart_array.shipping_rates?.[0]?.shipping_rates || []
 
-  shippingOptions.value = rates.map(rate => ({
+  /*shippingOptions.value = rates.map(rate => ({
     label: `${rate.name} – ${formatCurrency(rate.price, {
       minorUnit: 2,
       decimalSeparator: '.',
       prefix: '₪'
     })}`,
     value: rate.rate_id
-  }))
+  }))*/
 
   if (shippingOptions.value.length) {
     selectedShippingRateId.value ??= shippingOptions.value[0].value
@@ -488,21 +540,24 @@ const needsSync = computed(() => {
 })
 
 onMounted(async () => {
-  checkoutReady.value = false
+  // Start the loading state
+  checkoutReady.value = false;
 
-  // Ensure server cart exists at least once
-  await cart.fetchCartOnce()
+  try {
+    // We call fetchCartOnce with 'true' to force a blocking sync
+    // This ensures cart_array is 100% accurate before we proceed
+    //await cart.fetchCartOnce(true);
 
-  if (needsSync.value) {
-    await syncCart()
-    if (syncError.value) return
+    // Now that the server and local are identical:
+    await initializeFormFromCart();
+    await fetchShippingRates();
+
+    checkoutReady.value = true;
+  } catch (err) {
+    console.error('Initial sync failed:', err);
+    syncError.value = "Could not sync your cart. Please check your connection.";
   }
-
-  await initializeFormFromCart()
-  await fetchShippingRates()
-
-  checkoutReady.value = true
-})
+});
 </script>
 
 <style scoped>

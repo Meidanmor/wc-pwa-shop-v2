@@ -7,7 +7,16 @@ const routes = [
       { path: 'product/:slug', component: () => import('pages/ProductPage.vue') },
       { path: 'product-category/:slug', component: () => import('pages/CategoryPage.vue') },
       { path: 'cart', component: () => import('pages/CartPage.vue') },
-      { path: 'checkout',component: () => import('pages/CheckoutPage.vue')},
+      {
+        path: 'checkout',
+        component: () => import('pages/CheckoutPage.vue'),
+        beforeEnter: async (to, from, next) => {
+          const cartStore = (await import('src/stores/cart')).default;
+          // Perform the heavy lifting before the route changes
+          await cartStore.fetchCartOnce(true);
+          next();
+        }
+      },
       { path: 'products', name: 'products', component: () => import('pages/ProductsPage.vue') },
       { path: 'thank-you', name: 'thank-you', component: () => import('pages/ThankYouPage.vue') },
       { path: 'my-account', name: 'my-account', component: () => import('pages/AccountPage.vue') },

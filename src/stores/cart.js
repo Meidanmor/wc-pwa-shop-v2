@@ -21,7 +21,8 @@ const state = reactive({
   loading: { cart: false, quickbuy: false, wishlist: false },
   error: null,
   wishlist_items: {},
-  offline: typeof navigator !== 'undefined' ? !navigator.onLine : true,
+  offline: typeof window !== 'undefined' ? !navigator.onLine : false, // Assume false on server
+  //offline: typeof navigator !== 'undefined' ? !navigator.onLine : true,
   drawerOpen: false,
   synced: false, // <--- NEW
   // ADD a getter:
@@ -32,21 +33,42 @@ const state = reactive({
 /* -------------------------
    Helpers (robust)
    ------------------------- */
-let cartFetchPromise = null
-
-async function fetchCartOnce () {
-  if (cartFetchPromise) return cartFetchPromise
+// Add a variable to track the sync promise specifically
+let cartFetchPromise = null;
+async function fetchCartOnce(forceSync = false) {
+  // 1. If we are already fetching/syncing, return that promise
+  if (cartFetchPromise) return cartFetchPromise;
 
   cartFetchPromise = (async () => {
     try {
-      await fetchCart()
-    } finally {
-      // allow refetch only if explicitly forced
-    }
-  })()
+      // 2. Load what we have locally first for immediate UI
+      loadLocalCart();
 
-  return cartFetchPromise
+      if (state.offline) {
+        return state.cart_array;
+      }
+
+      // 3. If we're going to checkout, we MUST sync before resolving
+      if (forceSync || needsSyncComputed.value) {
+        return await syncLocalCartWithServer();
+      } else {
+        // Just a standard refresh for non-checkout pages
+        return await fetchCart();
+      }
+    } finally {
+      cartFetchPromise = null; // Reset so future calls can refresh
+    }
+  })();
+
+  return cartFetchPromise;
 }
+
+// Helper to check sync status without the computed overhead in the store
+const needsSyncComputed = computed(() => {
+  if (state.offline) return false;
+  if (state.synced === false) return true;
+  return !localAndServerSignaturesEqual();
+});
 
 function getMaxAllowed(item) {
   if (!item) return Infinity

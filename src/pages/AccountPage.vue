@@ -11,7 +11,7 @@
     </div>
 
     <div v-else>
-      <q-tabs @touchstart.stop @mousedown.stop :right-icon="matChevronLeft" :left-icon="matChevronRight" v-model="tab" class="text-primary" active-color="primary" align="justify">
+      <q-tabs @touchstart.stop @mousedown.stop :right-icon="matChevronLeft" :left-icon="matChevronRight" v-model="tab" class="text-secondary" active-bg-color="secondary" active-color="primary" align="justify">
         <q-tab name="dashboard" label="Dashboard" />
         <q-tab name="orders" label="My Orders" />
         <q-tab name="details" label="Account Details" />
@@ -24,7 +24,7 @@
         <q-tab-panel name="dashboard">
           <h2 class="text-h4">Dashboard</h2>
           <div v-if="userData">Welcome, {{ userData?.first__name }} {{ userData?.last__name }}</div>
-          <div v-else> <q-spinner color="primary" size="2em" /> </div>
+          <div v-else> <q-spinner color="secondary" size="2em" /> </div>
         </q-tab-panel>
         <q-tab-panel name="orders"><OrdersSection :token="token" /></q-tab-panel>
         <q-tab-panel name="details"><AccountDetails :token="token" /></q-tab-panel>
@@ -98,5 +98,9 @@ onMounted(() => {
   font-size: 10px;
   transform: translateY(-5px);
 }
+div.q-tab-panels {
+  background: transparent;
+}
 /* purgecss end ignore */
+
 </style>

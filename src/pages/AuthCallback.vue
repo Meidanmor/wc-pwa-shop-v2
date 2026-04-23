@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md flex flex-center">
-    <q-spinner size="3em" color="primary" />
+    <q-spinner size="3em" color="secondary" />
   </q-page>
 </template>
 

@@ -4,7 +4,7 @@
 <q-btn
   fab
   class="fixed-bottom-left q-mb-md q-ml-md z-max"
-  color="primary"
+  color="secondary"
   :aria-label="visible ? 'Close chat' : 'Open chat'"
   @click="visible = !visible"
 >

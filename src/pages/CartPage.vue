@@ -31,6 +31,30 @@
 <script setup>
 import cart from 'src/stores/cart';
 import { computed } from 'vue';
+import { useMeta } from 'quasar';
+defineOptions({
+  async preFetch ({ ssrContext }) {
+    //const seo = await fetchSeoForPath('checkout')
+    const seo = {
+      title: 'Cart',
+      description: 'Cart page',
+      robots: 'noindex, follow'
+    }
+    if (ssrContext) {
+      ssrContext.seoData = seo
+    }
+  }
+})
+useMeta(() => {
+  return {
+    title: 'Cart',
+    meta: {
+      robots: {name: 'robots', content: 'noindex, follow'},
+      description: {name: 'description', content: 'Cart page'},
+    }
+  };
+});
+
 
 const cartItems = computed(() => cart.state.items);
 </script>
