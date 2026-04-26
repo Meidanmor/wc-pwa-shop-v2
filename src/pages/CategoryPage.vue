@@ -6,9 +6,16 @@
           <q-breadcrumbs-el><span v-html="selectedCategoryOBJ?.name"></span></q-breadcrumbs-el>
         </q-breadcrumbs>
 
-      <h2 v-html="selectedCategoryOBJ?.name || 'Products'"></h2>
+      <h1 v-html="selectedCategoryOBJ?.name || 'Products'"></h1>
+      <div class="archive-layout flex no-wrap">
+      <div class="filters-wrap flex" :class="{ 'shown': filtersOpen }" >
+        <q-btn
+  v-if="isHydrated && $q.screen.width <= 767"
+  :icon="matClose"
+  color="secondary"
+  @click="filtersOpen = false"
+/>
       <!-- Search and Filter -->
-      <div class="row q-col-gutter-md q-mb-md">
         <div class="col-xs-12 col-md-6" v-if="!isHydrated">
           <q-skeleton type="rect" class="q-mb-md"/>
         </div>
@@ -21,21 +28,18 @@
         </div>
 
         <div class="col-xs-12 col-md-6" v-else>
-          <q-select
-            filled
-            v-model="selectedCategory"
-            :options="categoryOptions"
-            label="Filter by category"
-            emit-value
-            map-options
-            clearable
-            :dropdown-icon="matArrowDropDown"
-            :loading-icon="matAutorenew"
-            :clear-icon="matClose"
-          />
+          <q-card class="q-pa-md q-mb-md">
+            <div class="text-subtitle1 q-mb-sm">
+              Filter by Category
+            </div>
+            <q-option-group
+                v-model="selectedCategory"
+                :options="categoryOptions"
+                type="checkbox"
+                color="secondary"
+            />
+          </q-card>
         </div>
-
-      </div>
 
       <div class="q-pa-md q-mb-md" v-if="!isHydrated || isHydrated && !priceMin">
         <q-skeleton type="rect" class="q-mb-md"/>
@@ -53,18 +57,47 @@
               label-always
               label
               dense
-              color="primary"
+              color="secondary"
               :step="0.01"
               @change="onPriceChange"
           />
         </q-card>
 
+      </div>
+
+      <div class="products-wrap">
+        <div class="flex justify-between q-mb-md total-products">
       <!-- Total Products -->
       <div v-if="totalProducts" class="text-subtitle1 q-mb-sm">
         Found {{ totalProducts || 0 }} product{{ totalProducts === 1 ? '' : 's' }}
       </div>
 
-      <div v-if="productsStore.productsLoading.value && isHydrated" class="row q-col-gutter-md">
+        </div>
+
+        <div class="flex justify-between q-mb-md sticky">
+          <q-select
+  filled
+  v-model="sortBy"
+  label="Sort by"
+  emit-value
+  map-options
+  :options="sortOptions"
+  :dropdown-icon="matArrowDropDown"
+  :loading-icon="matAutorenew"
+  :clear-icon="matClose"
+  color="secondary"
+
+/>
+          <q-btn
+  v-if="isHydrated && $q.screen.width <= 767"
+  :icon="matFilterList"
+  label="Filters"
+  color="secondary"
+  @click="filtersOpen = !filtersOpen"
+/>
+        </div>
+
+      <div v-if="productsStore.productsLoading.value && isHydrated" class="products-inner row q-col-gutter-md">
   <div
     v-for="n in 6"
     :key="'skeleton-' + n"
@@ -73,7 +106,7 @@
     <q-card class="my-card full-height">
 
       <!-- Image skeleton -->
-      <q-skeleton height="300px" square />
+      <q-skeleton height="250px" square />
 
       <q-card-section>
         <!-- Title -->
@@ -92,46 +125,14 @@
     </q-card>
   </div>
 </div>
-      <div v-else-if="paginatedProducts.length" class="row q-col-gutter-md">
+      <div v-else-if="paginatedProducts.length" class="products-inner row q-col-gutter-md">
         <!-- Product Grid -->
         <div
           v-for="product in paginatedProducts"
           :key="product.id"
           class="col-xs-12 col-sm-6 col-md-4 relative-position"
         >
-          <div class="item-loop-wl absolute">
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
-          </div>
-
-          <q-card class="my-card full-height">
-            <q-img
-            :img-src="product.images[0]?.src"
-            :src="product.images[0]?.src"
-            :srcset="product.images[0]?.srcset"
-            :sizes="product.images[0]?.sizes"
-            :alt="product.name"
-            height="300px"
-            width="auto"
-            class="rounded-borders"
-            />
-            <q-card-section>
-              <div class="text-h6">{{ product.name }}</div>
-              <div class="text-subtitle2" v-html="product.price_html" />
-            </q-card-section>
-            <q-card-actions>
-              <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
-              <q-btn v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="primary" @click="addToCart(product)" />
-              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" :to="`/product/${getSlugFromPermalink(product.permalink)}`" label="Choose options" color="primary" />
-              <div v-else>Out of stock</div>
-              <q-btn
-                label="View"
-                color="secondary"
-                :to="`/product/${getSlugFromPermalink(product.permalink)}`"
-                flat
-              />
-            </q-card-actions>
-          </q-card>
+          <ProductCard :product="product" />
         </div>
       </div>
       <!-- Empty -->
@@ -140,7 +141,7 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="q-mt-lg flex flex-center">
+      <div v-if="totalPages > 1" class="q-mt-lg flex flex-center pagination-btns">
         <q-pagination
             v-model="currentPage"
             :max="totalPages || 1"
@@ -149,9 +150,13 @@
             direction-links
             :icon-prev="matKeyboardArrowLeft"
             :icon-next="matKeyboardArrowRight"
-            color="primary"
+            color="secondary"
             @update:model-value="scrollToTop"
         />
+      </div>
+
+      </div>
+
       </div>
 
     </div>
@@ -161,19 +166,15 @@
 <script setup>
 import { ref, computed, onMounted, watch, useSSRContext } from 'vue'
 import api from 'src/boot/woocommerce'
-import cart from 'src/stores/cart'
 import { useQuasar, useMeta, scroll } from 'quasar'
 import { useRoute } from 'vue-router'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFavorite, matFavoriteBorder } from '@quasar/extras/material-icons'
+import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFilterList } from '@quasar/extras/material-icons'
+import ProductCard from 'src/components/ProductCard.vue'
 
 const $q = useQuasar()
 const { setVerticalScrollPosition } = scroll
-
-async function addToWishlist(objID = 0) {
-  await cart.toggleWishlistItem(objID, $q);
-}
 
 function scrollToTop() {
   // Option A: Smooth scroll using Quasar utility (Best feel)
@@ -185,14 +186,26 @@ function scrollToTop() {
 }
 // Refs and state
 const categories = ref([])
-const selectedCategory = ref(null)
-const selectedCategoryOBJ = ref({})
+const selectedCategory = ref([])
 const search = ref('')
 const currentPage = ref(1)
 const perPage = 6
+const sortBy = ref('menu_order')
+const filtersOpen = ref(false)
+const sortOptions = [
+  { label: 'Default', value: 'menu_order' },
+  { label: 'Newest', value: 'date_desc' },
+  { label: 'Price: Low to High', value: 'price_asc' },
+  { label: 'Price: High to Low', value: 'price_desc' },
+  { label: 'Name: A to Z', value: 'title_asc' },
+  { label: 'Name: Z to A', value: 'title_desc' },
+  { label: 'Popularity', value: 'popularity' },
+  { label: 'Rating', value: 'rating' }
+]
+
 const route = useRoute()
 const categorySlug = ref(route.params.slug || null)
-
+const selectedCategoryOBJ = ref(null)
 // Fetch SEO data during SSR
 // 🟢 Run on SSR only
 // Inside your Page or Layout
@@ -266,7 +279,7 @@ if(process.env.SERVER) {
   const ssr = useSSRContext()
   categories.value = ssr.categoriesData
   selectedCategoryOBJ.value = ssr.selectedCategoryData
-  selectedCategory.value = ssr.selectedCategoryData.id
+  selectedCategory.value = [ssr.selectedCategoryData.id]
 }
 
 if (process.env.CLIENT) {
@@ -320,7 +333,7 @@ if (process.env.CLIENT) {
     selectedCategoryOBJ.value = currentCat
   }
 
-  selectedCategory.value = selectedCategoryOBJ.value?.id || null
+  selectedCategory.value = [selectedCategoryOBJ.value?.id]
 
   // ----------------------------------
   // 4. Decide: SSR reuse OR fresh fetch
@@ -425,22 +438,43 @@ if (process.env.CLIENT && window.__PAGES_TOTAL__) {
   productsStore.totalPages.value = window.__PAGES_TOTAL__
 }
 
-// Add to cart handler
-const addToCart = (product) => {
-  cart.add(product.id, 1)
-  console.log('Added to cart:', product.id)
+// Watch price range
+
+function getSortParams(sort) {
+  switch (sort) {
+    case 'price_asc':
+      return { orderby: 'price', order: 'asc' }
+
+    case 'price_desc':
+      return { orderby: 'price', order: 'desc' }
+
+    case 'date_desc':
+      return { orderby: 'date', order: 'desc' }
+
+    case 'title_asc':
+      return { orderby: 'title', order: 'asc' }
+
+    case 'title_desc':
+      return { orderby: 'title', order: 'desc' }
+
+    case 'popularity':
+      return { orderby: 'popularity', order: 'desc' }
+
+    case 'rating':
+      return { orderby: 'rating', order: 'desc' }
+
+    default:
+      return { orderby: 'menu_order', order: 'desc' }
+  }
 }
 
-// Slug from permalink
-const getSlugFromPermalink = (permalink) => {
-  return permalink.split('/').filter(Boolean).pop()
-}
-
+let requestId = 0
 watch(
   () => ({
     category: selectedCategory.value,
     search: search.value,
     page: currentPage.value,
+    sort: sortBy.value,
     priceTrigger: priceChanged.value // ✅ only trigger when user releases slider
   }),
   async (filters, prev) => {
@@ -451,15 +485,31 @@ watch(
     ) return
     if (isFetching.value) return
 
-    const categoryChanged = prev && filters.category !== prev.category
+    const currentRequest = ++requestId
 
-    if (categoryChanged) {
+const categoryChanged =
+  prev &&
+  JSON.stringify([...filters.category].sort()) !==
+  JSON.stringify([...prev.category].sort())
+    /*if (categoryChanged) {
       console.log('Category changed → fetching price meta')
 
       productsStore.productsLoading.value = true
       await fetchPriceMeta(filters.category)
 
       //return
+    }*/
+    if (categoryChanged) {
+      productsStore.productsLoading.value = true
+
+      await fetchPriceMeta(filters.category)
+
+      priceMin.value = pendingPriceRange.value.min
+      priceMax.value = pendingPriceRange.value.max
+      priceRange.value = {
+        min: pendingPriceRange.value.min,
+        max: pendingPriceRange.value.max
+      }
     }
 
     if (
@@ -474,22 +524,28 @@ watch(
     }
 
     isFetching.value = true
-
+if (currentRequest !== requestId) return
     console.log('Products fetch watcher triggered!!!')
-const source = categoryChanged
+/*const source = categoryChanged
   ? pendingPriceRange.value
-  : priceRange.value
+  : priceRange.value*/
+    const source = priceRange.value
 
 const min = Math.floor(source.min * 100)
 const max = Math.ceil(source.max * 100)
+    const sortParams = getSortParams(filters.sort)
+
     await productsStore.preFetchProducts({
       api: true,
       page: filters.page,
       per_page: perPage,
       min_price: min,
       max_price: max,
-      category: filters.category,
-      search: filters.search
+      category: filters.category.length
+          ? filters.category.join(',')
+          : null,
+      search: filters.search,
+      ...sortParams
     })
 
     // 4. NOW update UI together 💥
@@ -514,7 +570,7 @@ watch(
     const cat = categories.value.find(c => c.slug === newSlug)
 
     if (cat) {
-      selectedCategory.value = cat.id
+      selectedCategory.value = [cat.id]
       selectedCategoryOBJ.value = cat
 
       // 🔥 FIX STARTS HERE
@@ -573,7 +629,7 @@ onMounted(async () => {
     const cat = categories.value.find(c => c.slug === categorySlug.value)
 
     if (cat) {
-      selectedCategory.value = cat.id
+      selectedCategory.value = [cat.id]
       selectedCategoryOBJ.value = cat
     }
   }
@@ -603,9 +659,102 @@ async function fetchPriceMeta(category = null) {
 </script>
 
 <style scoped>
+.q-breadcrumbs,
+h1{
+  margin: 20px 0;
+}
+
+.q-breadcrumbs,
+h1,
+.products-wrap > row,
+.total-products {
+    padding: 0 16px;
+}
+
+.archive-layout.flex {
+  column-gap: 20px;
+}
 .my-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+}
+.products-wrap {
+  flex: 1;
+  padding-bottom: 20px;
+}
+
+.products-inner {
+  flex: 100%;
+}
+.filters-wrap {
+  width: 25%;
+  row-gap: 25px;
+  flex-direction: column;
+  position: sticky;
+  top: 70px;
+  height: fit-content;
+}
+
+.products-wrap .q-select {
+  min-width: 160px;
+}
+
+.q-checkbox[aria-checked="true"] .q-checkbox__label {
+    font-weight: 600;
+}
+
+@media(max-width: 767px){
+  .filters-wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 10px;
+    z-index: 9999;
+    height: 100dvh;
+    background: var(--q-primary);
+    width: 85%;
+    box-shadow: 0 0 50px #00000050;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition: 0.3s ease;
+  }
+  .filters-wrap.shown {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .flex.justify-between.q-mb-md.sticky {
+    position: sticky;
+    top: 58px;
+    z-index: 9;
+    background: var(--q-primary);
+    padding: 10px;
+  }
+
+  .products-inner {
+    padding: 20px 16px 0;
+  }
+
+}
+
+@media(min-width: 768px){
+  .products-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .flex.justify-between.q-mb-md {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+  }
+  .pagination-btns {
+    width: 100%;
+    margin-bottom: 20px;
+  }
 }
 </style>

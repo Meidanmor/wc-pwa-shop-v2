@@ -135,36 +135,7 @@
             <div v-if="fp.__placeholder" class="q-card invisible-card"></div>
 
             <div v-else>
-
-              <router-link :to="`/product/${getSlugFromPermalink(fp.permalink)}`">
-          <div class="item-loop-wl absolute">
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => fp.id === obj.id)" @click.prevent="addToWishlist(fp.id)" color="accent" :icon="matFavorite" />
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click.prevent="addToWishlist(fp.id)" color="accent" :icon="matFavoriteBorder" />
-          </div>
-
-          <q-card class="my-card full-height">
-            <q-img
-            :img-src="fp.images[0]?.src"
-            :src="fp.images[0]?.src"
-            :srcset="fp.images[0]?.srcset"
-            :sizes="fp.images[0]?.sizes"
-            :alt="fp.name"
-            height="150px"
-            width="100%"
-            class="rounded-borders"
-            />
-            <div class="flex q-pa-md">
-              <div class="full-width q-mb-sm">
-              <div>{{ fp.name }}</div>
-              <div class="text-subtitle2" v-html="fp.price_html" />
-              </div>
-              <div v-if="fp.status && fp.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
-              <q-btn v-else-if="fp.is_in_stock && fp.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(fp)" />
-              <q-btn v-else-if="fp.is_in_stock && fp.type === 'variable'" :to="`/product/${getSlugFromPermalink(fp.permalink)}`" label="Choose options" color="secondary" />
-              <div v-else>Out of stock</div>
-              </div>
-          </q-card>
-          </router-link>
+          <ProductCard :product="fp" />
             </div>
           </div>
         </div>
@@ -401,19 +372,19 @@ ingredient is ethically harvested at its peak potency.</p>
 import { ref, onMounted, watch, computed, useSSRContext } from 'vue'
 import { useQuasar, useMeta } from 'quasar'
 import { useRoute } from 'vue-router' // Standard import is tiny
-import cart from 'src/stores/cart'
 import productsStore from 'src/stores/products'
-import { matChevronLeft, matChevronRight, matFavoriteBorder, matFavorite, matStar } from '@quasar/extras/material-icons'
+import { matChevronLeft, matChevronRight, matStar } from '@quasar/extras/material-icons'
 import { defineAsyncComponent } from 'vue'
 import { loadPageConfig } from 'src/utils/config-loader'
 import { useCarouselKeyboard } from 'src/composables/useCarouselKeyboard'
+import ProductCard from 'src/components/ProductCard.vue'
+
 // Add this here
 
 // Instead of standard imports, do this:
 const QCarousel = defineAsyncComponent(() => import('quasar').then(m => m.QCarousel))
 const QCarouselSlide = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselSlide))
 const QCarouselControl = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselControl))
-const QCard = defineAsyncComponent(() => import('quasar').then(m => m.QCard))
 const QInput = defineAsyncComponent(() => import('quasar').then(m => m.QInput))
 
 const isHydrated = ref(false)
@@ -554,10 +525,6 @@ const visibleStaticItems = computed(() => {
 // ----------------- Setup -----------------
 const API_BASE = import.meta.env.VITE_API_BASE
 
-async function addToWishlist(objID = 0) {
-  await cart.toggleWishlistItem(objID, $q);
-}
-
 const slideChunks = ref([])
 const testimonialSlideChunks = ref([])
 const slide = ref(0)
@@ -668,15 +635,6 @@ const subscribeNewsletter = () => {
     $q.notify({ type: 'negative', message: 'Please enter a valid email.' })
   }
 }
-
-const addToCart = (product) => {
-  cart.add(product.id, 1)
-}
-
-const getSlugFromPermalink = (permalink) =>
-  permalink.split('/').filter(Boolean).pop()
-
-
 
 // ----------------- Mounted -----------------
 onMounted(async() => {

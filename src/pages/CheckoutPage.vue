@@ -133,6 +133,7 @@
           v-model="selectedShippingRateId"
           :options="shippingOptions"
           type="radio"
+          color="secondary"
           @update:model-value="onShippingMethodChange"
         />
       </q-card-section>
@@ -146,6 +147,7 @@
             v-model="paymentMethod"
             :options="paymentMethods"
             type="radio"
+            color="secondary"
           />
         </q-card-section>
       </q-card>

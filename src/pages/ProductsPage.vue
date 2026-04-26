@@ -133,35 +133,7 @@
           :key="product.id"
           class="col-xs-12 col-sm-6 col-md-4 relative-position"
         >
-          <router-link :to="`/product/${getSlugFromPermalink(product.permalink)}`">
-          <div class="item-loop-wl absolute">
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
-          </div>
-
-          <q-card class="my-card full-height">
-            <q-img
-            :img-src="product.images[0]?.src"
-            :src="product.images[0]?.src"
-            :srcset="product.images[0]?.srcset"
-            :sizes="product.images[0]?.sizes"
-            :alt="product.name"
-            height="250px"
-            width="auto"
-            class="rounded-borders"
-            />
-            <div class="flex q-pa-md">
-              <div class="full-width q-mb-sm">
-              <div>{{ product.name }}</div>
-              <div class="text-subtitle2" v-html="product.price_html" />
-              </div>
-              <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
-              <q-btn v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(product)" />
-              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" :to="`/product/${getSlugFromPermalink(product.permalink)}`" label="Choose options" color="secondary" />
-              <div v-else>Out of stock</div>
-              </div>
-          </q-card>
-          </router-link>
+          <ProductCard :product="product" />
         </div>
       </div>
       <!-- Empty -->
@@ -195,18 +167,14 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import api from 'src/boot/woocommerce'
-import cart from 'src/stores/cart'
 import { useQuasar, useMeta, scroll } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFavorite, matFavoriteBorder, matFilterList } from '@quasar/extras/material-icons'
+import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFilterList } from '@quasar/extras/material-icons'
+import ProductCard from 'src/components/ProductCard.vue'
 
 const $q = useQuasar()
 const { setVerticalScrollPosition } = scroll
-
-async function addToWishlist(objID = 0) {
-  await cart.toggleWishlistItem(objID, $q);
-}
 
 function scrollToTop() {
   // Option A: Smooth scroll using Quasar utility (Best feel)
@@ -372,17 +340,6 @@ if (process.env.CLIENT && window.__PRODUCTS_TOTAL__) {
 }
 if (process.env.CLIENT && window.__PAGES_TOTAL__) {
   productsStore.totalPages.value = window.__PAGES_TOTAL__
-}
-
-// Add to cart handler
-const addToCart = (product) => {
-  cart.add(product.id, 1)
-  console.log('Added to cart:', product.id)
-}
-
-// Slug from permalink
-const getSlugFromPermalink = (permalink) => {
-  return permalink.split('/').filter(Boolean).pop()
 }
 
 const priceChanged = ref(0)
