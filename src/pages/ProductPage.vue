@@ -219,7 +219,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, useSSRContext } from 'vue'
+import { ref, onMounted, computed, useSSRContext, watch } from 'vue'
 import { useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
@@ -612,20 +612,12 @@ onBeforeRouteUpdate(async (to) => {
   try {
     await fetchProduct(to.params.slug)
 
-    fetchSeoForPath(`product/${to.params.slug}`)
-        .then(data => {
-          seoData.value = data
-        })
-        .catch(err => {
-          console.error('SEO fetch failed', err)
-        })
-
   } catch (e) {
     console.error(e)
   }
 })
 
-/*const pageLoading = ref(false)
+
 
 watch(
   () => route.params.slug,
