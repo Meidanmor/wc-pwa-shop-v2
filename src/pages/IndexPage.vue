@@ -454,10 +454,7 @@ useMeta(() => {
   // If data isn't ready yet, return an empty object or just the default title.
   // This prevents the "Flicker" and avoids the Vue warning.
   if (!seo) {
-    return {
-      // You can return a generic title or nothing at all
-      title: ''
-    };
+    return {};
   }
 
   // Once seoData.value is populated, Quasar will automatically
@@ -647,12 +644,8 @@ onMounted(async() => {
       if (freshConfig) homeSettings.value = freshConfig
     }
 
-      // 1. DATA FETCHING (Parallel)
-      const {fetchSeoForPath} = await import('src/composables/useSeo');
-      // 2. SEO UPDATE
-      seoData.value = await fetchSeoForPath('homepage');
-
 isHydrated.value = false
+
   if (process.env.CLIENT) {
     // If it's a SPA navigation, hydrate immediately for UX
     //const hasSsrData = !!window.__PRODUCTS_DATA__;
@@ -700,6 +693,11 @@ watch(isHydrated, async (val) => {
     await recomputeSlides(true);
 
     await recomputeTestimonialSlides(true);
+    // 1. DATA FETCHING (Parallel)
+    const {fetchSeoForPath} = await import('src/composables/useSeo');
+    // 2. SEO UPDATE
+    seoData.value = await fetchSeoForPath('homepage');
+
     // 5. RESPONSIVE LISTENER
     // We only start listening to screen/store changes AFTER initial hydration is done
 
