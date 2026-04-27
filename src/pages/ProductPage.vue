@@ -617,14 +617,11 @@ onBeforeRouteUpdate(async (to) => {
   }
 })
 
-
-
 watch(
   () => route.params.slug,
   async (newSlug, oldSlug) => {
     if (newSlug === oldSlug) return
 
-    pageLoading.value = true
 
     selectedVariation.value = null
     selectedVariations.value = {}
@@ -632,14 +629,13 @@ watch(
     quantity.value = 1
     activeSlide.value = 0
 
-    await fetchProduct(newSlug)
+    //await fetchProduct(newSlug)
 
-    pageLoading.value = false
 
     fetchSeoForPath(`product/${newSlug}`)
       .then(data => seoData.value = data)
   }
-)*/
+)
 
 const wheelZoom = (e) => {
   e.preventDefault()
