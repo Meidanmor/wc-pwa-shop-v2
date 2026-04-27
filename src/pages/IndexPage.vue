@@ -55,7 +55,7 @@
               <img
                   loading="lazy"
                 width="300"
-                height="150"
+                height="250"
                 :src="product.images?.[0]?.src|| ''"
                 :srcset="product.images?.[0]?.srcset || ''"
                 :sizes="product.images?.[0]?.sizes || ''"

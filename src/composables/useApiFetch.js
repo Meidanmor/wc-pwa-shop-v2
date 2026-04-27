@@ -1,41 +1,41 @@
-export async function fetchWithToken(url, options = {}) {
-  const isClient = typeof window !== 'undefined';
+let authExpiredTriggered = false
 
-  // 1. Prepare Headers
+export async function fetchWithToken(url, options = {}) {
+  const isClient = typeof window !== 'undefined'
+
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {})
-  };
-
-  if (isClient) {
-    const token = localStorage.getItem('jwt_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // 2. Perform the Fetch
+  if (isClient) {
+    const token = localStorage.getItem('jwt_token')
+    if (token) headers.Authorization = `Bearer ${token}`
+  }
+
   const response = await fetch(url, {
     credentials: 'include',
     ...options,
     headers
-  });
+  })
 
-  // 3. Handle Expired Token (Interception)
   if ((response.status === 401 || response.status === 403) && isClient) {
-// 🟢 CRITICAL CHECK:
-    // Is this a data fetch or a JS/CSS file?
-    // We ONLY redirect if it's a data request (usually starts with http or /wp-json)
-    const isDataRequest = url.includes('wp-json') || !url.match(/\.(js|css|woff2?|png|jpg)$/);
+    console.log(await response.text());
+    const isDataRequest =
+      url.includes('wp-json') ||
+      !url.match(/\.(js|css|woff2?|png|jpg)$/)
 
-    if (isDataRequest && !window.location.pathname.includes('/login')) {
-      console.warn('Token expired. Clearing session...');
+    if (isDataRequest && !authExpiredTriggered) {
+      authExpiredTriggered = true
 
-      // We still use dynamic import to be safe with Quasar's boot order
-      const {clearUser} = await import('src/stores/user');
-      clearUser();
+      const { clearUser } = await import('src/stores/user')
+      clearUser()
 
-      window.location.href = '/my-account?reason=expired';
+      window.dispatchEvent(
+        new CustomEvent('auth-expired')
+      )
     }
   }
 
-  return response;
+  return response
 }

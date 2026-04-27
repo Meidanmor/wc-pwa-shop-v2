@@ -359,6 +359,7 @@ div#q-portal--dialog--1 {
     position: fixed;
     width: 100%;
     height: 100%;
+    pointer-events: auto;
 }
 .q-dialog button.q-btn {
   background: #ffffff;
@@ -456,5 +457,9 @@ footer .footer-bottom {
         margin-right: auto;
         margin-left: 30px;
     }
+}
+
+.q-card.q-dialog-plugin.expired-dialog {
+    background: #fff;
 }
 /* purgecss end ignore */

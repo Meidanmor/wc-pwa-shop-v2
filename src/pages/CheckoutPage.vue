@@ -335,8 +335,6 @@ const updateShippingAddress = async () => {
   try {
     const response = await fetchWithToken('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart/update-customer', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      credentials: 'include',
       body: JSON.stringify({
         billing_address: {
           first_name: form.first_name,
@@ -421,8 +419,6 @@ const onShippingMethodChange = async (newRateId) => {
     // Send selected shipping rate to WooCommerce
     await fetchWithToken('https://nuxt.meidanm.com/wp-json/wc/store/cart/select-shipping-rate', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${token.value}`},
-      credentials: 'include',
       body: JSON.stringify({package_id: 0, rate_id: newRateId})
     });
     // Re-fetch cart to get updated totals
