@@ -33,7 +33,7 @@ export default defineConfig((ctx) => {
       head: (val) => val.trim()
     },
     boot: [
-        { path: 'auth-expired', client: true } ,
+        //{ path: 'auth-expired', client: true } ,
         //{ path: 'push', client: true } ,
         //{ path: 'woocommerce', client: true } ,
         //{ path: 'products' } ,

@@ -40,6 +40,7 @@ import { defineAsyncComponent } from 'vue'
 const $q = useQuasar()
 
 const QCard = defineAsyncComponent(() => import('quasar').then(m => m.QCard))
+const QImg = defineAsyncComponent(() => import('quasar').then(m => m.QImg))
 
 defineProps({
   product: {

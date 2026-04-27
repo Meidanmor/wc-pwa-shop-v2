@@ -269,6 +269,7 @@ import { Platform } from 'quasar';
 import AiAssistant from "src/components/AiAssistant.vue";
 import initPush, { subscribeToWebPush, initNativePush, checkNativePermission } from 'src/boot/push.js'
 import { initLoadingBar } from 'boot/loading-bar'
+import { initAuthPopup } from 'boot/auth-expired'
 
 import { matShoppingCart,
   matFavoriteBorder,
@@ -466,6 +467,7 @@ onMounted(() => {
     }
 
     initLoadingBar(router)
+    initAuthPopup(router);
     // 1. ALWAYS initialize tracking (Abandoned Cart logic)
     // This doesn't ask for permission, it just sets up listeners.
     if ( typeof window !== 'undefined' || Platform.is.capacitor ) {
