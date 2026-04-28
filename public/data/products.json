@@ -12,9 +12,9 @@
         "description": "<p>Check</p>",
         "on_sale": true,
         "prices": {
-            "price": "45000",
+            "price": "44000",
             "regular_price": "50000",
-            "sale_price": "45000",
+            "sale_price": "44000",
             "price_range": null,
             "currency_code": "ILS",
             "currency_symbol": "\u20aa",
@@ -24,7 +24,7 @@
             "currency_prefix": "",
             "currency_suffix": "\u20aa"
         },
-        "price_html": "<del aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">500.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></del> <span class=\"screen-reader-text\">Original price was: 500.00&#8362;.</span><ins aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">450.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></ins><span class=\"screen-reader-text\">Current price is: 450.00&#8362;.</span>",
+        "price_html": "<del aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">500.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></del> <span class=\"screen-reader-text\">Original price was: 500.00&#8362;.</span><ins aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">440.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></ins><span class=\"screen-reader-text\">Current price is: 440.00&#8362;.</span>",
         "average_rating": "0",
         "review_count": 0,
         "images": [
