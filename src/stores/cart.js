@@ -10,7 +10,6 @@ const API_BASE = import.meta.env.VITE_STORE_API_BASE;
 const LOCAL_CART_KEY = 'local_cart_v1'
 const LEGACY_OFFLINE_KEY = 'offline_cart'
 
-
 const state = reactive({
   cart_array: null,
   local_cart: { items: [] },
@@ -637,7 +636,14 @@ async function add(productId, quantity = 1, variationId = null, variation = {}, 
   const apiItem = (state.cart_array?.items || []).find(i => itemSignature(i) === sigCandidate)
   if (apiItem) {
     const maxAllowed = getMaxAllowed(apiItem)
-    const intendedQty = (apiItem.quantity || 0) + quantity
+const existingItem = state.local_cart.items.find(
+  i => itemSignature(i) === sigCandidate && !i._removed
+)
+
+const currentQty = existingItem ? (existingItem.quantity || 0) : 0
+
+const intendedQty = currentQty + quantity
+//const intendedQty = (apiItem.quantity || 0) + quantity
     const clampQty = maxAllowed === Infinity ? intendedQty : Math.min(intendedQty, maxAllowed)
     if (clampQty <= (apiItem.quantity || 0)) {
       if ($q) $q.notify({ type: 'negative', message: 'Only 0 more available for this product.', icon: matError })
@@ -1188,6 +1194,16 @@ if (typeof window !== 'undefined') {
   })
   window.addEventListener('offline', () => {
     state.offline = true
+  })
+  window.addEventListener('storage', (e) => {
+    if (e.key === LOCAL_CART_KEY || e.key === LEGACY_OFFLINE_KEY) {
+      try {
+        state.local_cart.items = JSON.parse(e.newValue || '[]')
+        rebuildMergedView()
+      } catch (err) {
+        console.warn('[cart] storage sync failed', err)
+      }
+    }
   })
 }
 

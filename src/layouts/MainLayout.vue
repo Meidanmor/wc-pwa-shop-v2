@@ -257,6 +257,9 @@
         </div>
       </div>
     </footer>
+
+    <CookieBanner v-if="uiHydrated" />
+
   </q-layout>
 </template>
 
@@ -266,6 +269,7 @@ import cart from 'src/stores/cart'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Platform } from 'quasar';
+import CookieBanner from "src/components/CookieBanner.vue";
 import AiAssistant from "src/components/AiAssistant.vue";
 import initPush, { subscribeToWebPush, initNativePush, checkNativePermission } from 'src/boot/push.js'
 import { initLoadingBar } from 'boot/loading-bar'

@@ -37,5 +37,10 @@ export async function fetchWithToken(url, options = {}) {
     }
   }
 
+  const latestCartToken = response.headers.get('Cart-Token');
+  if (latestCartToken && latestCartToken !== localStorage.getItem('wc_cart_token')) {
+    localStorage.setItem('wc_cart_token', latestCartToken);
+  }
+
   return response
 }
