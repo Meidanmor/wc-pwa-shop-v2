@@ -407,7 +407,7 @@ defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
     const API_BASE =
   import.meta.env.SSR
-    ? process.env.API_BASE   // ✅ your server env (Vercel)
+    ? process.env.VITE_API_BASE   // ✅ your server env (Vercel)
     : import.meta.env.VITE_API_BASE // ✅ client env
 
     console.log('--- PreFetch Running for:', currentRoute.path)
