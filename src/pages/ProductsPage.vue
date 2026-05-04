@@ -129,11 +129,11 @@
       <div v-else-if="paginatedProducts.length" class="products-inner row q-col-gutter-md">
         <!-- Product Grid -->
         <div
-          v-for="product in paginatedProducts"
+          v-for="(product, index) in paginatedProducts"
           :key="product.id"
           class="col-xs-12 col-sm-6 col-md-4 relative-position"
         >
-          <ProductCard :product="product" />
+          <ProductCard :product="product" :priority="index < 3" />
         </div>
       </div>
       <!-- Empty -->

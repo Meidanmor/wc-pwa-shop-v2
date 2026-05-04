@@ -12,6 +12,8 @@
             :srcset="product.images[0]?.srcset"
             :sizes="product.images[0]?.sizes"
             :alt="product.name"
+            :loading="priority ? 'eager' : 'lazy'"
+            :fetchpriority="priority ? 'high' : 'auto'"
             height="250px"
             width="auto"
             class="rounded-borders"
@@ -46,7 +48,8 @@ defineProps({
   product: {
     type: Object,
     required: true
-  }
+  },
+  priority: Boolean
 })
 
 /*const isWishlisted = computed(() => {

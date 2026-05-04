@@ -596,6 +596,7 @@ onMounted(async() => {
       // If no SSR data → fetch
   if (!product.value || !product.value.id) {
     await fetchProduct(route.params.slug)
+    await enhanceProduct();
   }
     console.log('PWA Shell detected: Fetching SEO data from API...')
     try {
@@ -607,9 +608,9 @@ onMounted(async() => {
     }
   }
 
-  if (process.env.CLIENT) {
+  /*if (process.env.CLIENT) {
     await fetchWishlistData()
-  }
+  }*/
 })
 
 onBeforeRouteUpdate(async (to) => {

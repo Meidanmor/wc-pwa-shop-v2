@@ -128,11 +128,11 @@
       <div v-else-if="paginatedProducts.length" class="products-inner row q-col-gutter-md">
         <!-- Product Grid -->
         <div
-          v-for="product in paginatedProducts"
+          v-for="(product, index) in paginatedProducts"
           :key="product.id"
           class="col-xs-12 col-sm-6 col-md-4 relative-position"
         >
-          <ProductCard :product="product" />
+          <ProductCard :product="product" :priority="index < 3" />
         </div>
       </div>
       <!-- Empty -->
@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, useSSRContext, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, useSSRContext } from 'vue'
 import api from 'src/boot/woocommerce'
 import { useQuasar, useMeta, scroll } from 'quasar'
 import { useRoute } from 'vue-router'
@@ -512,6 +512,7 @@ if (process.env.CLIENT) {
 
   isReady.value = true
 }
+
 const paginatedProducts = computed(() => {
   return productsStore.products.value || []
 })
@@ -589,13 +590,6 @@ watch(
     priceTrigger: priceChanged.value // ✅ only trigger when user releases slider
   }),
   async (filters, prev) => {
-    const routeAtTrigger = route.fullPath
-
-    await nextTick() // ensure navigation has a chance to update
-
-    // 🚫 If route changed during trigger → cancel
-    if (route.fullPath !== routeAtTrigger) return
-
     if (
   !isReady.value ||
   priceRange.value.min === null ||
