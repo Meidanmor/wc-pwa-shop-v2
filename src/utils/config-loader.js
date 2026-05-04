@@ -7,8 +7,8 @@ export async function loadPageConfig(page, isPreview) {
   // --- SERVER SIDE LOGIC ---
   if (import.meta.env.SSR) {
     try {
-      const path = await import('path')
-      const fs = await import('fs')
+      /*const path = await import('path')
+      const fs = await import('fs')*/
 
       // 1. If Preview, fetch from WordPress API
       if (isPreview) {
@@ -25,13 +25,29 @@ export async function loadPageConfig(page, isPreview) {
       }
 
       // 2. If NOT Preview, read from local public folder (like products.js)
-      const filePath = path.join(process.cwd(), `public/config/${page}.json`);
+      /*const filePath = path.join(process.cwd(), `public/config/${page}.json`);
       if (fs.existsSync(filePath)) {
         const raw = fs.readFileSync(filePath, 'utf-8');
         return JSON.parse(raw);
+      }*/
+      const base =
+          process.env.SERVER
+              ? process.env.API_BASE   // your domain
+              : ''
+
+      const url = `${base}/config/${page}.json`
+
+      console.log(`[SSR] Fetching config via HTTP: ${url}`)
+
+      const response = await fetch(url, {
+        cache: 'no-store'
+      })
+
+      if (response.ok) {
+        return await response.json()
       }
 
-      console.warn(`[SSR] Config file not found at: ${filePath}`);
+      console.warn(`[SSR] Config file not found at: ${url}`);
       return {};
     } catch (err) {
       console.error('[SSR] loadPageConfig Error:', err.message);
