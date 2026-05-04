@@ -207,7 +207,11 @@ const sortOptions = [
 // Inside your Page or Layout
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
-    const API_BASE = process.env.VITE_API_BASE || ''
+    const API_BASE =
+  import.meta.env.SSR
+    ? process.env.API_BASE   // ✅ your server env (Vercel)
+    : import.meta.env.VITE_API_BASE // ✅ client env
+
     console.log('--- PreFetch Running for:', currentRoute.path)
     const seo = await fetchSeoForPath('shop')
 
