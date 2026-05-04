@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, useSSRContext } from 'vue'
+import { ref, computed, onMounted, watch, useSSRContext, nextTick } from 'vue'
 import api from 'src/boot/woocommerce'
 import { useQuasar, useMeta, scroll } from 'quasar'
 import { useRoute } from 'vue-router'
@@ -589,6 +589,13 @@ watch(
     priceTrigger: priceChanged.value // ✅ only trigger when user releases slider
   }),
   async (filters, prev) => {
+    const routeAtTrigger = route.fullPath
+
+    await nextTick() // ensure navigation has a chance to update
+
+    // 🚫 If route changed during trigger → cancel
+    if (route.fullPath !== routeAtTrigger) return
+
     if (
   !isReady.value ||
   priceRange.value.min === null ||
