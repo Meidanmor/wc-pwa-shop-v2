@@ -21,6 +21,8 @@ const isIgnoredRequest = (url) => {
 }
 export default defineSsrMiddleware(({ app, resolve, render, /*serve*/ }) => {
     app.get(resolve.urlPath('*'), (req, res) => {
+        console.log('SSR USER AGENT:', req.headers['user-agent']) // ✅ HERE
+
         if (isIgnoredRequest(req.url)) {
             return res.status(404).end()
         }
