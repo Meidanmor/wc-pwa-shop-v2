@@ -1,4 +1,9 @@
 export async function loadPageConfig(page, isPreview) {
+  const API_BASE =
+  import.meta.env.SSR
+    ? process.env.VITE_API_BASE
+    : import.meta.env.VITE_API_BASE
+
   // --- SERVER SIDE LOGIC ---
   if (import.meta.env.SSR) {
     try {
@@ -7,7 +12,7 @@ export async function loadPageConfig(page, isPreview) {
 
       // 1. If Preview, fetch from WordPress API
       if (isPreview) {
-        const url = `${import.meta.env.VITE_API_BASE}/wp-json/shop-builder/v1/preview/${page}`;
+        const url = `${API_BASE}/wp-json/shop-builder/v1/preview/${page}`;
         console.log(`[SSR] Fetching Preview from API: ${url}`);
 
         // We use a dynamic import for 'node-fetch' or similar if global fetch isn't available
@@ -38,7 +43,7 @@ export async function loadPageConfig(page, isPreview) {
   else {
     try {
       const url = isPreview
-        ? `${import.meta.env.VITE_API_BASE}/wp-json/shop-builder/v1/preview/${page}`
+        ? `${API_BASE}/wp-json/shop-builder/v1/preview/${page}`
         : `/config/${page}.json`;
 
       const response = await fetch(url, {

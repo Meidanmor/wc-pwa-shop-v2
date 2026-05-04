@@ -211,6 +211,7 @@ const selectedCategoryOBJ = ref(null)
 // Inside your Page or Layout
 defineOptions({
   async preFetch({ ssrContext, currentRoute }) {
+    const API_BASE = process.env.VITE_API_BASE || ''
     const seo = await fetchSeoForPath('shop')
 
     let categories = []
@@ -229,8 +230,8 @@ defineOptions({
     }
 
     const priceUrl = currentCat
-      ? `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta?category=${currentCat.id}`
-      : `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta`
+      ? `${API_BASE}/wp-json/wc/store/v1/products-meta?category=${currentCat.id}`
+      : `${API_BASE}/wp-json/wc/store/v1/products-meta`
 
     // ✅ Run both in parallel for speed
     const [products, priceRes] = await Promise.all([

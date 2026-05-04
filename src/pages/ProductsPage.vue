@@ -207,6 +207,7 @@ const sortOptions = [
 // Inside your Page or Layout
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
+    const API_BASE = process.env.VITE_API_BASE || ''
     console.log('--- PreFetch Running for:', currentRoute.path)
     const seo = await fetchSeoForPath('shop')
 
@@ -225,7 +226,7 @@ defineOptions({
 
       categories = await api.getCategories()
 
-      const res = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta`)
+      const res = await fetch(`${API_BASE}/wp-json/wc/store/v1/products-meta`)
       priceMeta = await res.json()
 
     if(ssrContext) {

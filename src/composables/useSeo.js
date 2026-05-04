@@ -1,6 +1,11 @@
 // src/composables/useSeo.js
 // lightweight helper that can be used from defineOptions preFetch (import-only)
 export async function fetchSeoForPath(path) {
+    const API_BASE =
+  import.meta.env.SSR
+    ? process.env.VITE_API_BASE
+    : import.meta.env.VITE_API_BASE
+
   // Define default fallbacks
   const result = {
     title: 'NaturaBloom',
@@ -12,7 +17,7 @@ export async function fetchSeoForPath(path) {
 
   try {
     const res = await fetch(
-      `${import.meta.env.VITE_API_BASE}/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`
+      `${API_BASE}/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`
     )
 
     if (!res.ok) return result

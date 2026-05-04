@@ -1,7 +1,11 @@
 // src/boot/woocommerce.js
 import { fetchWithToken } from 'src/composables/useApiFetch.js'
 
-const baseURL = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1`
+const API_BASE =
+  import.meta.env.SSR
+    ? process.env.VITE_API_BASE
+    : import.meta.env.VITE_API_BASE
+const baseURL = `${API_BASE}/wp-json/wc/store/v1`
 
 // --- API functions (unchanged) ---
 export const fetchAPI = async (endpoint) => {
@@ -33,7 +37,7 @@ export async function fetchAllProducts() {
 }
 
 export async function fetchAdminProducts() {
-  const base = `${import.meta.env.VITE_API_BASE}/wp-json/wc/v3/products?per_page=100`
+  const base = `${API_BASE}/wp-json/wc/v3/products?per_page=100`
 
   try {
     // We run both requests at the same time for speed

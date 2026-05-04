@@ -405,6 +405,7 @@ defineExpose({ scrollToProducts })
 // Inside your Page or Layout
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
+    const API_BASE = process.env.VITE_API_BASE || ''
     console.log('--- PreFetch Running for:', currentRoute.path)
     const {fetchSeoForPath} = await import('src/composables/useSeo')
     /*const seo = await fetchSeoForPath('homepage')
@@ -436,8 +437,8 @@ defineOptions({
       ssrContext.pageConfig = configData
       // 2. Attach it to the rendered state (for the component)
       ssrContext.heroData = {
-        src: `${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png`,
-        srcset: `${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w`,
+        src: `${API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png`,
+        srcset: `${API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w`,
         sizes: '(min-width: 768px) 50vw, calc(100vw - 40px)'
       }
     }
