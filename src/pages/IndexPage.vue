@@ -21,8 +21,8 @@
         loading="eager"
         decoding="async"
         alt="Homepage hero image"
-        src="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png"
-        srcset="https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w"
+        :src="`${API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png`"
+        :srcset="`${API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,${API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,${API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w`"
         sizes="(min-width: 768px) 50vw, calc(100vw - 40px)"
         width="300"
         height="200"
@@ -436,8 +436,8 @@ defineOptions({
       ssrContext.pageConfig = configData
       // 2. Attach it to the rendered state (for the component)
       ssrContext.heroData = {
-        src: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png',
-        srcset: 'https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,https://nuxt.meidanm.com/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w',
+        src: `${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png`,
+        srcset: `${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w`,
         sizes: '(min-width: 768px) 50vw, calc(100vw - 40px)'
       }
     }
@@ -665,8 +665,10 @@ isHydrated.value = false
         window.removeEventListener('scroll', hydrateOnInteraction)
         window.removeEventListener('mousemove', hydrateOnInteraction)
         window.removeEventListener('touchstart', hydrateOnInteraction)
+        requestAnimationFrame(() => {
+          isHydrated.value = true
+        })
 
-        isHydrated.value = true
         recomputeSlides()
         recomputeTestimonialSlides();
 
@@ -785,37 +787,6 @@ div.q-img__loading > svg{
   border-radius: 20px;
   padding: 40px 20px;
   overflow: hidden;
-}
-
-.cta-overlay:after {
-    content: '';
-    display: block;
-    position: absolute;
-    top: unset;
-    left: auto;
-    width: 400px;
-    height: 500px;
-    background: url(https://nuxt.meidanm.com/wp-content/uploads/2025/05/procudts-catalog-img.png);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    border-radius: 50px;
-    bottom: -30%;
-    z-index: -1;
-    opacity: 0.5;
-    transform: translateY(50%);
-}
-.cta-overlay:before {
-  content: '';
-  background: var(--q-primary);
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: auto;
-  max-width: 200px;
-  z-index: -1;
-  transition: 1s;
 }
 .cta-content {
   max-width: 600px;

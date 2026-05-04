@@ -34,7 +34,7 @@ export const useOfflineCart = defineStore('offlineCart', {
 
       try {
         // Replace this with your real API call
-        await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart/items/bulk', {
+        await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/cart/items/bulk`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ items: this.items }),

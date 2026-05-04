@@ -1,13 +1,13 @@
-import path from 'path'
-import fs from 'fs'
-
 export async function loadPageConfig(page, isPreview) {
   // --- SERVER SIDE LOGIC ---
   if (import.meta.env.SSR) {
     try {
+      const path = await import('path')
+      const fs = await import('fs')
+
       // 1. If Preview, fetch from WordPress API
       if (isPreview) {
-        const url = `https://nuxt.meidanm.com/wp-json/shop-builder/v1/preview/${page}`;
+        const url = `${import.meta.env.VITE_API_BASE}/wp-json/shop-builder/v1/preview/${page}`;
         console.log(`[SSR] Fetching Preview from API: ${url}`);
 
         // We use a dynamic import for 'node-fetch' or similar if global fetch isn't available
@@ -38,7 +38,7 @@ export async function loadPageConfig(page, isPreview) {
   else {
     try {
       const url = isPreview
-        ? `https://nuxt.meidanm.com/wp-json/shop-builder/v1/preview/${page}`
+        ? `${import.meta.env.VITE_API_BASE}/wp-json/shop-builder/v1/preview/${page}`
         : `/config/${page}.json`;
 
       const response = await fetch(url, {

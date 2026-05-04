@@ -333,7 +333,7 @@ const initializeFormFromCart = async () => {
 };
 const updateShippingAddress = async () => {
   try {
-    const response = await fetchWithToken('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart/update-customer', {
+    const response = await fetchWithToken(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/cart/update-customer`, {
       method: 'POST',
       body: JSON.stringify({
         billing_address: {
@@ -417,7 +417,7 @@ const fetchShippingRates = async () => {
 const onShippingMethodChange = async (newRateId) => {
   try {
     // Send selected shipping rate to WooCommerce
-    await fetchWithToken('https://nuxt.meidanm.com/wp-json/wc/store/cart/select-shipping-rate', {
+    await fetchWithToken(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/cart/select-shipping-rate`, {
       method: 'POST',
       body: JSON.stringify({package_id: 0, rate_id: newRateId})
     });

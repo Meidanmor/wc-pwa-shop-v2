@@ -15,7 +15,7 @@ import { matLogin } from '@quasar/extras/material-icons';
 import { Platform } from 'quasar';
 
 // This is the "Web Application" Client ID from Google Console
-const GOOGLE_WEB_CLIENT_ID = "541818756446-cpeeist28iikua9g1i436vpj5mncslmb.apps.googleusercontent.com";
+const GOOGLE_WEB_CLIENT_ID = import.meta.env.GOOGLE_WEB_CLIENT_ID;
 
 const loading = ref(false);
 
@@ -36,6 +36,11 @@ async function handleLogin() {
 }
 
 async function handleNativeLogin() {
+
+  // HARD SSR GUARD
+  if (import.meta.env.SSR) {
+    return;
+  }
   // Guard: Only attempt this if we are actually on a mobile device/native app
   if (!Platform.is.capacitor) {
     console.warn('Native login not available on web.');
@@ -67,7 +72,7 @@ async function handleNativeLogin() {
 
 async function sendTokenToBackend(idToken) {
   try {
-    const response = await fetch("https://nuxt.meidanm.com/wp-json/custom/v1/google-login", {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/custom/v1/google-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: idToken }),

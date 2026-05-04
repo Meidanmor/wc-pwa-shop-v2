@@ -25,7 +25,7 @@ const account = ref({
 const token = localStorage.getItem('jwt_token');
 
 onMounted(async () => {
-  const res = await fetch('https://nuxt.meidanm.com/wp-json/wp/v2/users/me', {
+  const res = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wp/v2/users/me`, {
     credentials: 'include',
     headers: {
     Authorization: `Bearer ${token}`
@@ -38,7 +38,7 @@ onMounted(async () => {
 async function updateDetails() {
 console.log(account.value);
 console.log(JSON.stringify(account.value).replace('__name', '_name'));
-  await fetch('https://nuxt.meidanm.com/wp-json/wp/v2/users/me', {
+  await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wp/v2/users/me`, {
     method: 'POST',
     credentials: 'include',
     headers: {

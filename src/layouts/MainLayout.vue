@@ -475,7 +475,7 @@ onMounted(() => {
     // 1. ALWAYS initialize tracking (Abandoned Cart logic)
     // This doesn't ask for permission, it just sets up listeners.
     if ( typeof window !== 'undefined' || Platform.is.capacitor ) {
-      initPush()
+      initPush({ router })
       const initialPermissions = await checkNativePermission();
       permission.value = normalizePermission(initialPermissions)
       console.log('🛒 Cart tracking active');

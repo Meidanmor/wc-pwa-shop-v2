@@ -35,7 +35,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve({ left: 0, top: 0, behavior: 'smooth' })
-        }, 50) // 50ms is usually enough to let Vue swap the component content
+        }, 10) // 50ms is usually enough to let Vue swap the component content
       })
     },
     routes,

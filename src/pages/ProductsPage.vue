@@ -24,7 +24,7 @@
             <q-input filled v-model="search" label="Search products..." debounce="300" />
         </div>
 
-        <div class="col-xs-12 col-md-6"  v-if="!isHydrated || isHydrated && !Array.isArray(categories)">
+        <div class="col-xs-12 col-md-6"  v-if="!isHydrated || !categoryOptions.length">
           <q-skeleton type="rect" class="q-mb-md"/>
         </div>
 
@@ -42,7 +42,7 @@
           </q-card>
         </div>
 
-      <div class="q-pa-md q-mb-md" v-if="!isHydrated || isHydrated && !priceMin">
+      <div class="q-pa-md q-mb-md" v-if="!priceMin">
         <q-skeleton type="rect" class="q-mb-md"/>
       </div>
 
@@ -216,7 +216,6 @@ defineOptions({
     let categories = []
     let priceMeta = null
 
-    if (ssrContext) {
       // 🟢 ONLY BLOCK SSR
       products = await productsStore.preFetchProducts({
         api: true,
@@ -226,16 +225,24 @@ defineOptions({
 
       categories = await api.getCategories()
 
-      const res = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/products-meta')
+      const res = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta`)
       priceMeta = await res.json()
 
+    if(ssrContext) {
       ssrContext.productsData = products
       ssrContext.categoriesData = categories
       ssrContext.priceMetaData = priceMeta
       ssrContext.productsTotal = productsStore.totalProducts.value
       ssrContext.pagesTotal = productsStore.totalPages.value
-    }
+    } else {
+      // ✅ Client-side navigation: populate store directly
+      productsStore.products.value = products
+      productsStore.initialized.value = true
+      productsStore.productsLoading.value = false
+      window.__CATEGORIES_DATA__ = categories
+      window.__PRICE_META__ = priceMeta
 
+    }
     if (ssrContext) {
       ssrContext.seoData = seo
     }
@@ -247,7 +254,7 @@ const seoData = ref({
   description: 'Products description'
 });
 // This only runs in the browser
-if (process.env.CLIENT) {
+/*if (process.env.CLIENT) {
   if (window.__SEO_DATA__) {
     seoData.value = window.__SEO_DATA__
   }
@@ -272,7 +279,7 @@ if (process.env.CLIENT) {
       }
     }
   })
-}
+}*/
 
 const paginatedProducts = computed(() => {
   return productsStore.products.value || []
@@ -284,7 +291,7 @@ const priceMin = ref(null)
 const priceMax = ref(null)
 const priceRange = ref({ min: 0, max: 1000 })
 
-if (process.env.CLIENT) {
+/*if (process.env.CLIENT) {
 
   if (Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length) {
     productsStore.products.value = window.__PRODUCTS_DATA__
@@ -307,6 +314,69 @@ if (process.env.CLIENT) {
   }
 
   // 🔥 THIS CHANGES EVERYTHING
+  isReady.value = true
+}*/
+if (process.env.CLIENT) {
+  // --- SEO ---
+  if (window.__SEO_DATA__) seoData.value = window.__SEO_DATA__
+
+  useMeta(() => {
+    const seo = seoData.value
+    return {
+      title: seo?.title || 'NaturaBloom',
+      meta: {
+        description: {
+          name: 'description',
+          content: seo?.description || "Let's Bloom Together"
+        },
+        'og:title': {
+          property: 'og:title',
+          content: seo?.title || 'NaturaBloom'
+        },
+        'og:description': {
+          property: 'og:description',
+          content: seo?.description || "Let's Bloom Together"
+        }
+      }
+    }
+  })
+  const hasSSRProducts =
+    Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length
+
+  // ✅ Check BOTH: data exists AND it belongs to the current category
+  const isSSRMatch = hasSSRProducts
+
+  // --- SSR hydration path (correct category) ---
+  if (isSSRMatch) {
+    categories.value = window.__CATEGORIES_DATA__ || []
+
+    productsStore.products.value = window.__PRODUCTS_DATA__
+    productsStore.initialized.value = true
+    productsStore.productsLoading.value = false
+
+    if (window.__PRICE_META__) {
+      priceMin.value = Number(window.__PRICE_META__.min_price)
+      priceMax.value = Number(window.__PRICE_META__.max_price)
+      priceRange.value = { min: priceMin.value, max: priceMax.value }
+    }
+
+    if (window.__PRODUCTS_TOTAL__) productsStore.totalProducts.value = window.__PRODUCTS_TOTAL__
+    if (window.__PAGES_TOTAL__) productsStore.totalPages.value = window.__PAGES_TOTAL__
+  }
+
+  // --- Client nav path: preFetch already loaded the correct category ---
+  else if (productsStore.initialized.value) {
+    categories.value = window.__CATEGORIES_DATA__ || []
+
+    if (window.__PRICE_META__) {
+      priceMin.value = Number(window.__PRICE_META__.min_price)
+      priceMax.value = Number(window.__PRICE_META__.max_price)
+      priceRange.value = { min: priceMin.value, max: priceMax.value }
+    }
+
+
+  }
+
   isReady.value = true
 }
 // Fetch categories
@@ -347,7 +417,13 @@ const priceChanged = ref(0)
 function onPriceChange() {
   priceChanged.value++ // trigger watcher manually
 }
-const isHydrated = ref(false)
+//const isHydrated = ref(false)
+const isHydrated = ref(
+  process.env.CLIENT && (
+    productsStore.initialized.value === true ||
+    !!(window.__PRODUCTS_DATA__?.length)
+  )
+)
 // Watch price range
 
 function getSortParams(sort) {
@@ -479,21 +555,44 @@ if (categoryChanged) {
     isFetching.value = false
   }
 )
-const hasSSRProducts =
+/*const hasSSRProducts =
   process.env.CLIENT &&
   Array.isArray(window.__PRODUCTS_DATA__) &&
   window.__PRODUCTS_DATA__.length > 0
 const hasSelectedCategory =
   process.env.CLIENT &&
   window.__SELECTED_CATEGORY_DATA__ &&
-  Object.keys(window.__SELECTED_CATEGORY_DATA__).length > 0
+  Object.keys(window.__SELECTED_CATEGORY_DATA__).length > 0*/
 // Lifecycle
 onMounted(async () => {
   isHydrated.value = true
 
-  console.log(hasSelectedCategory)
-  // 🟢 Fetch missing data only if needed
-  if (!hasSSRProducts || hasSelectedCategory) {
+    // preFetch already handled client nav — only fetch if truly nothing loaded
+  if (!productsStore.initialized.value) {
+    productsStore.productsLoading.value = true
+    await productsStore.preFetchProducts({
+      api: true,
+      page: 1,
+      per_page: perPage,
+    })
+  }
+
+  if (!priceMin.value) {
+    await fetchPriceMeta()
+    priceMin.value = pendingPriceRange.value.min
+    priceMax.value = pendingPriceRange.value.max
+    priceRange.value = { ...pendingPriceRange.value }
+  }
+
+  if (!Array.isArray(categories.value) || !categories.value.length) {
+    await fetchCategories()
+  }
+
+  if (!isReady.value) {
+    isReady.value = true  // only set if not already set
+  }
+  /*// 🟢 Fetch missing data only if needed
+  if (!hasSSRProducts) {
     productsStore.products.value = []
     productsStore.preFetchProducts({
       api: true,
@@ -515,12 +614,12 @@ onMounted(async () => {
 
 
 
-  isReady.value = true
+  isReady.value = true*/
 })
 // Function to recalculate price limits based on a product list
 
 async function fetchPriceMeta(category = null) {
-  let url = 'https://nuxt.meidanm.com/wp-json/wc/store/v1/products-meta'
+  let url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta`
 
   if (category) {
     url += `?category=${category}`

@@ -1,7 +1,7 @@
 // src/boot/woocommerce.js
 import { fetchWithToken } from 'src/composables/useApiFetch.js'
 
-const baseURL = 'https://nuxt.meidanm.com/wp-json/wc/store/v1'
+const baseURL = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1`
 
 // --- API functions (unchanged) ---
 export const fetchAPI = async (endpoint) => {
@@ -33,7 +33,7 @@ export async function fetchAllProducts() {
 }
 
 export async function fetchAdminProducts() {
-  const base = 'https://nuxt.meidanm.com/wp-json/wc/v3/products?per_page=100'
+  const base = `${import.meta.env.VITE_API_BASE}/wp-json/wc/v3/products?per_page=100`
 
   try {
     // We run both requests at the same time for speed

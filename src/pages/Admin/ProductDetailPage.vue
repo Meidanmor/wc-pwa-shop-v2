@@ -35,13 +35,13 @@ const product = ref({})
 onMounted(fetchProduct)
 
 async function fetchProduct() {
-  const res = await fetchWithToken(`https://nuxt.meidanm.com/wp-json/wc/v3/products/${route.params.id}`)
+  const res = await fetchWithToken(`${import.meta.env.VITE_API_BASE}/wp-json/wc/v3/products/${route.params.id}`)
   product.value = await res.json()
 }
 
 async function updateProduct() {
   product.value.manage_stock = true;
-  const res = await fetchWithToken(`https://nuxt.meidanm.com/wp-json/wc/v3/products/${route.params.id}`, {
+  const res = await fetchWithToken(`${import.meta.env.VITE_API_BASE}/wp-json/wc/v3/products/${route.params.id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

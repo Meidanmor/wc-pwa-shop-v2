@@ -15,6 +15,7 @@ import { NetworkFirst/*, StaleWhileRevalidate*/ } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { enable as enableNavigationPreload } from 'workbox-navigation-preload';
 
+const API_BASE = '<%= VITE_API_BASE %>'
 // Call it directly
 enableNavigationPreload();
 
@@ -27,49 +28,9 @@ precacheAndRoute(self.__WB_MANIFEST)
 
 // Clean old caches
 cleanupOutdatedCaches()
-
-// ✅ API caching for WooCommerce backend
-/*registerRoute(
-  ({ url }) =>
-      url.origin === 'https://nuxt.meidanm.com' &&
-      (url.pathname === '/wp-json/wc/store/v1/products' || url.pathname === '/wp-json/wc/store/v1/products/categories') &&
-    url.searchParams.has('per_page'),
-  new NetworkFirst({
-    cacheName: 'woocommerce-api',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 24 * 60 * 60, // 1 day
-      }),
-    ],
-  })
-)*/
-/*registerRoute(
-  ({ url }) =>
-    url.origin === 'https://nuxt.meidanm.com' &&
-      (
-          (
-              url.pathname === '/wp-json/wc/store/v1/products/categories'
-          ) ||
-          (
-              url.pathname === '/wp-json/wc/store/v1/products'
-           &&
-              url.searchParams.has('per_page')
-          )
-      ),
-  new StaleWhileRevalidate({
-    cacheName: 'woocommerce-api',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 24 * 60 * 60, // 1 day
-      }),
-    ],
-  })
-);*/
 registerRoute(
   ({ url }) =>
-    url.origin === 'https://nuxt.meidanm.com' &&
+    url.origin === `${API_BASE}` &&
       (
           (url.pathname === '/wp-json/wc/store/v1/products/categories') ||
           (url.pathname === '/wp-json/wc/store/v1/products' && url.searchParams.has('per_page'))
@@ -82,40 +43,9 @@ registerRoute(
     ]
   })
 );
-
-/*registerRoute(
-  ({ url }) =>
-      url.origin === 'https://nuxt.meidanm.com' &&
-    url.pathname === '/wp-json/custom/v1/seo' &&
-    url.searchParams.has('path'),
-  new NetworkFirst({
-    cacheName: 'seo-api',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 24 * 60 * 60, // 1 day
-      }),
-    ],
-  })
-)*/
-/*registerRoute(
-  ({ url }) =>
-    url.origin === 'https://nuxt.meidanm.com' &&
-    url.pathname === '/wp-json/custom/v1/seo' &&
-    url.searchParams.has('path'),
-  new StaleWhileRevalidate({
-    cacheName: 'seo-api',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 24 * 60 * 60, // 1 day
-      }),
-    ],
-  })
-);*/
 registerRoute(
   ({ url }) =>
-    url.origin === 'https://nuxt.meidanm.com' &&
+    url.origin === `${API_BASE}` &&
     url.pathname === '/wp-json/custom/v1/seo' &&
     url.searchParams.has('path'),
   new NetworkFirst({

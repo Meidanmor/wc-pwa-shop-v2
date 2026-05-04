@@ -20,7 +20,7 @@ const addedItems = ref('');
 async function login() {
   try {
 
-const res = await fetch('https://nuxt.meidanm.com/wp-json/jwt-auth/v1/token', {
+const res = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/jwt-auth/v1/token`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -44,7 +44,7 @@ if (data.token) {
 
 const token = localStorage.getItem('jwt_token');
 
-const userRes = await fetch('https://nuxt.meidanm.com/wp-json/wp/v2/users/me', {
+const userRes = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wp/v2/users/me`, {
   headers: {
     Authorization: `Bearer ${token}`
   }
@@ -53,12 +53,12 @@ const user = await userRes.json();
 console.log(user);
 cart.state.user = user;
 console.log(cart.state.user);
-const guestCart = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart', {
+const guestCart = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/cart`, {
   credentials: 'include'
 }).then(res => res.json())
 
 // After login, get the user cart
-const userCart = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart', {
+const userCart = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/cart`, {
   headers: {
     Authorization: `Bearer ${token}`
   },
@@ -68,7 +68,7 @@ console.log(userCart);
 // If user cart is empty and guest cart had items, sync
 if (userCart.items_count === 0 && guestCart.items.length > 0) {
   for (const item of guestCart.items) {
-    const itemRes = await fetch('https://nuxt.meidanm.com/wp-json/wc/store/v1/cart/add-item', {
+    const itemRes = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/cart/add-item`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

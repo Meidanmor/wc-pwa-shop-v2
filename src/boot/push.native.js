@@ -26,7 +26,7 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 // your VAPID public key for web push
-const APP_SERVER_KEY = 'BHSV149RpWY5IkRyGC_DvxRWQuO_29FAdwhhFu9IPyfUNHDedg7pTCer_WrlJipDvmU0JqxBy4lKHWItX2E6cLw'
+const APP_SERVER_KEY = import.meta.env.VAPID_APP_SERVER_KEY
 
 /**
  * Get or create a unique device ID (stored in localStorage)
@@ -67,7 +67,7 @@ export async function subscribeToWebPush() {
       subscription: subscription
     }
 
-    const res = await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/save-subscription', {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/pwa/v1/save-subscription`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -156,7 +156,7 @@ export async function initNativePush() {
       try {
         const deviceId = getDeviceId()
         const cartToken = localStorage.getItem('wc_cart_token') || null
-        await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/save-subscription', {
+        await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/pwa/v1/save-subscription`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -290,7 +290,7 @@ async function syncSubscriptionCartToken() {
   if (!cartToken || !deviceId) return
   try {
     // Send the stable deviceId and the volatile cartToken
-    await fetch('https://nuxt.meidanm.com/wp-json/pwa/v1/update-cart-token', {
+    await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/pwa/v1/update-cart-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       keepalive: true,

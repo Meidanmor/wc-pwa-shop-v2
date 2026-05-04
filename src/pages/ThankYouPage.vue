@@ -160,7 +160,7 @@ onMounted(async () => {
 
   try {
     const res = await fetchWithToken(
-      `https://nuxt.meidanm.com/wp-json/wc/store/v1/order/${orderID}?key=${order_key}&billing_email=${email}`,
+      `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/order/${orderID}?key=${order_key}&billing_email=${email}`,
       {credentials: 'include'}
     )
     if (!res.ok) {

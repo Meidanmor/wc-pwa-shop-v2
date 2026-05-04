@@ -23,7 +23,7 @@ onMounted(async () => {
   }
 
   try {
-    const res = await fetch('https://nuxt.meidanm.com/wp-json/custom/v1/google-login-redirect', {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/custom/v1/google-login-redirect`, {
       method: 'POST',
       credentials: 'include',
       headers: {'Content-Type': 'application/json'},

@@ -12,9 +12,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted/*, onBeforeUnmount*/, watch } from 'vue';
+//import { SplashScreen } from '@capacitor/splash-screen'
+import { ref, onMounted/*, nextTick /*, onBeforeUnmount*/, watch } from 'vue';
 //import { useQuasar } from 'quasar';
 import cart from "src/stores/cart.js";
+
 //const $q = useQuasar();
 const isOnline = ref(true); // Assume online by default
 watch(() => cart.state.offline, (off) => {
@@ -22,6 +24,11 @@ watch(() => cart.state.offline, (off) => {
 });
 
 onMounted(async () => {
+  /*await nextTick()
+
+  requestAnimationFrame(async () => {
+    await SplashScreen.hide()
+  })*/
 /*  if (typeof navigator !== 'undefined') {
     isOnline.value = navigator.onLine;
 

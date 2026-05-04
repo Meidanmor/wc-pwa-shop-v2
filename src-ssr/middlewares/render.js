@@ -1,6 +1,8 @@
 // ssr-src/middlewares/render.js
 import { defineSsrMiddleware } from '#q-app/wrappers'
 // 1. Define the helper at the top of the file
+const API_BASE = process.env.VITE_API_BASE || ''
+
 const escapeHTML = (str) => {
   if (!str || typeof str !== 'string') return '';
   return str
@@ -10,8 +12,18 @@ const escapeHTML = (str) => {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 };
-export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
+const isIgnoredRequest = (url) => {
+  return (
+    url.startsWith('/.well-known') ||
+    url.includes('devtools') ||
+    url.endsWith('.map')
+  )
+}
+export default defineSsrMiddleware(({ app, resolve, render, /*serve*/ }) => {
     app.get(resolve.urlPath('*'), (req, res) => {
+        if (isIgnoredRequest(req.url)) {
+            return res.status(404).end()
+        }
         res.setHeader('Content-Type', 'text/html')
 
         // CSP header matching your htmlVariables settings
@@ -21,7 +33,7 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
             "script-src 'self' https://accounts.google.com 'unsafe-inline'; " +
             "style-src 'self' 'unsafe-inline'; " +
             "img-src 'self' data: https:; " +
-            "connect-src 'self' https://nuxt.meidanm.com; " +
+            `connect-src 'self' ${API_BASE ? API_BASE : ''} ws://localhost:* wss://localhost:*;` +
             "font-src 'self' https://fonts.gstatic.com; " +
             "frame-src https://accounts.google.com;"
         )
@@ -70,9 +82,14 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
                 }
 
                 // 2. CRITICAL HEAD TOP: Connections, Styles, Pixels, and SEO
-                const criticalHeadTop = `
-    <link rel="preconnect" href="https://nuxt.meidanm.com" crossorigin>
-    <link rel="dns-prefetch" href="https://nuxt.meidanm.com">
+                const preconnects = API_BASE
+                    ? `
+    <link rel="preconnect" href="${API_BASE}" crossorigin>
+    <link rel="dns-prefetch" href="${API_BASE}">
+  `
+                    : '';
+
+                const criticalHeadTop = `${preconnects}
     <title>${safeTitle}</title>
     <meta name="description" content="${safeDesc}">
     <meta name="robots" content="${safeRobots}">
@@ -135,7 +152,14 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
                 } else if (err.code === 404) {
                     res.status(404).send('404 | Page Not Found')
                 } else if (process.env.DEV) {
-                    serve.error({err, req, res})
+                    console.error('SSR REAL ERROR:', err)
+                    console.error(err.stack)
+
+                    res.status(500).send(`
+    <pre style="white-space: pre-wrap; color: red;">
+      ${err.stack || err.message}
+    </pre>
+  `)
                 } else {
                     res.status(500).send('500 | Internal Server Error')
                     if (process.env.DEBUGGING) console.error(err.stack)

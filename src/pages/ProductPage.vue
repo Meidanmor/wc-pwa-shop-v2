@@ -452,6 +452,11 @@ async function fetchProduct(slug) {
     return
   }
 
+}
+
+async function enhanceProduct()
+{
+
   // Fix categories fallback (your logic)
   if (!product.value?.categories?.length) {
     product.value.categories = [
@@ -466,7 +471,6 @@ async function fetchProduct(slug) {
   await resetVariations()
   await fetchWishlistData()
 }
-
 const isVariable = computed(() => product.value?.type === 'variable')
 
 const selectedVariations = ref({})
@@ -631,7 +635,7 @@ watch(
 
     //await fetchProduct(newSlug)
 
-
+    enhanceProduct().catch(console.error)
     fetchSeoForPath(`product/${newSlug}`)
       .then(data => seoData.value = data)
   }

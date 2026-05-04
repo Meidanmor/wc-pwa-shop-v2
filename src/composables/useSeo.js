@@ -12,7 +12,7 @@ export async function fetchSeoForPath(path) {
 
   try {
     const res = await fetch(
-      `https://nuxt.meidanm.com/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`
+      `${import.meta.env.VITE_API_BASE}/wp-json/custom/v1/seo?path=${encodeURIComponent(path)}`
     )
 
     if (!res.ok) return result

@@ -1,8 +1,6 @@
 // src/stores/products.js
 import { ref } from 'vue'
 import api from 'src/boot/woocommerce'
-import path from 'path'
-import fs from 'fs'
 import { isAdmin } from 'src/stores/user' // Our new lightweight store
 
 // --- reactive state ---
@@ -36,7 +34,7 @@ async function getByIds(ids = []) {
   try {
     // Parallel fetch for the missing items using the Store API endpoint
     const fetchPromises = missingIds.map(id =>
-      fetch(`https://nuxt.meidanm.com/wp-json/wc/store/v1/products/${id}`)
+      fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products/${id}`)
         .then(res => res.ok ? res.json() : null)
     )
 
@@ -105,7 +103,7 @@ export async function preFetchProducts(ctx = {}, force = false) {
         query.append('order', order);
       }
 
-      const url = `https://nuxt.meidanm.com/wp-json/wc/store/v1/products?${query.toString()}`;
+      const url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products?${query.toString()}`;
 
       let data = [];
       let total = 1;
@@ -148,6 +146,10 @@ export async function preFetchProducts(ctx = {}, force = false) {
   if (import.meta.env.SSR) {
 
     try {
+
+      const path = await import('path')
+      const fs = await import('fs')
+
       productsLoading.value = true
       let allProducts = []
 

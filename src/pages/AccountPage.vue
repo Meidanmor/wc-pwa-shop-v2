@@ -67,7 +67,7 @@ if(process.env.CLIENT) {
   }
 
   async function fetchUser() {
-    const res = await fetchWithToken('https://nuxt.meidanm.com/wp-json/wp/v2/users/me', )
+    const res = await fetchWithToken(`${import.meta.env.VITE_API_BASE}/wp-json/wp/v2/users/me`, )
     if (!res.ok) return // 🚨 STOP if error
     userData.value = await res.json()
     cart.state.user = userData.value
