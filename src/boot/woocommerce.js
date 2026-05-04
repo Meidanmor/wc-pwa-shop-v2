@@ -5,6 +5,7 @@ const API_BASE =
   import.meta.env.SSR
     ? process.env.VITE_API_BASE
     : import.meta.env.VITE_API_BASE
+
 const baseURL = `${API_BASE}/wp-json/wc/store/v1`
 
 // --- API functions (unchanged) ---
