@@ -143,65 +143,71 @@ export async function preFetchProducts(ctx = {}, force = false) {
   // =========================
   // 🔵 ORIGINAL LOGIC (UNCHANGED)
   // =========================
-  if (import.meta.env.SSR) {
+if (import.meta.env.SSR) {
+
+  try {
+
+    productsLoading.value = true
+    let allProducts = []
+
+    const base =
+      process.env.SERVER
+        ? process.env.API_BASE   // your production domain
+        : ''
+
+    const url = `${base}/data/products.json`
 
     try {
+      console.log(`[SSR] Fetching products via HTTP: ${url}`)
 
-      const path = await import('path')
-      const fs = await import('fs')
+      const response = await fetch(url, {
+        cache: 'no-store'
+      })
 
-      productsLoading.value = true
-      let allProducts = []
+      if (response.ok) {
+        const raw = await response.text()
 
-      const filePath = path.join(process.cwd(), 'public/data/products.json')
+        if (raw.trim()) {
+          allProducts = JSON.parse(raw)
 
-      try {
-        if (fs.existsSync(filePath)) {
-          const raw = fs.readFileSync(filePath, 'utf-8')
-          if (raw.trim()) {
-            allProducts = JSON.parse(raw)
-            if (Array.isArray(allProducts) && allProducts.length) {
-              console.log('Products loaded from products.json')
-              products.value = allProducts
-              initialized.value = true
-              return allProducts
-            }
+          if (Array.isArray(allProducts) && allProducts.length) {
+            console.log('Products loaded from products.json')
+            products.value = allProducts
+            initialized.value = true
+            return allProducts
           }
         }
-      } catch (err) {
-        console.warn('Failed to read products.json, will fetch API', err)
-      }
-
-      if (!allProducts.length) {
-        console.log('Fetching products from API...')
-        allProducts = await api.getProducts()
-
-        try {
-          fs.mkdirSync(path.dirname(filePath), {recursive: true})
-          fs.writeFileSync(filePath, JSON.stringify(allProducts, null, 2), 'utf-8')
-          console.log('products.json updated on server.')
-        } catch (err) {
-          console.warn('Failed to update products.json', err)
-        }
-      }
-
-      products.value = allProducts
-      initialized.value = true
-
-      if (ctx?.ssrContext) {
-        ctx.ssrContext[SSR_KEY] = allProducts
-      } else if (typeof window !== 'undefined') {
-        window[SSR_KEY] = allProducts
       }
 
     } catch (err) {
-      console.error('[products store] preFetchProducts error', err)
-      products.value = []
-    } finally {
-      productsLoading.value = false
+      console.warn('Failed to read products.json, will fetch API', err)
     }
 
-  } else {
+    if (!allProducts.length) {
+      console.log('Fetching products from API...')
+      allProducts = await api.getProducts()
+
+      // ⛔ keep this block removed (fs no longer exists)
+      // previously writing to file — no longer possible in SSR serverless
+    }
+
+    products.value = allProducts
+    initialized.value = true
+
+    if (ctx?.ssrContext) {
+      ctx.ssrContext[SSR_KEY] = allProducts
+    } else if (typeof window !== 'undefined') {
+      window[SSR_KEY] = allProducts
+    }
+
+  } catch (err) {
+    console.error('[products store] preFetchProducts error', err)
+    products.value = []
+  } finally {
+    productsLoading.value = false
+  }
+
+} else {
     initFromSSR()
 
     if (loadingPromise) {
