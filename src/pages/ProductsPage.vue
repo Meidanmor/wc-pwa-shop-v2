@@ -217,15 +217,16 @@ defineOptions({
 
     // ✅ ALWAYS fetch SEO (lightweight)
 
-    let products = []
+    let result = []
     let categories = []
     let priceMeta = null
 
       // 🟢 ONLY BLOCK SSR
-      products = await productsStore.preFetchProducts({
+      result = await productsStore.preFetchProducts({
         api: true,
         page: 1,
         per_page: 6,
+        dryRun: true  // ✅ don't touch the store yet
       })
 
       categories = await api.getCategories()
@@ -234,18 +235,26 @@ defineOptions({
       priceMeta = await res.json()
 
     if(ssrContext) {
-      ssrContext.productsData = products
+      ssrContext.productsData = result.products
       ssrContext.categoriesData = categories
       ssrContext.priceMetaData = priceMeta
-      ssrContext.productsTotal = productsStore.totalProducts.value
-      ssrContext.pagesTotal = productsStore.totalPages.value
+      ssrContext.productsTotal = result.total
+      ssrContext.pagesTotal = result.totalPages
     } else {
       // ✅ Client-side navigation: populate store directly
-      productsStore.products.value = products
+     /* productsStore.products.value = products
       productsStore.initialized.value = true
       productsStore.productsLoading.value = false
       window.__CATEGORIES_DATA__ = categories
+      window.__PRICE_META__ = priceMeta*/
+      // ✅ AFTER: stage the data in a window buffer, don't touch the store yet
+      window.__PREFETCH_PRODUCTS__ = result.products
+      window.__PREFETCH_TOTAL__ = result.total
+      window.__PREFETCH_PAGES__ = result.totalPages
+      window.__CATEGORIES_DATA__ = categories
       window.__PRICE_META__ = priceMeta
+      // Do NOT set productsStore.products.value here
+
 
     }
     if (ssrContext) {
@@ -572,8 +581,18 @@ const hasSelectedCategory =
 onMounted(async () => {
   isHydrated.value = true
 
-    // preFetch already handled client nav — only fetch if truly nothing loaded
-  if (!productsStore.initialized.value) {
+  if (window.__PREFETCH_PRODUCTS__) {
+    // ✅ Now safe to commit — old page is already gone
+    productsStore.products.value = window.__PREFETCH_PRODUCTS__
+    productsStore.totalProducts.value = window.__PREFETCH_TOTAL__
+    productsStore.totalPages.value = window.__PREFETCH_PAGES__
+    productsStore.initialized.value = true
+    productsStore.productsLoading.value = false
+    window.__PREFETCH_PRODUCTS__ = null
+    window.__PREFETCH_TOTAL__ = null
+    window.__PREFETCH_PAGES__ = null
+  } else if (!productsStore.initialized.value) {
+    // fallback if preFetch didn't run
     productsStore.productsLoading.value = true
     await productsStore.preFetchProducts({
       api: true,
@@ -586,7 +605,7 @@ onMounted(async () => {
     await fetchPriceMeta()
     priceMin.value = pendingPriceRange.value.min
     priceMax.value = pendingPriceRange.value.max
-    priceRange.value = { ...pendingPriceRange.value }
+    priceRange.value = {...pendingPriceRange.value}
   }
 
   if (!Array.isArray(categories.value) || !categories.value.length) {

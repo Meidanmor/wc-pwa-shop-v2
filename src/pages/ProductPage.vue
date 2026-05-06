@@ -162,8 +162,8 @@
         <div v-else> Out of stock </div>
 
        <div class="full-width">
-        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation ? selectedVariation.id : product.id === obj.id)" @click="addToWishlist" color="accent" label="Remove from wishlist" :icon="matFavorite" />
-        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click="addToWishlist" color="accent" label="Add to wishlist" :icon="matFavoriteBorder" />
+        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-if="wishlist.state.items && Object.values(wishlist.state.items).find(obj => selectedVariation ? selectedVariation.id : product.id === obj.id)" @click="addToWishlist" color="accent" label="Remove from wishlist" :icon="matFavorite" />
+        <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-else @click="addToWishlist" color="accent" label="Add to wishlist" :icon="matFavoriteBorder" />
         </div>
       </div>
     </div>
@@ -223,6 +223,7 @@ import { ref, onMounted, computed, useSSRContext, watch } from 'vue'
 import { useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { fetchProductById } from 'src/boot/woocommerce.js'
 import cart from 'src/stores/cart.js'
+import wishlist from 'src/stores/wishlist.js'
 import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
@@ -379,6 +380,7 @@ function openLightbox(index) {
   }
 }
 
+const openDrawer = ref(true);
 function addToCart(e) {
   handleAddToCart(e)
   console.log('Cart:', cart.state)
@@ -386,6 +388,8 @@ function addToCart(e) {
 function handleAddToCart(e) {
   if(e && e.target.innerText == 'QUICK CHECKOUT') {
     cart.state.loading.quickbuy = true;
+    openDrawer.value = false;
+
   }
   console.log(e.target.innerText);
   const matchedVariation = product.value.variations.find((variation) => {
@@ -401,7 +405,7 @@ function handleAddToCart(e) {
   if (!matchedVariation) {
     console.log(product.value.id);
     //alert('No matching variation found');
-    cart.add(product.value.id, quantity.value, null, null, $q);
+    cart.add(product.value.id, quantity.value, null, null, $q, '', openDrawer.value);
     return;
   }
 
@@ -423,7 +427,7 @@ function handleAddToCart(e) {
     selectedVariationsArray.variation.push({"attribute": value.name, "value": value.value});
   }
   console.log(product.value.id + '-' + 1 + '-' + matchedVariation.id + '-' + selectedVariationsArray.variation);
-  cart.add(product.value.id, quantity.value, matchedVariation.id, selectedVariationsArray.variation, $q);
+  cart.add(product.value.id, quantity.value, matchedVariation.id, selectedVariationsArray.variation, $q, '', openDrawer.value);
 }
 function increaseQty() {
   quantity.value++
@@ -489,10 +493,10 @@ const shouldDisableCartButtons = computed(() => {
 })
 async function fetchWishlistData() {
 
-  await cart.fetchWishlistItems();
+  await wishlist.fetchWishlistItems();
 
-//console.log(cart.state.wishlist_items.wishlist);
-if(cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)){
+//console.log(cart.state.items.wishlist);
+if(wishlist.state.items && Object.values(wishlist.state.items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)){
     wishlistAdded.value = true
   } else{
     wishlistAdded.value = false
@@ -571,18 +575,18 @@ function addToCartHandler(e) {
 
 async function addToWishlist() {
 if(selectedVariation.value){
-  await cart.toggleWishlistItem(selectedVariation.value.id, $q);
+  await wishlist.toggleWishlistItem(selectedVariation.value.id, $q);
 } else {
-  await cart.toggleWishlistItem(product.value.id, $q);
+  await wishlist.toggleWishlistItem(product.value.id, $q);
 }
-if(cart.state.wishlist_items) {
-  console.log(Object.values(cart.state.wishlist_items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id));
+if(wishlist.state.items) {
+  console.log(Object.values(wishlist.state.items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id));
 
-  console.log(cart.state.wishlist_items);
-  console.log(cart.state.wishlist_items.length);
+  console.log(cart.state.items);
+  console.log(cart.state.items.length);
 }
 
-  if (cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)) {
+  if (wishlist.state.items && Object.values(wishlist.state.items).find(obj => selectedVariation.value ? selectedVariation.value.id : product.value.id === obj.id)) {
     wishlistAdded.value = false;
   } else{
     wishlistAdded.value = true;

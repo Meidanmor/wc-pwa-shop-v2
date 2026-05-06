@@ -229,7 +229,8 @@ defineOptions({
       api: true,
       page: 1,
       per_page: 6,
-      category: currentCat ? currentCat.id : null
+      category: currentCat ? currentCat.id : null,
+      dryRun: true  // ✅ don't touch the store yet
     }
 
     const priceUrl = currentCat
@@ -237,7 +238,7 @@ defineOptions({
       : `${API_BASE}/wp-json/wc/store/v1/products-meta`
 
     // ✅ Run both in parallel for speed
-    const [products, priceRes] = await Promise.all([
+    const [result, priceRes] = await Promise.all([
       productsStore.preFetchProducts(productsQuery),
       fetch(priceUrl).then(r => r.json())
     ])
@@ -246,19 +247,19 @@ defineOptions({
 
     if (ssrContext) {
       // SSR: store in context for hydration
-      ssrContext.productsData = products
+      ssrContext.productsData = result.products
       ssrContext.categoriesData = categories
       ssrContext.selectedCategoryData = currentCat || null
       ssrContext.ssrQuery = productsQuery
       ssrContext.priceMetaData = priceMeta
-      ssrContext.productsTotal = productsStore.totalProducts.value
-      ssrContext.pagesTotal = productsStore.totalPages.value
+      ssrContext.productsTotal = result.total
+      ssrContext.pagesTotal = result.totalPages
       ssrContext.seoData = seo
     } else {
       // ✅ Client-side navigation: populate store directly
-      productsStore.products.value = products
-      productsStore.initialized.value = true
-      productsStore.productsLoading.value = false
+      window.__PREFETCH_PRODUCTS__ = result.products
+      window.__PREFETCH_TOTAL__ = result.total
+      window.__PREFETCH_PAGES__ = result.totalPages
       window.__CATEGORIES_DATA__ = categories
       window.__PRICE_META__ = priceMeta
 
@@ -590,6 +591,7 @@ watch(
     priceTrigger: priceChanged.value // ✅ only trigger when user releases slider
   }),
   async (filters, prev) => {
+
     if (
   !isReady.value ||
   priceRange.value.min === null ||
@@ -673,6 +675,13 @@ if (categoryChanged) {
 watch(
   () => route.params.slug,
   async (newSlug) => {
+    /*// ✅ If slug is gone, we're navigating away — do nothing
+    if (!newSlug) return
+
+    // ✅ Also guard against navigating to a non-category route
+    if (!route.name?.toString().includes('category')) return
+    */
+    // ✅ If slug is gone, we're navigating away — do nothing
     categorySlug.value = newSlug
 
     if (!categories.value.length) {
@@ -717,9 +726,18 @@ watch(
 // ✅ Fix
 onMounted(async () => {
   isHydrated.value = true
-
-  // preFetch already handled client nav — only fetch if truly nothing loaded
-  if (!productsStore.initialized.value) {
+  if (window.__PREFETCH_PRODUCTS__) {
+    // ✅ Now safe to commit — old page is already gone
+    productsStore.products.value = window.__PREFETCH_PRODUCTS__
+    productsStore.totalProducts.value = window.__PREFETCH_TOTAL__
+    productsStore.totalPages.value = window.__PREFETCH_PAGES__
+    productsStore.initialized.value = true
+    productsStore.productsLoading.value = false
+    window.__PREFETCH_PRODUCTS__ = null
+    window.__PREFETCH_TOTAL__ = null
+    window.__PREFETCH_PAGES__ = null
+  } else if (!productsStore.initialized.value) {
+    // fallback if preFetch didn't run
     productsStore.productsLoading.value = true
     await productsStore.preFetchProducts({
       api: true,

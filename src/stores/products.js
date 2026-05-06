@@ -61,7 +61,8 @@ export async function preFetchProducts(ctx = {}, force = false) {
   // =========================
   if (isApiMode) {
     try {
-      productsLoading.value = true;
+      //productsLoading.value = true;
+      if (!ctx.dryRun) productsLoading.value = true  // ✅ only load if not a dry run
 
       const {
         page = 1,
@@ -120,6 +121,15 @@ export async function preFetchProducts(ctx = {}, force = false) {
 
         total = res.headers.get('X-WP-Total');
         totalPagesHeader = res.headers.get('X-WP-TotalPages');
+
+        // ✅ If dryRun, return data without touching the shared store
+        if (ctx.dryRun) {
+          return {
+            products: data || [],
+            total: total ? parseInt(total) : 0,
+            totalPages: totalPagesHeader ? parseInt(totalPagesHeader) : 1
+          }
+        }
 
       } catch (err) {
         console.error('[SSR API ERROR]', err);

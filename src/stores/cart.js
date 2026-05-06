@@ -1,15 +1,20 @@
 import { reactive, computed } from 'vue'
 import { fetchWithToken } from 'src/composables/useApiFetch.js'
 import productsStore from 'src/stores/products'
-import { matShoppingCart, matError, matFavorite, matCloudOff, matCloudDone } from '@quasar/extras/material-icons'
-import { userState, isLoggedIn, setUser } from 'src/stores/user'
+import { matShoppingCart, matError, matCloudOff } from '@quasar/extras/material-icons'
+import { userState, setUser } from 'src/stores/user'
+
 /* -------------------------
-   Constants & state (same shape as before)
+   Constants
    ------------------------- */
-const API_BASE = import.meta.env.VITE_STORE_API_BASE;
+const API_BASE = import.meta.env.VITE_STORE_API_BASE
 const LOCAL_CART_KEY = 'local_cart_v1'
 const LEGACY_OFFLINE_KEY = 'offline_cart'
+const DEBUG = import.meta.env.DEV
 
+/* -------------------------
+   State
+   ------------------------- */
 const state = reactive({
   cart_array: null,
   local_cart: { items: [] },
@@ -17,144 +22,42 @@ const state = reactive({
   items_count: 0,
   totals: {},
   coupons: [],
-  loading: { cart: false, quickbuy: false, wishlist: false },
+  loading: { cart: false, quickbuy: false },
   error: null,
-  wishlist_items: {},
-  offline: typeof window !== 'undefined' ? !navigator.onLine : false, // Assume false on server
-  //offline: typeof navigator !== 'undefined' ? !navigator.onLine : true,
+  offline: typeof window !== 'undefined' ? !navigator.onLine : false,
   drawerOpen: false,
-  synced: false, // <--- NEW
-  // ADD a getter:
+  synced: false,
   get user() { return userState.data },
   set user(val) { setUser(val) }
 })
 
 /* -------------------------
-   Helpers (robust)
+   Tiny helpers
    ------------------------- */
-// Add a variable to track the sync promise specifically
-let cartFetchPromise = null;
-async function fetchCartOnce(forceSync = false) {
-  // 1. If we are already fetching/syncing, return that promise
-  if (cartFetchPromise) return cartFetchPromise;
-
-  cartFetchPromise = (async () => {
-    try {
-      // 2. Load what we have locally first for immediate UI
-      loadLocalCart();
-
-      if (state.offline) {
-        return state.cart_array;
-      }
-
-      // 3. If we're going to checkout, we MUST sync before resolving
-      if (forceSync || needsSyncComputed.value) {
-        return await syncLocalCartWithServer();
-      } else {
-        // Just a standard refresh for non-checkout pages
-        return await fetchCart();
-      }
-    } finally {
-      cartFetchPromise = null; // Reset so future calls can refresh
-    }
-  })();
-
-  return cartFetchPromise;
+function notifyUser($q, type, message, icon) {
+  if ($q?.notify) $q.notify({ type, message, icon })
 }
 
-// Helper to check sync status without the computed overhead in the store
-const needsSyncComputed = computed(() => {
-  if (state.offline) return false;
-  if (state.synced === false) return true;
-  return !localAndServerSignaturesEqual();
-});
-
-function getMaxAllowed(item) {
-  if (!item) return Infinity
-
-  // 1. If quantity_limits.maximum exists (number)
-  if (item.quantity_limits && typeof item.quantity_limits.maximum === 'number') {
-    const m = item.quantity_limits.maximum
-    return (m === null || Number.isNaN(m)) ? Infinity : m
-  }
-
-  // 2. Try add_to_cart.maximum
-  if (item.add_to_cart && typeof item.add_to_cart.maximum === 'number') {
-    const m = item.add_to_cart.maximum
-    return (m === null || Number.isNaN(m)) ? Infinity : m
-  }
-
-  // 3. Try stock_availability.text (extract number)
-  const stockText = item?.stock_availability?.text
-  if (stockText && String(stockText).trim() !== '') {
-    const m = String(stockText).match(/\d+/)
-    if (m) return parseInt(m[0], 10)
-  }
-
-  return Infinity
+function markCartChanged() {
+  state.synced = false
 }
 
-async function getCachedProduct(productId) {
-  // 1) Prefer in-memory global products store (fast, SSR hydrated if available)
-  try {
-    const fromStore = productsStore.getById(Number(productId))
-    if (fromStore) return fromStore
-  } catch (err) {
-    console.error(err)
-    // swallow
-  }
-
-  // 2) Try SW cache (the same cache / key used by products store)
-  // NOTE: ensure these keys match products store SW cache keys
-  try {
-    if (typeof window !== 'undefined' && 'caches' in window) {
-      const cache = await caches.open('products-cache') // same name product store uses
-      // the products store writes a synthetic key like '/api/products' (see earlier products.js)
-      const matchKey = '/api/products'
-      const res = await cache.match(matchKey)
-      if (res && res.ok) {
-        const data = await res.json()
-        if (Array.isArray(data)) {
-          const found = data.find(p => Number(p.id) === Number(productId))
-          if (found) return found
-        }
-      }
-    }
-  } catch (err) {
-    // ignore read/cache errors
-    console.warn('[cart] getCachedProduct cache read failed', err)
-  }
-
-  // 3) As a last resort: ask the products store to fetch the listing if needed,
-  //    (productsStore.fetchProductsIfNeeded will reuse SSR/cache and only hit network when needed)
-  try {
-    // Only fetch when online to avoid blocking while offline:
-    if (typeof navigator !== 'undefined' && navigator.onLine) {
-      await productsStore.fetchProductsIfNeeded()
-      const fromAfterFetch = productsStore.getById(Number(productId))
-      if (fromAfterFetch) return fromAfterFetch
-    }
-  } catch (err) {
-    console.warn('[cart]', err)
-    // swallow
-  }
-
-  // Nothing found
-  return null
-}
-
+/* -------------------------
+   Signature / key utilities
+   ------------------------- */
 function normalizeVariation(variation) {
-  // Always return sorted array of { attribute, value }
   if (!variation) return []
   if (Array.isArray(variation)) {
-    const mapped = variation.map(v => {
-      if (!v) return { attribute: '', value: '' }
-      if (typeof v === 'string') return { attribute: '', value: String(v) }
-      const attribute = v.attribute ?? v.name ?? v.option ?? ''
-      const value = v.value ?? v.option ?? ''
-      return { attribute: String(attribute), value: String(value) }
-    }).filter(v => v.attribute !== '' || v.value !== '')
-    return mapped.sort((a, b) => (a.attribute + a.value).localeCompare(b.attribute + b.value))
+    return variation
+      .map(v => {
+        if (!v) return { attribute: '', value: '' }
+        if (typeof v === 'string') return { attribute: '', value: String(v) }
+        const attribute = v.attribute ?? v.name ?? v.option ?? ''
+        const value = v.value ?? v.option ?? ''
+        return { attribute: String(attribute), value: String(value) }
+      })
+      .filter(v => v.attribute !== '' || v.value !== '')
+      .sort((a, b) => (a.attribute + a.value).localeCompare(b.attribute + b.value))
   }
   if (typeof variation === 'object') {
     if ('attribute' in variation || 'value' in variation || 'name' in variation) {
@@ -163,14 +66,14 @@ function normalizeVariation(variation) {
       if (attribute === '' && (value === '' || typeof value === 'undefined')) return []
       return [{ attribute: String(attribute), value: String(value) }]
     }
-    // treat as object map { attr: value }
-    const arr = Object.entries(variation).map(([k, v]) => {
-      const val = (v && typeof v === 'object' && 'value' in v) ? v.value : v
-      return { attribute: String(k), value: String(val ?? '') }
-    }).filter(v => v.attribute !== '' || v.value !== '')
-    return arr.sort((a, b) => (a.attribute + a.value).localeCompare(b.attribute + b.value))
+    return Object.entries(variation)
+      .map(([k, v]) => {
+        const val = (v && typeof v === 'object' && 'value' in v) ? v.value : v
+        return { attribute: String(k), value: String(val ?? '') }
+      })
+      .filter(v => v.attribute !== '' || v.value !== '')
+      .sort((a, b) => (a.attribute + a.value).localeCompare(b.attribute + b.value))
   }
-  // scalar fallback
   return [{ attribute: '', value: String(variation) }]
 }
 
@@ -186,25 +89,118 @@ function itemSignature(itemLike) {
   return `${id}::${varSig}`
 }
 
+function buildSig(productId, variationArr) {
+  const varSig = variationArr
+    .map(v => `${v.attribute || ''}:${v.value || ''}`)
+    .filter(Boolean)
+    .sort()
+    .join('|')
+  return `${productId}::${varSig}`
+}
+
 function generateLocalKeyForSig(sig) {
-  // deterministic short key based on signature (stable across reloads)
   let h = 5381
   for (let i = 0; i < sig.length; i++) h = ((h << 5) + h) + sig.charCodeAt(i)
   const num = (h >>> 0).toString(36)
-  // include a short sanitized part of the signature for easier debugging
   const friendly = sig.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 18)
   return `local-${num}-${friendly}`
 }
 
+/* -------------------------
+   Stock / limits helper
+   ------------------------- */
+function getMaxAllowed(item) {
+  if (!item) return Infinity
+
+  if (item.quantity_limits && typeof item.quantity_limits.maximum === 'number') {
+    const m = item.quantity_limits.maximum
+    return (m === null || Number.isNaN(m)) ? Infinity : m
+  }
+  if (item.add_to_cart && typeof item.add_to_cart.maximum === 'number') {
+    const m = item.add_to_cart.maximum
+    return (m === null || Number.isNaN(m)) ? Infinity : m
+  }
+  const stockText = item?.stock_availability?.text
+  if (stockText && String(stockText).trim() !== '') {
+    const m = String(stockText).match(/\d+/)
+    if (m) return parseInt(m[0], 10)
+  }
+  return Infinity
+}
+
+/* -------------------------
+   Product cache lookup
+   ------------------------- */
+async function getCachedProduct(productId) {
+  try {
+    const fromStore = productsStore.getById(Number(productId))
+    if (fromStore) return fromStore
+  } catch (err) {
+    if (DEBUG) console.warn('[cart] getCachedProduct store lookup failed', err)
+  }
+
+  try {
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      const cache = await caches.open('products-cache')
+      const res = await cache.match('/api/products')
+      if (res?.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          const found = data.find(p => Number(p.id) === Number(productId))
+          if (found) return found
+        }
+      }
+    }
+  } catch (err) {
+    if (DEBUG) console.warn('[cart] getCachedProduct cache read failed', err)
+  }
+
+  try {
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      await productsStore.fetchProductsIfNeeded()
+      const fromAfterFetch = productsStore.getById(Number(productId))
+      if (fromAfterFetch) return fromAfterFetch
+    }
+  } catch (err) {
+    if (DEBUG) console.warn('[cart] getCachedProduct fetch failed', err)
+  }
+
+  return null
+}
+
+let productsJsonCache = null
+async function getProductFromJson(productId) {
+  try {
+    if (!productsJsonCache) {
+      const res = await fetch('/data/products.json')
+      productsJsonCache = await res.json()
+      if (!Array.isArray(productsJsonCache)) productsJsonCache = []
+    }
+    return productsJsonCache.find(p => Number(p.id) === Number(productId)) || null
+  } catch (err) {
+    if (DEBUG) console.warn('[cart] getProductFromJson failed', err)
+    return null
+  }
+}
+
+/* -------------------------
+   Local item builder
+   ------------------------- */
 function buildLocalItemFromProduct(productLike, variation = [], quantity = 1) {
   const images = productLike?.images ?? []
-  const prices = productLike?.prices ?? (productLike?.price ? { price: productLike.price, currency_code: (productLike?.prices?.currency_code || '') } : {})
+  const prices = productLike?.prices ?? (productLike?.price
+    ? { price: productLike.price, currency_code: productLike?.prices?.currency_code || '' }
+    : {})
   const normalizedVariation = normalizeVariation(variation)
   const temp = {
     id: productLike?.id || 0,
     name: productLike?.name || productLike?.title || '',
     quantity: quantity || 1,
-    quantity_limits: { maximum: productLike?.add_to_cart?.maximum ?? null, minimum: productLike?.add_to_cart?.minimum ?? 1, multiple_of: productLike?.add_to_cart?.multiple_of ?? 1 },
+    quantity_limits: {
+      maximum: productLike?.add_to_cart?.maximum ?? null,
+      minimum: productLike?.add_to_cart?.minimum ?? 1,
+      multiple_of: productLike?.add_to_cart?.multiple_of ?? 1
+    },
     prices,
     images,
     variation: normalizedVariation,
@@ -221,11 +217,11 @@ function buildLocalItemFromProduct(productLike, variation = [], quantity = 1) {
    ------------------------- */
 function persistLocalCart() {
   try {
-    localStorage.setItem(LOCAL_CART_KEY, JSON.stringify(state.local_cart.items || []))
-    // keep legacy key for compatibility
-    localStorage.setItem(LEGACY_OFFLINE_KEY, JSON.stringify(state.local_cart.items || []))
+    const data = JSON.stringify(state.local_cart.items || [])
+    localStorage.setItem(LOCAL_CART_KEY, data)
+    localStorage.setItem(LEGACY_OFFLINE_KEY, data) // legacy compat
   } catch (err) {
-    console.warn('[cart] persistLocalCart failed', err)
+    if (DEBUG) console.warn('[cart] persistLocalCart failed', err)
   }
 }
 
@@ -233,8 +229,9 @@ async function loadLocalCart() {
   try {
     const raw = localStorage.getItem(LOCAL_CART_KEY)
     let items = []
-    if (raw) items = JSON.parse(raw) || []
-    else {
+    if (raw) {
+      items = JSON.parse(raw) || []
+    } else {
       const legacy = localStorage.getItem(LEGACY_OFFLINE_KEY)
       if (legacy) items = JSON.parse(legacy) || []
     }
@@ -265,7 +262,7 @@ async function loadLocalCart() {
     state.local_cart.items = Array.from(map.values())
     persistLocalCart()
   } catch (err) {
-    console.warn('[cart] loadLocalCart failed', err)
+    if (DEBUG) console.warn('[cart] loadLocalCart failed', err)
     state.local_cart.items = []
   }
 
@@ -273,68 +270,94 @@ async function loadLocalCart() {
 }
 
 /* -------------------------
-   rebuildMergedView (local-first)
-   - local items are authoritative
-   - include API items only if no local override exists
+   Merged view (local-first)
+   BUG FIX: filter out _removed tombstones before rendering
    ------------------------- */
 function rebuildMergedView() {
-
-  // mutate the same array instance so all refs/aliases stay reactive
-  state.items.splice(0, state.items.length, ...(state.local_cart.items || []))
-
-  // keep items_count as a number (recalculated here)
+  const visible = (state.local_cart.items || []).filter(i => !i._removed)
+  state.items.splice(0, state.items.length, ...visible)
   state.items_count = state.items.reduce((s, i) => s + (i.quantity || 0), 0)
-
-// totals: if server cart exists, use it; else compute minimal local total
   state.totals = state.cart_array?.totals || {
-    total_items: String(state.items.reduce((s, it) =>
-      s + ((it.prices?.price ? parseFloat(it.prices.price) * (it.quantity || 1) : 0)), 0))
+    total_items: String(
+      state.items.reduce((s, it) =>
+        s + (it.prices?.price ? parseFloat(it.prices.price) * (it.quantity || 1) : 0), 0)
+    )
   }
   state.coupons = state.cart_array?.coupons || []
-  //console.log('cart merged', state);
 }
 
-// ----- sync helpers / debounce -----
-let __syncDebounceTimer = null;
-const SYNC_DEBOUNCE_MS = 700;
+/* -------------------------
+   applyServerSnapshot
+   Single helper that replaces 4 duplicated update blocks
+   ------------------------- */
+function applyServerSnapshot(data) {
+  state.cart_array = data || null
+  state.synced = true
+  state.error = null
 
+  const serverMap = new Map(
+    (state.cart_array?.items || []).map(i => [itemSignature(i), i])
+  )
+  for (const li of state.local_cart.items) {
+    const match = serverMap.get(itemSignature(li))
+    if (match) {
+      li._synced = true
+      li.remote_key = match.key || li.remote_key
+    } else {
+      li._synced = false
+    }
+  }
+
+  persistLocalCart()
+  rebuildMergedView()
+}
+
+/* -------------------------
+   Signature equality check
+   ------------------------- */
 function localAndServerSignaturesEqual() {
-  // produce sorted array of signatures for local items (ignore _synced/_local/_removed flags)
   const local = (state.local_cart.items || [])
-    .filter(i => !i._removed) // items marked removed are part of diff
+    .filter(i => !i._removed)
     .map(i => itemSignature(i))
     .sort()
-    .join('|');
+    .join('|')
 
   const server = ((state.cart_array && state.cart_array.items) || [])
     .map(i => itemSignature(i))
     .sort()
-    .join('|');
+    .join('|')
 
-  return local === server;
+  return local === server
 }
 
+const needsSyncComputed = computed(() => {
+  if (state.offline) return false
+  if (state.synced === false) return true
+  return !localAndServerSignaturesEqual()
+})
+
+/* -------------------------
+   Debounced sync scheduler
+   ------------------------- */
+let __syncDebounceTimer = null
+const SYNC_DEBOUNCE_MS = 700
+
 function scheduleSyncLocalToServer() {
-  // Mark changed already sets state.synced = false — ensure scheduled sync runs
-  if (__syncDebounceTimer) clearTimeout(__syncDebounceTimer);
+  if (__syncDebounceTimer) clearTimeout(__syncDebounceTimer)
   __syncDebounceTimer = setTimeout(() => {
-    // fire and ignore errors
     syncLocalCartWithServer().catch(err => {
-      console.warn('[cart] scheduled sync failed', err);
-    });
-    __syncDebounceTimer = null;
-  }, SYNC_DEBOUNCE_MS);
+      if (DEBUG) console.warn('[cart] scheduled sync failed', err)
+    })
+    __syncDebounceTimer = null
+  }, SYNC_DEBOUNCE_MS)
 }
 
 /* -------------------------
-   Background sync (local -> API) (does not overwrite local_cart)
-   - attempts add/update/remove
-   - after actions, fetch server cart into state.cart_array (informational)
-   - mark local items _synced if found on server
+   Item-by-item merge (FALLBACK ONLY)
+   Only called by syncLocalCartWithServer when the batch endpoint fails.
    ------------------------- */
-async function mergeLocalIntoApi($q = null) {
-  if (!state.local_cart.items.length) return
-  if (state.offline) return
+async function _mergeLocalIntoApiFallback() {
+  if (!state.local_cart.items.length || state.offline) return
 
   const apiItems = state.cart_array?.items || []
   const apiMap = new Map(apiItems.map(i => [itemSignature(i), i]))
@@ -343,161 +366,95 @@ async function mergeLocalIntoApi($q = null) {
   for (const localItem of state.local_cart.items) {
     const sig = itemSignature(localItem)
     const apiItem = apiMap.get(sig)
+
     if (localItem._removed) {
-      if (apiItem && apiItem.key) actions.push({ type: 'remove', payload: { key: apiItem.key }, sig })
+      if (apiItem?.key) actions.push({ type: 'remove', payload: { key: apiItem.key } })
       continue
     }
 
-    // clamp quantity using API limits (if available)
     const maxAllowed = getMaxAllowed(apiItem || localItem)
-    if (Number.isFinite(maxAllowed) && localItem.quantity > maxAllowed) localItem.quantity = maxAllowed
+    if (Number.isFinite(maxAllowed) && localItem.quantity > maxAllowed) {
+      localItem.quantity = maxAllowed
+    }
+
     if (apiItem) {
       if ((localItem.quantity || 0) !== (apiItem.quantity || 0)) {
-        // update via api key
-        if (apiItem.key) actions.push({ type: 'update', payload: { key: apiItem.key, quantity: Number(localItem.quantity) }, sig })
-        else actions.push({ type: 'add', payload: { id: localItem.id, quantity: localItem.quantity, variation: localItem.variation }, sig })
+        if (apiItem.key) {
+          actions.push({ type: 'update', payload: { key: apiItem.key, quantity: Number(localItem.quantity) } })
+        } else {
+          actions.push({ type: 'add', payload: { id: localItem.id, quantity: localItem.quantity, variation: localItem.variation } })
+        }
       }
     } else {
-      // not on server -> add
-      actions.push({ type: 'add', payload: { id: localItem.id, quantity: localItem.quantity, variation: localItem.variation }, sig })
-    }
-  }
-  if (!actions.length) {
-    // no actions, but refresh server snapshot
-    try {
-      const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
-      if (res.ok) {
-        const data = await res.json()
-        state.cart_array = data
-        // mark synced local items
-        const serverMap = new Map((state.cart_array.items || []).map(i => [itemSignature(i), i]))
-        for (const li of state.local_cart.items) {
-          const matching = serverMap.get(itemSignature(li))
-          if (matching) {
-            li._synced = true
-            li.remote_key = matching.key || li.remote_key
-          } else li._synced = false
-        }
-        persistLocalCart()
-        rebuildMergedView()
-      }
-    } catch (err) {
-      console.warn('[cart] merge refresh failed', err)
-    }
-    return
-  }
-  state.loading.cart = true
-  for (const act of actions) {
-    try {
-      if (act.type === 'add') {
-        const body = { id: act.payload.id, quantity: act.payload.quantity }
-        if (act.payload.variation && act.payload.variation.length) {
-          body.variation = act.payload.variation.map(v => ({ attribute: v.attribute, value: v.value }))
-        }
-        const res = await fetchWithToken(`${API_BASE}/cart/add-item`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          console.warn('[cart] merge add failed', err)
-        }
-      } else if (act.type === 'update') {
-        const res = await fetchWithToken(`${API_BASE}/cart/update-item`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(act.payload)
-        })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          console.warn('[cart] merge update failed', err)
-        }
-      } else if (act.type === 'remove') {
-        const res = await fetchWithToken(`${API_BASE}/cart/remove-item`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(act.payload)
-        })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          console.warn('[cart] merge remove failed', err)
-        }
-      }
-    } catch (err) {
-      console.warn('[cart] merge action error', err)
+      actions.push({ type: 'add', payload: { id: localItem.id, quantity: localItem.quantity, variation: localItem.variation } })
     }
   }
 
-  // Refresh server snapshot and mark local items as synced if present on server
+  // If no diff, just refresh the server snapshot
+  if (!actions.length) {
+    try {
+      const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
+      if (res.ok) applyServerSnapshot(await res.json())
+    } catch (err) {
+      if (DEBUG) console.warn('[cart] fallback refresh failed', err)
+    }
+    return
+  }
+
+  state.loading.cart = true
+  for (const act of actions) {
+    try {
+      const endpoint =
+        act.type === 'add'    ? 'add-item' :
+        act.type === 'update' ? 'update-item' : 'remove-item'
+
+      let body = act.payload
+      if (act.type === 'add' && body.variation?.length) {
+        body = { ...body, variation: body.variation.map(v => ({ attribute: v.attribute, value: v.value })) }
+      }
+
+      const res = await fetchWithToken(`${API_BASE}/cart/${endpoint}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        if (DEBUG) console.warn(`[cart] fallback ${act.type} failed`, err)
+      }
+    } catch (err) {
+      if (DEBUG) console.warn('[cart] fallback action error', err)
+    }
+  }
+
+  // Refresh server snapshot after all actions
   try {
     const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
-    if (res.ok) {
-      const data = await res.json()
-      state.cart_array = data
-      const serverMap = new Map((state.cart_array.items || []).map(i => [itemSignature(i), i]))
-      for (const li of state.local_cart.items) {
-        const matching = serverMap.get(itemSignature(li))
-        if (matching) {
-          li._synced = true
-          li.remote_key = matching.key || li.remote_key
-        } else {
-          li._synced = false
-        }
-      }
-      persistLocalCart()
-      rebuildMergedView()
-      if ($q && $q.notify) $q.notify({ type: 'positive', message: 'Cart synced with server.', icon: matCloudDone })
-    } else {
-      console.warn('[cart] fetchCart after merge failed')
-    }
+    if (res.ok) applyServerSnapshot(await res.json())
   } catch (err) {
-    console.warn('[cart] fetchCart after merge failed', err)
+    if (DEBUG) console.warn('[cart] fallback final refresh failed', err)
   } finally {
     state.loading.cart = false
   }
 }
 
 /* -------------------------
-   API fetch/update functions
+   PRIMARY SYNC
+   Batch POST first, item-by-item as fallback
    ------------------------- */
-async function updateCartState(data) {
-  // Update server snapshot but do NOT let server override local items
-  state.cart_array = data || null
-}
-
-/* --------- ENHANCEMENT: markCartChanged ----------- */
-function markCartChanged() {
-  state.synced = false
-}
-
-/* --------- ENHANCEMENT: batch sync API ----------- */
 async function syncLocalCartWithServer() {
-  // If offline, nothing to do
-  if (state.offline) return state.cart_array || null;
+  if (state.offline) return state.cart_array || null
 
-  // If we already believe the two sides are synced, verify signature equality;
-  // only skip when signatures match. Otherwise we must perform a sync.
   if (state.synced === true) {
     try {
-      if (localAndServerSignaturesEqual()) {
-        // nothing changed; ensure we still have cart_array to present on checkout
-        // return the existing server snapshot for immediate use.
-        // console.log('[cart] sync skipped: local and server signatures match.')
-        return state.cart_array || null;
-      }
-      // signatures differ -> fallthrough to perform actual sync
+      if (localAndServerSignaturesEqual()) return state.cart_array || null
     } catch (err) {
-      // if comparison fails for any reason, fallback to performing a sync
-      console.warn('[cart] signature compare failed, proceeding to sync', err);
+      if (DEBUG) console.warn('[cart] signature compare failed, proceeding to sync', err)
     }
   }
 
-  // perform full sync (local -> server). This keeps local authoritative.
-  state.loading.cart = true;
+  state.loading.cart = true
   try {
     const res = await fetchWithToken(`${API_BASE}/cart/sync-local-cart`, {
       method: 'POST',
@@ -507,46 +464,61 @@ async function syncLocalCartWithServer() {
         items: state.local_cart.items,
         coupons: state.coupons.map(c => c.code)
       })
-    });
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data?.message || 'Batch sync failed')
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.message || 'Cart sync failed');
-
-    // update server snapshot (cart_array) and mark synced
-    state.cart_array = data;
-    state.synced = true;
-
-    // mark local items as synced if matched on returned cart
-    const serverMap = new Map((state.cart_array.items || []).map(i => [itemSignature(i), i]));
-    for (const li of state.local_cart.items) {
-      const matching = serverMap.get(itemSignature(li));
-      if (matching) {
-        li._synced = true;
-        li.remote_key = matching.key || li.remote_key;
-      } else {
-        li._synced = false;
-      }
+    applyServerSnapshot(data)
+    return data
+  } catch (batchErr) {
+    if (DEBUG) console.warn('[cart] batch sync failed, falling back to item-by-item', batchErr)
+    state.error = batchErr.message || String(batchErr)
+    state.synced = false
+    // Fallback: item-by-item merge
+    try {
+      await _mergeLocalIntoApiFallback()
+    } catch (fallbackErr) {
+      if (DEBUG) console.warn('[cart] fallback sync also failed', fallbackErr)
     }
-
-    persistLocalCart();
-    rebuildMergedView();
-    state.loading.cart = false;
-    state.error = null;
-    return data;
-  } catch (err) {
-    state.error = err.message || String(err);
-    state.loading.cart = false;
-    state.synced = false;
-    throw err;
+    throw batchErr
+  } finally {
+    state.loading.cart = false
   }
 }
 
-/* --------- ENHANCEMENT: fetchCart respects synced ----------- */
+/* -------------------------
+   fetchCartOnce (deduped)
+   ------------------------- */
+let cartFetchPromise = null
+
+async function fetchCartOnce(forceSync = false) {
+  if (cartFetchPromise) return cartFetchPromise
+
+  cartFetchPromise = (async () => {
+    try {
+      loadLocalCart()
+      if (state.offline) return state.cart_array
+
+      if (forceSync || needsSyncComputed.value) {
+        return await syncLocalCartWithServer()
+      } else {
+        return await fetchCart()
+      }
+    } finally {
+      cartFetchPromise = null
+    }
+  })()
+
+  return cartFetchPromise
+}
+
+/* -------------------------
+   fetchCart
+   ------------------------- */
 async function fetchCart(force = false) {
   if (state.synced && !force) return
-  console.log('cart is being fetched')
-  // We still fetch the api cart to know server quantities/keys for syncing,
-  // but we do not let it replace the local cart.
+  if (DEBUG) console.log('[cart] fetchCart called')
+
   if (state.offline) {
     loadLocalCart()
     state.cart_array = null
@@ -555,25 +527,27 @@ async function fetchCart(force = false) {
   }
 
   state.error = null
-
   try {
     const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
     if (!res.ok) throw new Error('Failed to fetch cart')
     const data = await res.json()
-    const cartToken = res.headers.get('Cart-Token') || null;
+
+    const cartToken = res.headers.get('Cart-Token') || null
     if (cartToken) {
-      console.log('🟢 Cart-Token received:', cartToken);
-      localStorage.setItem('wc_cart_token', cartToken);
+      if (DEBUG) console.log('[cart] Cart-Token received:', cartToken)
+      localStorage.setItem('wc_cart_token', cartToken)
     }
 
-    // store server snapshot only
     state.cart_array = data
     rebuildMergedView()
-    // try to push local changes (background)
-    if(force){
-     await mergeLocalIntoApi().catch(err => console.warn('[cart] mergeLocalIntoApi failed', err))
+
+    // Push any local changes to server (background unless forced)
+    if (force) {
+      await _mergeLocalIntoApiFallback()
     } else {
-      mergeLocalIntoApi().catch(err => console.warn('[cart] mergeLocalIntoApi failed', err))
+      _mergeLocalIntoApiFallback().catch(err => {
+        if (DEBUG) console.warn('[cart] background merge failed', err)
+      })
     }
   } catch (err) {
     state.error = err.message
@@ -587,230 +561,255 @@ async function fetchCart(force = false) {
   }
 }
 
-let productsJsonCache = null
-
-async function getProductFromJson(productId) {
-  try {
-    if (!productsJsonCache) {
-      const res = await fetch('/data/products.json')
-      const data = await res.json()
-      productsJsonCache = Array.isArray(data) ? data : []
-    }
-
-    return productsJsonCache.find(p => Number(p.id) === Number(productId)) || null
-  } catch (err) {
-    console.warn('[cart] getProductFromJson failed', err)
-    return null
-  }
+/* -------------------------
+   add() sub-functions
+   ------------------------- */
+function _finishAdd($q, openDrawer = true) {
+  persistLocalCart()
+  rebuildMergedView()
+  scheduleSyncLocalToServer()
+  notifyUser($q, 'positive', 'Added to cart', matShoppingCart)
+  state.loading.cart = false
+  if (openDrawer) state.drawerOpen = true
 }
-/* --------- All Public Cart Mutations call markCartChanged ---------- */
-async function add(productId, quantity = 1, variationId = null, variation = {}, $q = null, productDataFromUI = null) {
-  markCartChanged() // <--- NEW
-  state.loading.cart = true
-  state.error = null
-  const variationArr = normalizeVariation(variation)
-  const sigCandidate = `${productId}::${variationArr.map(v => `${v.attribute || ''}:${v.value || ''}`).filter(Boolean).sort().join('|')}`
-  let localItem = state.local_cart.items.find(i => itemSignature(i) === sigCandidate)
-  if (localItem) {
-    const maxAllowed = getMaxAllowed(localItem)
-    const current = localItem.quantity || 0
-    const allowed = maxAllowed === Infinity ? Infinity : maxAllowed - current
-    const addQty = Math.min(quantity, allowed)
-    if (addQty <= 0) {
-      if ($q) $q.notify({ type: 'negative', message: 'No more stock available', icon: matError })
-      state.loading.cart = false
-      return
-    }
-    localItem.quantity = current + addQty
-    localItem._removed = false
-    persistLocalCart()
-    rebuildMergedView()
-    scheduleSyncLocalToServer()
-    if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: matShoppingCart })
+
+function _addToExistingLocalItem(localItem, quantity, $q, openDrawer = true) {
+  const maxAllowed = getMaxAllowed(localItem)
+  const current = localItem.quantity || 0
+  const addQty = maxAllowed === Infinity ? quantity : Math.min(quantity, maxAllowed - current)
+
+  if (addQty <= 0) {
+    notifyUser($q, 'negative', 'No more stock available', matError)
     state.loading.cart = false
-    state.drawerOpen = true
     return
   }
 
-  // Try to find an API item with this signature (to use product metadata)
-  const apiItem = (state.cart_array?.items || []).find(i => itemSignature(i) === sigCandidate)
-  if (apiItem) {
-    const maxAllowed = getMaxAllowed(apiItem)
-const existingItem = state.local_cart.items.find(
-  i => itemSignature(i) === sigCandidate && !i._removed
-)
+  localItem.quantity = current + addQty
+  localItem._removed = false
+  _finishAdd($q, openDrawer)
+}
 
-const currentQty = existingItem ? (existingItem.quantity || 0) : 0
+function _addFromApiItem(apiItem, quantity, variationArr, variationId, $q, openDrawer = true) {
+  const maxAllowed = getMaxAllowed(apiItem)
+  const existingItem = state.local_cart.items.find(
+    i => itemSignature(i) === itemSignature(apiItem) && !i._removed
+  )
+  const currentQty = existingItem ? (existingItem.quantity || 0) : 0
+  const intendedQty = currentQty + quantity
+  const clampQty = maxAllowed === Infinity ? intendedQty : Math.min(intendedQty, maxAllowed)
 
-const intendedQty = currentQty + quantity
-//const intendedQty = (apiItem.quantity || 0) + quantity
-    const clampQty = maxAllowed === Infinity ? intendedQty : Math.min(intendedQty, maxAllowed)
-    if (clampQty <= (apiItem.quantity || 0)) {
-      if ($q) $q.notify({ type: 'negative', message: 'Only 0 more available for this product.', icon: matError })
-      state.loading.cart = false
-      return
-    }
-    const normalizedVariation = normalizeVariation(Array.isArray(apiItem.variation) ? apiItem.variation : variationArr)
-    const clone = {
-      id: apiItem.id,
-      variationID: variationId || 0,
-      name: apiItem.name || '',
-      quantity: clampQty,
-      prices: apiItem.prices || {},
-      images: apiItem.images || [],
-      variation: normalizedVariation,
-      quantity_limits: apiItem.quantity_limits ? { ...apiItem.quantity_limits } : { editable: true, maximum: maxAllowed, minimum: 1, multiple_of: 1 },
-      _local: true,
-      _synced: false
-    }
-    const sig = itemSignature(clone)
-    clone.key = generateLocalKeyForSig(sig)
-    state.local_cart.items.push(clone)
-    persistLocalCart()
-    rebuildMergedView()
-    scheduleSyncLocalToServer()
-    if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: matShoppingCart })
+  if (clampQty <= (apiItem.quantity || 0)) {
+    notifyUser($q, 'negative', 'Only 0 more available for this product.', matError)
     state.loading.cart = false
-    state.drawerOpen = true
     return
   }
 
-  // fallback: create local-only item using cached product metadata if possible
+  const normalizedVariation = normalizeVariation(
+    Array.isArray(apiItem.variation) ? apiItem.variation : variationArr
+  )
+  const clone = {
+    id: apiItem.id,
+    variationID: variationId || 0,
+    name: apiItem.name || '',
+    quantity: clampQty,
+    prices: apiItem.prices || {},
+    images: apiItem.images || [],
+    variation: normalizedVariation,
+    quantity_limits: apiItem.quantity_limits
+      ? { ...apiItem.quantity_limits }
+      : { editable: true, maximum: maxAllowed, minimum: 1, multiple_of: 1 },
+    _local: true,
+    _synced: false
+  }
+  clone.key = generateLocalKeyForSig(itemSignature(clone))
+  state.local_cart.items.push(clone)
+  _finishAdd($q, openDrawer)
+}
 
+async function _addNewItem(productId, quantity, variationArr, productDataFromUI, $q, openDrawer = true) {
   let productData = productDataFromUI
   if (!productData) {
-    try {
-      productData = await getCachedProduct(productId)
-    } catch {
-      productData = null
-    }
+    try { productData = await getCachedProduct(productId) } catch { productData = null }
   }
-  if (!productData) {
-    productData = await getProductFromJson(productId)
+  if (!productData) productData = await getProductFromJson(productId)
+
+  const sourceProduct = productData || {
+    id: productId, name: '', images: [], prices: {},
+    add_to_cart: { minimum: 1, maximum: null },
+    stock_availability: { text: '' }
   }
 
-  const sourceProduct = productData || { id: productId, name: '', images: [], prices: {}, add_to_cart: { minimum: 1, maximum: null }, stock_availability: { text: '' } }
   const localItemNew = buildLocalItemFromProduct(sourceProduct, variationArr, quantity)
   const maxAllowedNew = getMaxAllowed(localItemNew)
   if (maxAllowedNew !== Infinity && localItemNew.quantity > maxAllowedNew) {
     localItemNew.quantity = maxAllowedNew
-    if ($q) $q.notify({ type: 'negative', message: `Only ${maxAllowedNew} available for this product`, icon: matError })
+    notifyUser($q, 'negative', `Only ${maxAllowedNew} available for this product`, matError)
   }
+
   state.local_cart.items.push(localItemNew)
-  persistLocalCart()
-  rebuildMergedView()
-  scheduleSyncLocalToServer()
-  if ($q) $q.notify({ type: 'positive', message: 'Added to cart', icon: matShoppingCart })
-  state.loading.cart = false
-  state.drawerOpen = true
+  _finishAdd($q, openDrawer)
+}
+
+/* -------------------------
+   Public cart mutations
+   ------------------------- */
+async function add(productId, quantity = 1, _variationId = null, variation = {}, $q = null, productDataFromUI = null, openDrawer = true) {
+  markCartChanged()
+  state.loading.cart = true
+  state.error = null
+
+  const variationArr = normalizeVariation(variation)
+  const sig = buildSig(productId, variationArr)
+
+  const localItem = state.local_cart.items.find(i => itemSignature(i) === sig)
+  if (localItem) return _addToExistingLocalItem(localItem, quantity, $q, openDrawer)
+
+  const apiItem = (state.cart_array?.items || []).find(i => itemSignature(i) === sig)
+  if (apiItem) return _addFromApiItem(apiItem, quantity, variationArr, _variationId, $q, openDrawer)
+
+  return _addNewItem(productId, quantity, variationArr, productDataFromUI, $q, openDrawer)
 }
 
 async function increase(productIdOrKey, $q = null) {
-  markCartChanged() // <--- NEW
+  markCartChanged()
   let localItem = null
+
   if (typeof productIdOrKey === 'string' && productIdOrKey.startsWith('local-')) {
     localItem = state.local_cart.items.find(i => i.key === productIdOrKey)
   } else {
-    // try interpret as signature
     localItem = state.local_cart.items.find(i => itemSignature(i) === String(productIdOrKey))
     if (!localItem) {
       const idNum = Number(productIdOrKey)
       if (!Number.isNaN(idNum)) {
-        // prefer no-variation local item for that id
-        localItem = state.local_cart.items.find(i => Number(i.id) === idNum && normalizeVariation(i.variation).length === 0)
-        if (!localItem) localItem = state.local_cart.items.find(i => Number(i.id) === idNum)
+        localItem =
+          state.local_cart.items.find(i => Number(i.id) === idNum && normalizeVariation(i.variation).length === 0) ||
+          state.local_cart.items.find(i => Number(i.id) === idNum)
       }
     }
   }
+
   if (localItem) {
     const max = getMaxAllowed(localItem)
     if (max !== Infinity && (localItem.quantity || 0) >= max) {
-      if ($q) $q.notify({ type: 'negative', message: `Reached max stock (${max}) for ${localItem.name || 'item'}`, icon: matError })
+      notifyUser($q, 'negative', `Reached max stock (${max}) for ${localItem.name || 'item'}`, matError)
       return
     }
     localItem.quantity = Number(localItem.quantity || 0) + 1
     persistLocalCart()
     rebuildMergedView()
     scheduleSyncLocalToServer()
-    if ($q) $q.notify({ type: 'info', message: 'Quantity updated', icon: matShoppingCart })
+    notifyUser($q, 'info', 'Quantity updated', matShoppingCart)
     return
   }
 
-  // fallback: create minimal local item
-  const minimal = { id: productIdOrKey, name: '', quantity: 1, prices: {}, images: [], variation: [], _local: true, _synced: false }
+  // Fallback: create minimal local item
+  const minimal = {
+    id: productIdOrKey, name: '', quantity: 1,
+    prices: {}, images: [], variation: [], _local: true, _synced: false
+  }
   const sig = itemSignature(minimal)
   minimal.key = generateLocalKeyForSig(sig)
   state.local_cart.items.push(minimal)
   persistLocalCart()
   rebuildMergedView()
   scheduleSyncLocalToServer()
-  if ($q) $q.notify({ type: 'info', message: 'Quantity updated', icon: matShoppingCart })
+  notifyUser($q, 'info', 'Quantity updated', matShoppingCart)
 }
 
-async function decrease(cartItemKey, /*$q = null*/) {
-  markCartChanged() // <--- NEW
-  const locIdx = state.local_cart.items.findIndex(i => i.key === cartItemKey || itemSignature(i) === cartItemKey)
+async function decrease(cartItemKey) {
+  markCartChanged()
+
+  const locIdx = state.local_cart.items.findIndex(
+    i => i.key === cartItemKey || itemSignature(i) === cartItemKey
+  )
+
   if (locIdx !== -1) {
     const item = state.local_cart.items[locIdx]
     item.quantity = (item.quantity || 0) - 1
+
     if (item.quantity <= 0) {
       state.local_cart.items.splice(locIdx, 1)
-      const removalSig = `${item.id}::${normalizeVariation(item.variation).map(v => `${v.attribute}:${v.value}`).filter(Boolean).sort().join('|')}`
-      const removal = { key: generateLocalKeyForSig(removalSig), id: item.id, quantity: 0, variation: normalizeVariation(item.variation || []), _local: true, _removed: true, _synced: false }
+      const removalSig = itemSignature(item)
+      const removal = {
+        key: generateLocalKeyForSig(removalSig),
+        id: item.id,
+        quantity: 0,
+        variation: normalizeVariation(item.variation || []),
+        _local: true,
+        _removed: true,
+        _synced: false
+      }
       state.local_cart.items.push(removal)
     }
+
     persistLocalCart()
     rebuildMergedView()
     scheduleSyncLocalToServer()
     return
   }
 
-  // not local: try to find API item and create local override
-  const apiItem = (state.cart_array?.items || []).find(i => i.key === cartItemKey || i.id === cartItemKey)
-  if (apiItem) {
-    const desired = (apiItem.quantity || 1) - 1
-    if (desired <= 0) {
-      const rm = { key: generateLocalKeyForSig(itemSignature(apiItem)), id: apiItem.id, quantity: 0, variation: normalizeVariation(apiItem.variation || []), _local: true, _removed: true, _synced: false }
-      state.local_cart.items.push(rm)
-    } else {
-      const override = { key: generateLocalKeyForSig(itemSignature(apiItem)), id: apiItem.id, name: apiItem.name, quantity: desired, prices: apiItem.prices || {}, images: apiItem.images || [], variation: normalizeVariation(apiItem.variation || []), _local: true, _synced: false }
-      override.quantity_limits = apiItem.quantity_limits ? { ...apiItem.quantity_limits } : { editable: true, maximum: getMaxAllowed(apiItem), minimum: 1, multiple_of: 1 }
-      state.local_cart.items.push(override)
+  // Not local: create a local override from the API item
+  const apiItem = (state.cart_array?.items || []).find(
+    i => i.key === cartItemKey || i.id === cartItemKey
+  )
+  if (!apiItem) return
+
+  const desired = (apiItem.quantity || 1) - 1
+  if (desired <= 0) {
+    const rm = {
+      key: generateLocalKeyForSig(itemSignature(apiItem)),
+      id: apiItem.id,
+      quantity: 0,
+      variation: normalizeVariation(apiItem.variation || []),
+      _local: true,
+      _removed: true,
+      _synced: false
     }
-    persistLocalCart()
-    rebuildMergedView()
-    scheduleSyncLocalToServer()
-    return
+    state.local_cart.items.push(rm)
+  } else {
+    const override = {
+      key: generateLocalKeyForSig(itemSignature(apiItem)),
+      id: apiItem.id,
+      name: apiItem.name,
+      quantity: desired,
+      prices: apiItem.prices || {},
+      images: apiItem.images || [],
+      variation: normalizeVariation(apiItem.variation || []),
+      quantity_limits: apiItem.quantity_limits
+        ? { ...apiItem.quantity_limits }
+        : { editable: true, maximum: getMaxAllowed(apiItem), minimum: 1, multiple_of: 1 },
+      _local: true,
+      _synced: false
+    }
+    state.local_cart.items.push(override)
   }
 
-  // nothing matched
-  return
+  persistLocalCart()
+  rebuildMergedView()
+  scheduleSyncLocalToServer()
 }
 
-async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
-  markCartChanged() // <--- NEW
+async function remove(cartItemKey = null, cartItemAPIKey = null, $q = null) {
+  markCartChanged()
   state.loading.cart = true
   state.error = null
 
-  // if local key exists -> remove locally
+  // Local item → remove directly
   const idxLocal = state.local_cart.items.findIndex(i => i.key === cartItemKey)
   if (idxLocal !== -1) {
     state.local_cart.items.splice(idxLocal, 1)
     persistLocalCart()
     rebuildMergedView()
     state.loading.cart = false
-    if ($q) $q.notify({ type: 'positive', message: 'Removed from cart', icon: matShoppingCart })
-    // We removed locally — schedule a background sync to reconcile later (if online)
-    // but only if we are online; mergeLocalIntoApi / syncLocalCartWithServer will handle validation.
+    notifyUser($q, 'positive', 'Removed from cart', matShoppingCart)
     if (!state.offline) scheduleSyncLocalToServer()
     return
   }
 
-  // try to find API item by key
+  // API item while offline → create local removal tombstone
   const apiItem = (state.cart_array?.items || []).find(i => i.remote_key === cartItemAPIKey)
   if (!apiItem || state.offline) {
     if (apiItem) {
-      // mark removal override locally
       const rm = {
         key: generateLocalKeyForSig(itemSignature(apiItem)),
         id: apiItem.id,
@@ -824,17 +823,14 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
       state.local_cart.items.push(rm)
       persistLocalCart()
       rebuildMergedView()
-      state.loading.cart = false
-      if ($q) $q.notify({ type: 'info', message: 'Removed from cart (local)', icon: matCloudOff })
-      // schedule background sync only when we created a local override
+      notifyUser($q, 'info', 'Removed from cart (local)', matCloudOff)
       if (!state.offline) scheduleSyncLocalToServer()
-    } else {
-      state.loading.cart = false
     }
+    state.loading.cart = false
     return
   }
 
-  // online + apiItem present -> remove remotely and then update server snapshot
+  // Online + API item → remove on server
   try {
     const res = await fetchWithToken(`${API_BASE}/cart/remove-item`, {
       method: 'POST',
@@ -845,22 +841,15 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
     const data = await res.json().catch(() => null)
     if (!res.ok) throw new Error((data && data.message) || 'Failed to remove item')
 
-    // remove any local items that match sig (we removed server-side)
+    // Remove matching local items
     const sig = itemSignature(apiItem)
     state.local_cart.items = state.local_cart.items.filter(i => itemSignature(i) !== sig)
 
-    // update server snapshot (no replace of local)
-    await updateCartState(data)
-    if ($q) $q.notify({ type: 'positive', message: 'Removed from cart.', icon: matShoppingCart })
-
-    // Persist local changes but DO NOT call scheduleSyncLocalToServer()
-    // because the server remove is authoritative and updateCartState() refreshed cart_array.
-    persistLocalCart()
-    rebuildMergedView()
+    applyServerSnapshot(data)
+    notifyUser($q, 'positive', 'Removed from cart.', matShoppingCart)
   } catch (err) {
     state.error = err.message
-    if ($q) $q.notify({ type: 'negative', message: 'Failed to remove.', icon: matError })
-    // On failure, schedule a full sync attempt (this helps recover transient errors)
+    notifyUser($q, 'negative', 'Failed to remove.', matError)
     if (!state.offline) scheduleSyncLocalToServer()
   } finally {
     state.loading.cart = false
@@ -868,7 +857,7 @@ async function remove(cartItemKey=null, cartItemAPIKey=null, $q = null) {
 }
 
 async function clear() {
-  markCartChanged() // <--- NEW
+  markCartChanged()
   state.loading.cart = true
   state.error = null
   state.local_cart.items = []
@@ -879,43 +868,53 @@ async function clear() {
 }
 
 /* -------------------------
-   Coupons / placeOrder
+   Coupons
    ------------------------- */
 async function applyCoupon(code) {
   try {
-    const res = await fetchWithToken(`${API_BASE}/cart/apply-coupon`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
+    const res = await fetchWithToken(`${API_BASE}/cart/apply-coupon`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    })
     const data = await res.json()
     if (!res.ok) throw new Error('Coupon failed')
-    // update server snapshot (informational)
-    await updateCartState(data)
+    state.cart_array = data || null
   } catch (err) {
-    console.error(err)
+    if (DEBUG) console.error('[cart] applyCoupon failed', err)
     throw err
   }
 }
 
 async function removeCoupon(code) {
   try {
-    const res = await fetchWithToken(`${API_BASE}/cart/remove-coupon`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
+    const res = await fetchWithToken(`${API_BASE}/cart/remove-coupon`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    })
     const data = await res.json()
     if (!res.ok) throw new Error('Coupon removal failed')
-    await updateCartState(data)
+    state.cart_array = data || null
   } catch (err) {
-    console.error(err)
+    if (DEBUG) console.error('[cart] removeCoupon failed', err)
     throw err
   }
 }
 
+/* -------------------------
+   Checkout
+   BUG FIX: now uses syncLocalCartWithServer (batch) instead of mergeLocalIntoApi
+   ------------------------- */
 async function placeOrder(payload) {
-  // ensure server reflects local cart before placing order
-  await mergeLocalIntoApi()
+  // Ensure server reflects local cart before placing order (batch sync)
+  await syncLocalCartWithServer()
 
   try {
-    // Include device_id for backend targeting
     const deviceId = localStorage.getItem('pwa_device_id') || null
-    if (deviceId) {
-      payload.pwa_device_id = deviceId
-    }
+    if (deviceId) payload.pwa_device_id = deviceId
 
     const res = await fetchWithToken(`${API_BASE}/checkout`, {
       method: 'POST',
@@ -927,291 +926,67 @@ async function placeOrder(payload) {
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Checkout failed')
 
-    // ---------------------------
-    // Clear local cart SAFELY
-    // ---------------------------
-    try {
-      // cancel any pending scheduled sync
-      if (typeof __syncDebounceTimer !== 'undefined' && __syncDebounceTimer) {
-        clearTimeout(__syncDebounceTimer)
-        __syncDebounceTimer = null
-      }
-    } catch (e) { console.log(e) }
+    // Cancel any pending sync
+    if (__syncDebounceTimer) {
+      clearTimeout(__syncDebounceTimer)
+      __syncDebounceTimer = null
+    }
 
-    // Clear reactive local cart and persist
+    // Clear local cart
     state.local_cart.items = []
     persistLocalCart()
-    // Update merged view & counts
     rebuildMergedView()
 
-    // Update server snapshot with returned checkout result if it includes cart info.
-    // If your backend returns an empty cart on success, replace cart_array too.
-    try {
-      state.cart_array = data || null
-      // Mark synced true so we don't immediately re-sync
-      state.synced = true
-    } catch (e) { console.log(e) }
-    // ---------------------------
+    state.cart_array = data || null
+    state.synced = true
 
     return data
   } catch (err) {
-    console.error('Checkout error:', err.message)
+    if (DEBUG) console.error('[cart] placeOrder failed', err.message)
     throw err
   }
 }
 
 /* -------------------------
-   Wishlist (kept behaviour, cleaned)
-   ------------------------- */
-function persistWLOffline() {
-  try { localStorage.setItem('offline_wl', JSON.stringify(state.wishlist_items || [])) } catch (err) { console.warn('[cart] persistWLOffline failed', err) }
-}
-function loadOfflineWL() {
-  try { const raw = localStorage.getItem('offline_wl'); if (raw) state.wishlist_items = JSON.parse(raw) } catch (err) { console.warn('[cart] loadOfflineWL failed', err) }
-}
-
-/*async function WLreplayOfflineItems(fetchedWL = { wishlist: [] }) {
-  const offlineItems = state.wishlist_items || []
-  const offlineIDs = Array.isArray(offlineItems) ? offlineItems.map(i => i?.id).filter(Boolean) : []
-  const serverIDs = (fetchedWL?.wishlist || []).map(i => i?.id).filter(Boolean)
-
-  for (const id of offlineIDs) {
-    if (!serverIDs.includes(id)) {
-      try {
-        await fetchWithToken(`${API_BASE}/wishlist/`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product_id: id })
-        })
-      } catch (err) {
-        console.warn('[WLreplayOfflineItems] error', err)
-      }
-    }
-  }
-}*/
-
-async function fetchWishlistItems() {
-  if (typeof window === 'undefined') return
-
-  // Always load local wishlist first (for instant UI)
-  loadOfflineWL()
-
-  // If offline or no logged-in user → stop here
-  // Cleaner check using our new store
-  if (state.offline || !isLoggedIn.value) return;
-
-  state.loading.wishlist = true
-
-  try {
-    // Fetch from server
-    const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
-      method: 'GET',
-      credentials: 'include'
-    })
-
-    const serverWishlist = await res.json()
-    const serverItems = serverWishlist.wishlist || serverWishlist || []
-
-    // Merge local wishlist with server wishlist (avoid duplicates)
-    const localIds = (state.wishlist_items || []).map(item => item.id)
-    const merged = [
-      ...serverItems,
-      ...state.wishlist_items.filter(item => !localIds.includes(item.id))
-    ]
-
-    state.wishlist_items = merged
-    persistWLOffline()
-  } catch (err) {
-    console.warn('Fetch wishlist error:', err)
-    state.error = err.message
-    // fallback to local
-    loadOfflineWL()
-  } finally {
-    state.loading.wishlist = false
-  }
-}
-
-
-async function toggleWishlistItem(productId, $q = null) {
-  state.loading.wishlist = true
-  // --- GUEST (NON-LOGGED-IN / OFFLINE) LOGIC ---
-  if (state.offline || !state.user || !state.user.id) {
-    try {
-      // Ensure wishlist array exists
-      if (!Array.isArray(state.wishlist_items)) state.wishlist_items = []
-
-      const exists = state.wishlist_items.find(p => p.id === productId)
-
-      if (exists) {
-        // Remove item
-        state.wishlist_items = state.wishlist_items.filter(p => p.id !== productId)
-      } else {
-        // Fetch minimal product info from cache if available (for instant UI rendering)
-        const cachedProduct = await getCachedProduct(productId)
-        let productSlug = '';
-        if (cachedProduct && cachedProduct.permalink) {
-          try {
-            const url = new URL(cachedProduct.permalink)
-            // Get pathname, remove leading "/product" and trailing "/"
-            productSlug = url.pathname
-                .replace(/^\/product/, '')   // remove leading "/product"
-                .replace(/\/$/, '')          // remove trailing "/"
-                .replace(/^\//, '')         // remove leading "/"
-          } catch (err) {
-            console.warn('Invalid permalink URL', cachedProduct.permalink, err)
-          }
-        }
-        const newItem = cachedProduct ? { id: cachedProduct.id,
-          name: cachedProduct.name,
-          image: cachedProduct?.images[0]?.thumbnail || '',
-        slug: productSlug} : { id: productId }
-        state.wishlist_items.push(newItem)
-        console.log(state.wishlist_items)
-      }
-
-      persistWLOffline()
-
-      if ($q && $q.notify) {
-        $q.notify({
-          type: 'positive',
-          message: exists ? 'Removed from wishlist' : 'Added to wishlist',
-          icon: matFavorite
-        })
-      }
-    } catch (err) {
-      console.warn('Guest wishlist error:', err)
-    } finally {
-      state.loading.wishlist = false
-    }
-
-    return
-  }
-
-  // --- LOGGED-IN USER LOGIC ---
-  try {
-    // Optimistically update local UI (instant feedback)
-    const exists = state.wishlist_items.find(p => p.id === productId)
-    if (exists) {
-      state.wishlist_items = state.wishlist_items.filter(p => p.id !== productId)
-    } else {
-      const cachedProduct = await getCachedProduct(productId)
-      const newItem = cachedProduct ? { id: cachedProduct.id, name: cachedProduct.name, images: cachedProduct.images } : { id: productId }
-      state.wishlist_items.push(newItem)
-    }
-    persistWLOffline()
-
-    // Sync with backend
-    const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: productId })
-    })
-
-    const wishlistItems = await res.json()
-    state.wishlist_items = wishlistItems.wishlist || wishlistItems || []
-    persistWLOffline()
-
-    if ($q && $q.notify) {
-      $q.notify({
-        type: 'positive',
-        message: exists ? 'Removed from wishlist' : 'Added to wishlist',
-        icon: matFavorite
-      })
-    }
-  } catch (err) {
-    console.error('Wishlist API error:', err)
-    state.error = err.message
-  } finally {
-    state.loading.wishlist = false
-  }
-
-}
-
-/*async function mergeLocalWishlistWithServer(userToken = null) {
-  try {
-    const localRaw = localStorage.getItem('offline_wl')
-    const localItems = localRaw ? JSON.parse(localRaw) : []
-    const localIDs = localItems.map(i => i.id)
-
-    // Fetch current server wishlist
-    const res = await fetchWithToken(`${API_BASE}/wishlist/`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
-    })
-    const serverData = await res.json()
-    const serverItems = serverData.wishlist || serverData || []
-    const serverIDs = serverItems.map(i => i.id)
-
-    // Find items that exist locally but not on the server
-    const missingIDs = localIDs.filter(id => !serverIDs.includes(id))
-
-    // Add missing items to server
-    for (const id of missingIDs) {
-      await fetchWithToken(`${API_BASE}/wishlist/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: id })
-      })
-    }
-
-    // Fetch the final updated wishlist
-    const res2 = await fetchWithToken(`${API_BASE}/wishlist/`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
-    })
-    const merged = await res2.json()
-    state.wishlist_items = merged.wishlist || merged || []
-
-    // Persist locally for faster next load
-    persistWLOffline()
-
-    console.log('[Wishlist] merged local + server wishlist successfully')
-  } catch (err) {
-    console.warn('[mergeLocalWishlistWithServer] failed', err)
-  }
-}*/
-
-/* -------------------------
    Init
    ------------------------- */
 if (typeof window !== 'undefined') {
-  loadLocalCart().then(() => rebuildMergedView());
-  loadOfflineWL()
+  loadLocalCart().then(() => rebuildMergedView())
+
   window.addEventListener('online', async () => {
     state.offline = false
     try {
       await fetchCart()
-      await mergeLocalIntoApi()
-      await fetchWishlistItems()
+      await syncLocalCartWithServer()
     } catch (err) {
-      console.warn('[cart] online sync failed', err)
+      if (DEBUG) console.warn('[cart] online sync failed', err)
     }
   })
+
   window.addEventListener('offline', () => {
     state.offline = true
   })
-  window.addEventListener('storage', (e) => {
+
+  window.addEventListener('storage', e => {
     if (e.key === LOCAL_CART_KEY || e.key === LEGACY_OFFLINE_KEY) {
       try {
         state.local_cart.items = JSON.parse(e.newValue || '[]')
         rebuildMergedView()
       } catch (err) {
-        console.warn('[cart] storage sync failed', err)
+        if (DEBUG) console.warn('[cart] storage sync failed', err)
       }
     }
   })
 }
 
+/* -------------------------
+   Computed
+   ------------------------- */
 const hasItems = computed(() => state.items.length > 0)
 
 /* -------------------------
    Exports
-------------------------- */
+   ------------------------- */
 export default {
   fetchCartOnce,
   state,
@@ -1225,12 +1000,14 @@ export default {
   applyCoupon,
   removeCoupon,
   placeOrder,
-  toggleWishlistItem,
-  fetchWishlistItems,
-  syncLocalCartWithServer, // <--- NEW
+  syncLocalCartWithServer,
   signatureFor(productId, variationArray) {
     const varArr = Array.isArray(variationArray) ? variationArray : normalizeVariation(variationArray)
-    const varSig = varArr.map(v => `${v.attribute || ''}:${v.value || ''}`).filter(Boolean).sort().join('|')
+    const varSig = varArr
+      .map(v => `${v.attribute || ''}:${v.value || ''}`)
+      .filter(Boolean)
+      .sort()
+      .join('|')
     return `${productId}::${varSig}`
   }
 }

@@ -22,26 +22,26 @@ export async function fetchWithToken(url, options = {}) {
   if ((response.status === 401 || response.status === 403) && isClient) {
     console.log(await response.text());
     const isDataRequest =
-      url.includes('wp-json') ||
-      !url.match(/\.(js|css|woff2?|png|jpg)$/)
+        url.includes('wp-json') ||
+        !url.match(/\.(js|css|woff2?|png|jpg)$/)
 
     if (isDataRequest && !authExpiredTriggered) {
       authExpiredTriggered = true
 
-      const { clearUser } = await import('src/stores/user')
+      const {clearUser} = await import('src/stores/user')
       clearUser()
 
       window.dispatchEvent(
-        new CustomEvent('auth-expired')
+          new CustomEvent('auth-expired')
       )
     }
   }
 
   const latestCartToken = response.headers.get('Cart-Token');
-  if (latestCartToken && latestCartToken !== localStorage.getItem('wc_cart_token')) {
+  if (isClient && latestCartToken && latestCartToken !== localStorage.getItem('wc_cart_token')) {
     localStorage.setItem('wc_cart_token', latestCartToken);
   } else {
-    console.log('new token is not updated');
+    console.log('Cart-Token not updated');
   }
 
   return response

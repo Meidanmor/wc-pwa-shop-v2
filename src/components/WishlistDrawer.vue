@@ -3,10 +3,10 @@
 
     <div>
     <h4> Wishlist </h4>
-      <div v-if="cart.state.wishlist_items && cart.state.wishlist_items.length === 0" class="text-center text-grey">
+      <div v-if="wishlist.state.items && wishlist.state.items.length === 0" class="text-center text-grey">
       Your wishlist is empty.
       </div>
-      <div v-else-if="cart.state.wishlist_items && cart.state.wishlist_items.length > 0" v-for="product in cart.state.wishlist_items" :key="product.id" class="relative-position q-pa-sm row full-width">
+      <div v-else-if="wishlist.state.items && wishlist.state.items.length > 0" v-for="product in wishlist.state.items" :key="product.id" class="relative-position q-pa-sm row full-width">
         <router-link :to="`/product/${product.slug}/`" class="flex no-wrap q-pr-lg no-decoration text-secondary full-width">
           <img v-if="product.image" :src="product.image" :alt="product.name" style="width: 100px; height: 100px; object-fit: cover" />
           <div class="q-ml-sm column">
@@ -24,11 +24,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import cart from 'src/stores/cart.js'
+import wishlist from 'src/stores/wishlist.js'
 import { matClose } from '@quasar/extras/material-icons'
 
-const wishlist = computed(() => cart.state.wishlist_items)
 const isHydrated = ref(false)
 
 async function addToCart(p){
@@ -37,7 +37,7 @@ cart.add(p.id, 1);
 
 async function removeFromWishlist(id) {
   try {
-    await cart.toggleWishlistItem(id)
+    await wishlist.toggleWishlistItem(id)
     console.log(wishlist.value);
   } catch (err) {
     console.error('Error removing from wishlist:', err)

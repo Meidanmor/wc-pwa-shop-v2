@@ -65,7 +65,7 @@
         </router-link>
           <div>
           <q-btn flat dense :icon="matFavoriteBorder" aria-label="Add to wishlist" @click="toggleWishlistDrawer" class="q-ml-sm q-mr-sm">
-          <q-badge v-if="storeReady && cart.state.wishlist_items && Object.keys(cart.state.wishlist_items).length > 0" floating color="red">{{ Object.keys(cart.state.wishlist_items).length }}</q-badge>
+          <q-badge v-if="storeReady && wishlist.state.items && Object.keys(wishlist.state.items).length > 0" floating color="red">{{ Object.keys(wishlist.state.items).length }}</q-badge>
         </q-btn>
 
         <q-btn flat dense :icon="matShoppingCart" aria-label="View cart" @click="toggleCart">
@@ -266,6 +266,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import cart from 'src/stores/cart'
+import wishlist from 'src/stores/wishlist'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Platform } from 'quasar';

@@ -12,8 +12,8 @@
       >
         <router-link :to="`/product/${getSlugFromPermalink(product.permalink)}`">
           <div class="item-loop-wl absolute">
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-if="wishlist.state.items && Object.values(wishlist.state.items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
           </div>
 
           <q-card class="my-card full-height">
@@ -73,8 +73,8 @@
 
         <router-link :to="`/product/${getSlugFromPermalink(product.permalink)}`">
           <div class="item-loop-wl absolute">
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-if="cart.state.wishlist_items && Object.values(cart.state.wishlist_items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="cart.state.loading.wishlist" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-if="wishlist.state.items && Object.values(wishlist.state.items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
+              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
           </div>
 
           <q-card class="my-card full-height">
@@ -156,6 +156,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import cart from 'src/stores/cart'
+import wishlist from 'src/stores/wishlist'
 //import { fetchAllProducts } from 'src/boot/woocommerce'
 import { matChevronLeft, matChevronRight, matFavorite, matFavoriteBorder } from '@quasar/extras/material-icons'
 
@@ -170,7 +171,7 @@ const products = ref([])
 const perSlide = ref(4) // default desktop count
 
 async function addToWishlist(objID = 0) {
-  await cart.toggleWishlistItem(objID, $q);
+  await wishlist.toggleWishlistItem(objID, $q);
 }
 
 const addToCart = (product) => {
