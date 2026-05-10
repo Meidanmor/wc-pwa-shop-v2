@@ -445,6 +445,8 @@ defineOptions({
         srcset: `${API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-300x300.png 300w,${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover-768x512.png 768w,${import.meta.env.VITE_API_BASE}/wp-content/uploads/2025/10/naturabloom-hero-cover.png 1024w`,
         sizes: '(min-width: 768px) 50vw, calc(100vw - 40px)'
       }
+    } else {
+      window.__PAGE_CONFIG__ = configData;
     }
   }
 })

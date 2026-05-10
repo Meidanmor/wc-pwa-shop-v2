@@ -262,7 +262,7 @@ defineOptions({
       window.__PREFETCH_PAGES__ = result.totalPages
       window.__CATEGORIES_DATA__ = categories
       window.__PRICE_META__ = priceMeta
-
+      window.__SELECTED_CATEGORY_DATA__ = currentCat
     }
   }
 })
@@ -726,6 +726,13 @@ watch(
 // ✅ Fix
 onMounted(async () => {
   isHydrated.value = true
+
+  // ✅ Apply category name first — prevents title fallback flash
+  if (window.__SELECTED_CATEGORY_DATA__) {
+    selectedCategoryOBJ.value = window.__SELECTED_CATEGORY_DATA__
+    selectedCategory.value = [window.__SELECTED_CATEGORY_DATA__.id]
+  }
+
   if (window.__PREFETCH_PRODUCTS__) {
     // ✅ Now safe to commit — old page is already gone
     productsStore.products.value = window.__PREFETCH_PRODUCTS__

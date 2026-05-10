@@ -462,4 +462,29 @@ footer .footer-bottom {
 .q-card.q-dialog-plugin.expired-dialog {
     background: #fff;
 }
+.q-drawer .cart-details {
+   margin-top: auto;
+}
+.q-drawer .cart-drawer {
+   padding: 0 10px;
+}
+.cart-drawer .q-scrollarea .q-scrollarea__content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.q-drawer .cart-details.sticky {
+    position: sticky;
+    bottom: 0;
+    padding: 20px 0;
+}
+.q-drawer h4.sticky {
+    position: sticky;
+    top: 0;
+    padding: 10px 0;
+}
+.q-drawer .sticky {
+    z-index: 9;
+    background-color: #fff;
+}
 /* purgecss end ignore */

@@ -26,7 +26,7 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 // your VAPID public key for web push
-const APP_SERVER_KEY = import.meta.env.VAPID_APP_SERVER_KEY
+const APP_SERVER_KEY = import.meta.env.VITE_VAPID_APP_SERVER_KEY
 
 /**
  * Get or create a unique device ID (stored in localStorage)

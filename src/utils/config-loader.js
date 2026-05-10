@@ -5,56 +5,38 @@ export async function loadPageConfig(page, isPreview) {
     : import.meta.env.VITE_API_BASE
 
   // --- SERVER SIDE LOGIC ---
-  if (import.meta.env.SSR) {
-    try {
-      /*const path = await import('path')
-      const fs = await import('fs')*/
+if (import.meta.env.SSR) {
+  try {
+    // 1. If Preview, fetch from WordPress API (keep as-is — HTTP fetch is correct here)
+    if (isPreview) {
+      const url = `${API_BASE}/wp-json/shop-builder/v1/preview/${page}`;
+      console.log(`[SSR] Fetching Preview from API: ${url}`);
 
-      // 1. If Preview, fetch from WordPress API
-      if (isPreview) {
-        const url = `${API_BASE}/wp-json/shop-builder/v1/preview/${page}`;
-        console.log(`[SSR] Fetching Preview from API: ${url}`);
-
-        // We use a dynamic import for 'node-fetch' or similar if global fetch isn't available
-        // but usually, in Quasar SSR, global fetch is available.
-        const response = await fetch(url, {
-          cache: 'no-store'
-        });
-        if (response.ok) return await response.json();
-        throw new Error(`WP API responded with ${response.status}`);
-      }
-
-      // 2. If NOT Preview, read from local public folder (like products.js)
-      /*const filePath = path.join(process.cwd(), `public/config/${page}.json`);
-      if (fs.existsSync(filePath)) {
-        const raw = fs.readFileSync(filePath, 'utf-8');
-        return JSON.parse(raw);
-      }*/
-      const base =
-          process.env.SERVER
-              ? process.env.API_BASE   // your domain
-              : ''
-
-      const url = `${base}/config/${page}.json`
-
-      console.log(`[SSR] Fetching config via HTTP: ${url}`)
-
-      const response = await fetch(url, {
-        cache: 'no-store'
-      })
-
-      if (response.ok) {
-        return await response.json()
-      }
-
-      console.warn(`[SSR] Config file not found at: ${url}`);
-      return {};
-    } catch (err) {
-      console.error('[SSR] loadPageConfig Error:', err.message);
-      return {}; // Return empty object to prevent 500 error
+      const response = await fetch(url, { cache: 'no-store' });
+      if (response.ok) return await response.json();
+      throw new Error(`WP API responded with ${response.status}`);
     }
-  }
 
+    // 2. If NOT Preview, read directly from filesystem
+    const { readFile } = await import('fs/promises')
+    const { resolve } = await import('path')
+
+    const isDev = import.meta.env.DEV
+    const basePath = isDev
+      ? resolve(process.cwd(), 'public', 'config')
+      : resolve(process.cwd(), 'client', 'config') // dist/ssr/client/config in prod
+
+    const filePath = resolve(basePath, `${page}.json`)
+    console.log(`[SSR] Reading config from filesystem: ${filePath}`)
+
+    const raw = await readFile(filePath, 'utf-8')
+    return JSON.parse(raw)
+
+  } catch (err) {
+    console.error('[SSR] loadPageConfig Error:', err.message);
+    return {};
+  }
+}
   // --- CLIENT SIDE LOGIC ---
   else {
     try {

@@ -10,12 +10,12 @@ const routes = [
       {
         path: 'checkout',
         component: () => import('pages/CheckoutPage.vue'),
-        beforeEnter: async (to, from, next) => {
+        /*beforeEnter: async (to, from, next) => {
           const cartStore = (await import('src/stores/cart')).default;
           // Perform the heavy lifting before the route changes
-          await cartStore.fetchCartOnce(true);
+          cartStore.fetchCart();
           next();
-        }
+        }*/
       },
       { path: 'products', name: 'products', component: () => import('pages/ProductsPage.vue') },
       { path: 'thank-you', name: 'thank-you', component: () => import('pages/ThankYouPage.vue') },

@@ -15,7 +15,7 @@ import { matLogin } from '@quasar/extras/material-icons';
 import { Platform } from 'quasar';
 
 // This is the "Web Application" Client ID from Google Console
-const GOOGLE_WEB_CLIENT_ID = import.meta.env.GOOGLE_WEB_CLIENT_ID;
+const GOOGLE_WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID;
 
 const loading = ref(false);
 

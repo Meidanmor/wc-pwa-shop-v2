@@ -37,12 +37,24 @@ export async function fetchWithToken(url, options = {}) {
     }
   }
 
-  const latestCartToken = response.headers.get('Cart-Token');
-  if (isClient && latestCartToken && latestCartToken !== localStorage.getItem('wc_cart_token')) {
-    localStorage.setItem('wc_cart_token', latestCartToken);
+  /*const latestCartToken = response.headers.get('Cart-Token')
+
+  if (isClient && latestCartToken) {
+    const currentToken = localStorage.getItem('wc_cart_token')
+
+    if (latestCartToken !== currentToken) {
+      localStorage.setItem('wc_cart_token', latestCartToken)
+    }
+
+    // Important for SSR:
+    document.cookie = [
+      `wc_cart_token=${latestCartToken}`,
+      'Path=/',
+      'SameSite=Lax'
+    ].join('; ')
   } else {
-    console.log('Cart-Token not updated');
-  }
+    console.log('Cart-Token not updated')
+  }*/
 
   return response
 }

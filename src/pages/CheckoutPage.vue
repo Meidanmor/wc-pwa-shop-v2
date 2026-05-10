@@ -5,7 +5,7 @@
         <GoogleLoginButton />
       </div>
 
-      <q-form class="flex" v-if="checkoutReady && itemsCount !== '0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
+      <q-form class="flex" v-if="cart.state.cart_array && itemsCount !== '0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
       <div class="float-left">
       <!-- Personal Info -->
       <q-card class="q-mb-md">
@@ -42,7 +42,7 @@
       </q-card>
 
       <!-- Billing Address (conditional) -->
-      <q-card v-if="!billingSameAsShipping" class="q-mb-md">
+      <q-card v-if="billingSameAsShipping" class="q-mb-md">
         <q-card-section>
           <div class="text-h6">Billing Address</div>
           <q-input @blur="handleInputBlur('postcode')" v-model="form.billing.address_1" label="Billing Address" filled class="q-mb-sm" />
@@ -62,12 +62,6 @@
             </div>
             <div class="col-auto">
               <q-btn label="Apply" color="secondary" @click="applyCoupon" />
-              <q-btn
-                  v-if="couponApplied"
-                  label="Remove Coupon"
-                  color="negative"
-                  @click="removeCoupon"
-              />
             </div>
           </div>
           <div v-if="couponApplied" class="text-positive q-mt-sm">
@@ -88,7 +82,8 @@
       </q-card>
 
       </div>
-      <div class="float-right">
+      <div class="float-right relative-position">
+        <div class="blockUi" v-if="cart.state.loading.cart === true"></div>
       <!-- Cart Items -->
       <q-card class="q-mb-md">
         <q-card-section>
@@ -155,7 +150,8 @@
       <!-- Total & Place Order -->
       <q-card class="q-mb-md">
         <q-card-section>
-          <div class="text-h6">Total: {{ cartTotal }}</div>
+          <div v-if="couponApplied">Total discount: {{formatCurrency(cart.state.totals.total_discount)}}</div>
+          <div class="text-h6">Total: <span v-if="couponApplied"><del>{{formatCurrency((Number(cart.state.totals.total_discount)+Number(cart.state.totals.total_price)))}}</del></span> {{ cartTotal }}</div>
         </q-card-section>
         <q-card-actions>
           <q-btn label="Place Order" type="submit" color="secondary" />
@@ -163,17 +159,17 @@
       </q-card>
         </div>
     </q-form>
-      <!-- Render loader and sync retry state -->
-      <div v-else-if="!checkoutReady" class="centered">
-        <q-spinner color="secondary" size="2em" />
-        <div>Synchronizing cart, please wait...</div>
-      </div>
 
-      <div v-else-if="checkoutReady && itemsCount === '0'">
+      <div v-else-if="cart.state.cart_array && itemsCount === '0'">
         Your cart is empty!
         <router-link to="/products/">Go to shop</router-link>
       </div>
 
+      <!-- Render loader and sync retry state -->
+      <div v-else class="centered">
+        <q-spinner color="secondary" size="2em" />
+        <div>Synchronizing cart, please wait...</div>
+      </div>
       <div v-if="syncError" class="text-negative q-mt-md text-center">
         {{ syncError }}
         <q-btn label="Retry Sync" color="secondary" @click="syncCart" class="q-ml-md" />
@@ -182,23 +178,49 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive, watch, onMounted, useSSRContext } from 'vue';
 import cart from 'src/stores/cart';
 import { useRouter } from 'vue-router';
-import { useMeta } from 'quasar';
+import { useMeta, useQuasar } from 'quasar';
 import { fetchWithToken } from 'src/composables/useApiFetch.js';
 import GoogleLoginButton from 'src/components/GoogleLoginButton.vue';
+import { loadPageConfig } from 'src/utils/config-loader'
+import { matError } from '@quasar/extras/material-icons'
+
 defineOptions({
-  async preFetch ({ ssrContext }) {
-    //const seo = await fetchSeoForPath('checkout')
-    const seo = {
-      title: 'Checkout',
-      description: 'Checkout page',
-      robots: 'noindex, follow'
+  async preFetch ({ ssrContext, currentRoute }) {
+    console.log('preFetch START', performance.now())
+    let cartData;
+    if(ssrContext) {
+       cartData = await cart.fetchCart(true, ssrContext)
+    } else  {
+      if(cart.needsSync()){
+       cartData = await cart.fetchCart(true, ssrContext)
+      }
     }
+      console.log('check', cart.state.cart_array);
+      console.log('check', cartData);
+      //const seo = await fetchSeoForPath('checkout')
+      const seo = {
+        title: 'Checkout',
+        description: 'Checkout page',
+        robots: 'noindex, follow'
+      }
+    const isPreview = currentRoute.query.preview === 'true'
+
+    const configData = await loadPageConfig('checkout', isPreview) // The helper we'll create
+    console.log(configData)
     if (ssrContext) {
+
+      ssrContext.cartArray = cartData
       ssrContext.seoData = seo
+      ssrContext.pageConfig = configData
+    } else {
+      window.__PAGE_CONFIG__ = configData;
+      window.__CART_ARRAY__ = cartData
     }
+        console.log('preFetch END', performance.now())
+
   }
 })
 useMeta(() => {
@@ -210,6 +232,18 @@ useMeta(() => {
     }
   };
 });
+
+const $q = useQuasar()
+// Change the default error icon (e.g., to 'warning')
+$q.iconSet.field.error = matError
+
+const pageConfig = ref('');
+
+if (process.env.SERVER) {
+  const ssr = useSSRContext()
+  pageConfig.value = ssr?.pageConfig || null
+}
+
 
 const syncError = ref(null);
 const token = ref('');
@@ -229,7 +263,9 @@ if(process.env.CLIENT) {
     }
   }
 })*/
-const checkoutReady = ref(false)
+const checkoutReady = computed(() => {
+  return !!cart.state.cart_array
+})
 const isLoggedIn = ref(!!token.value)
 const router = useRouter();
 
@@ -272,13 +308,13 @@ const paymentMethods = computed(() => {
 });
 
 const itemsCount = computed(() => cart.state.cart_array?.items_count || '0');
-const billingSameAsShipping = ref(true)
+const billingSameAsShipping = ref(false)
 const couponCode = ref('');
-const couponApplied = ref(false);
+const couponApplied = computed(() => {return cart.state.cart_array?.coupons?.length > 0});
 const couponError = ref(null);
 const paymentMethod = ref('bacs');
 const selectedShippingRateId = ref(null);
-const cartItems = computed(() => cart.state.cart_array.items);
+const cartItems = computed(() => cart.state.cart_array?.items || []);
 const cartTotal = computed(() => {
   const total = cart.state.totals?.total_price || '0';
   const formattedTotal = formatCurrency(total, {minorUnit: 2, decimalSeparator: '.', prefix: '₪', suffix: ''});
@@ -537,9 +573,42 @@ const needsSync = computed(() => {
   return false
 })
 
+watch(
+  () => cart.state.cart_array,
+  (cartData) => {
+    if (!cartData) return
+
+    initializeFormFromCart()
+    fetchShippingRates()
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
+  console.log(cart.state.loading)
+  if (window.__CART_ARRAY__ && !cart.state.cart_array) {
+    cart.state.cart_array = window.__CART_ARRAY__
+    cart.state.synced = true
+    window.__CART_ARRAY__ = null
+
+    // FIX: SSR gave us the server's cart, but the local cart (localStorage)
+    // may have items the server doesn't know about yet — e.g. items added
+    // while offline, or before the session was established.
+    // Load local cart first, then let the sync diff decide what to do.
+    await cart.loadLocalCart()
+    console.log(cart.needsSync());
+    if (cart.needsSync()) {
+      console.log('cart is syncing !!!')
+      await cart.syncLocalCartWithServer()
+    }
+  } else {
+    cart.fetchCart()
+  }
+  if (window.__PAGE_CONFIG__ && Object.keys(window.__PAGE_CONFIG__).length) {
+    pageConfig.value = window.__PAGE_CONFIG__
+  }
   // Start the loading state
-  checkoutReady.value = false;
+  /*checkoutReady.value = false;
 
   try {
     // We call fetchCartOnce with 'true' to force a blocking sync
@@ -554,7 +623,7 @@ onMounted(async () => {
   } catch (err) {
     console.error('Initial sync failed:', err);
     syncError.value = "Could not sync your cart. Please check your connection.";
-  }
+  }*/
 });
 </script>
 
@@ -582,5 +651,12 @@ onMounted(async () => {
   .q-form .float-right {
     width: 41%;
   }
+}
+.blockUi{
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background: red;
+  z-index: 999;
 }
 </style>

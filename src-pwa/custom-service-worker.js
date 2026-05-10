@@ -7,85 +7,55 @@
  */
 
 import { clientsClaim } from 'workbox-core'
-import { precacheAndRoute, cleanupOutdatedCaches/*, createHandlerBoundToURL*/} from 'workbox-precaching'
-import { registerRoute/*, NavigationRoute*/ } from 'workbox-routing'
-
-// ✅ IMPORT THESE
-import { NetworkFirst/*, StaleWhileRevalidate*/ } from 'workbox-strategies'
+import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
+import { registerRoute } from 'workbox-routing'
+import { NetworkFirst, NetworkOnly } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { enable as enableNavigationPreload } from 'workbox-navigation-preload';
 
 const API_BASE = '<%= VITE_API_BASE %>'
-// Call it directly
+
 enableNavigationPreload();
 
-// Setup service worker behavior
 self.skipWaiting()
 clientsClaim()
 
-// Pre-cache static assets
 precacheAndRoute(self.__WB_MANIFEST)
-
-// Clean old caches
 cleanupOutdatedCaches()
+
+// ─── WooCommerce API: products & categories ───────────────────────────────────
 registerRoute(
   ({ url }) =>
     url.origin === `${API_BASE}` &&
-      (
-          (url.pathname === '/wp-json/wc/store/v1/products/categories') ||
-          (url.pathname === '/wp-json/wc/store/v1/products' && url.searchParams.has('per_page'))
-      ),
+    (
+      url.pathname === '/wp-json/wc/store/v1/products/categories' ||
+      (url.pathname === '/wp-json/wc/store/v1/products' && url.searchParams.has('per_page'))
+    ),
   new NetworkFirst({
-    cacheName: 'woocommerce-api-v2', // Changed name to clear old "stale" cache
-    networkTimeoutSeconds: 1.5,      // Fast fallback for real users
-    plugins: [
-      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 })
-    ]
-  })
-);
-registerRoute(
-  ({ url }) =>
-    url.origin === `${API_BASE}` &&
-    url.pathname === '/wp-json/custom/v1/seo' &&
-    url.searchParams.has('path'),
-  new NetworkFirst({
-    cacheName: 'seo-api-v2', // Versioned to clear old data
+    cacheName: 'woocommerce-api-v2',
     networkTimeoutSeconds: 1.5,
     plugins: [
       new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 })
     ]
   })
 );
-self.addEventListener('install', (/*event*/) => {
-  console.log('🛠️ Service Worker installing');
-  self.skipWaiting(); // Optional but useful
-});
 
-self.addEventListener('activate', (event) => {
-  console.log('⚡ Service Worker activating & cleaning old caches...');
+// ─── SEO API ──────────────────────────────────────────────────────────────────
+registerRoute(
+  ({ url }) =>
+    url.origin === `${API_BASE}` &&
+    url.pathname === '/wp-json/custom/v1/seo' &&
+    url.searchParams.has('path'),
+  new NetworkFirst({
+    cacheName: 'seo-api-v2',
+    networkTimeoutSeconds: 1.5,
+    plugins: [
+      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 })
+    ]
+  })
+);
 
-  // List the cache names you want to KEEP.
-  // If you changed your cacheNames to 'woocommerce-api-v2', put that here.
-  const cacheAllowlist = ['woocommerce-api-v2', 'seo-api-v2', 'ssr-pages'];
-
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          // If the cache found isn't in our 'allow' list, and it's one of ours, delete it
-          if (!cacheAllowlist.includes(cacheName)) {
-            console.log('🗑️ Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      // Claim clients so the new SW takes over immediately
-      return self.clients.claim();
-    })
-  );
-});
-
+// ─── Push notifications ───────────────────────────────────────────────────────
 self.addEventListener('push', event => {
   console.log('[SW] Push received');
   let data = {};
@@ -95,18 +65,17 @@ self.addEventListener('push', event => {
     console.error('Push data parse error', e);
   }
 
-  // Support both direct and wrapped payloads
   const notification = data.notification || data;
 
   const options = {
-      body: notification.body,
-      icon: notification.icon || '/icons/favicon-128x128.png',
-      badge: notification.badge || '/icons/favicon-96x96.png',
-      data: notification.data || {},
-      tag: notification.tag || 'default',
-      requireInteraction: notification.requireInteraction || true,
-      renotify: notification.renotify || true,
-      vibrate: notification.vibrate || ''
+    body: notification.body,
+    icon: notification.icon || '/icons/favicon-128x128.png',
+    badge: notification.badge || '/icons/favicon-96x96.png',
+    data: notification.data || {},
+    tag: notification.tag || 'default',
+    requireInteraction: notification.requireInteraction || true,
+    renotify: notification.renotify || true,
+    vibrate: notification.vibrate || ''
   };
 
   event.waitUntil(
@@ -126,40 +95,75 @@ self.addEventListener('notificationclick', function (event) {
           return client.focus();
         }
       }
-
       return clients.openWindow(clickUrl);
     })
   );
 });
 
-
-// ✅ Navigation fallback for SPA routing
-// This tells the SW: "Try to get the live SSR page first so we see
-// the products and SEO immediately. If the network fails, use the cache."
+// ─── Navigation: SSR HTML pages ───────────────────────────────────────────────
+//
+// THE FIX:
+//
+// The old strategy cached the entire SSR HTML response (including the
+// window.__CART_ARRAY__ that the server baked in). On the next refresh,
+// if the network was slow or the 2s timeout elapsed, the SW served the
+// stale cached HTML — meaning the user saw the old cart data even though
+// the server had already computed the fresh one.
+//
+// The root cause: window.__CART_ARRAY__ is session-specific data. It
+// changes on every request for every user. It must never be cached at
+// the SW layer.
+//
+// Strategy: NetworkOnly for all navigation requests.
+//   - The SW acts as a transparent pass-through for page loads.
+//   - Navigation preload is still enabled so the network request fires
+//     in parallel with SW startup — no extra latency vs. no SW at all.
+//   - If the network is truly dead, the browser's own offline page shows
+//     (acceptable — a stale cart is worse than an honest offline screen).
+//
+// If you want offline fallback for non-session pages (e.g. homepage
+// when logged out), see the commented block below.
+//
 registerRoute(
-({ request, url }) =>
-  request.mode === 'navigate' &&
-  !url.searchParams.has('preview'),
-    new NetworkFirst({
-    cacheName: 'ssr-pages',
-    networkTimeoutSeconds: 2, // If network is dead, fallback to cache after 2s
-    plugins: [
-      new ExpirationPlugin({ maxEntries: 10 })
-    ]
-  })
+  ({ request, url }) =>
+    request.mode === 'navigate' &&
+    !url.searchParams.has('preview'),
+  new NetworkOnly()
 )
-/*if (process.env.MODE !== 'ssr' || process.env.PROD) {
-  registerRoute(
-    new NavigationRoute(
-      //createHandlerBoundToURL(process.env.PWA_FALLBACK_HTML),
-      createHandlerBoundToURL(process.env.PWA_FALLBACK_HTML),
-      {
-        denylist: [
-          new RegExp(process.env.PWA_SERVICE_WORKER_REGEX),
-          /workbox-(.)*\.js$/
-        ]
-      }
-    )
-  )
-}*/
 
+// ─── Optional: offline fallback for public pages only ─────────────────────────
+//
+// If you want SOME offline support for pages that don't contain session
+// data, you can cache them selectively using a custom plugin that inspects
+// the response body before storing it. But the safest rule is:
+//
+//   Any page whose HTML contains window.__CART_ARRAY__ (or any other
+//   per-user injected state) must use NetworkOnly.
+//
+// If your SSR always injects __CART_ARRAY__ on every page (even as null),
+// NetworkOnly for all navigation is the correct and simplest choice.
+//
+// If only certain routes inject it, you can scope NetworkOnly like this:
+//
+// registerRoute(
+//   ({ request, url }) =>
+//     request.mode === 'navigate' &&
+//     SESSION_ROUTES.some(path => url.pathname.startsWith(path)),
+//   new NetworkOnly()
+// )
+//
+// registerRoute(
+//   ({ request, url }) =>
+//     request.mode === 'navigate' &&
+//     !SESSION_ROUTES.some(path => url.pathname.startsWith(path)),
+//   new NetworkFirst({
+//     cacheName: 'ssr-public-pages',
+//     networkTimeoutSeconds: 3,
+//     plugins: [
+//       new ExpirationPlugin({
+//         maxEntries: 20,
+//         maxAgeSeconds: 60 * 5   // 5 minutes max — public pages change too
+//       })
+//     ]
+//   })
+// )

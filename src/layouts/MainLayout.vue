@@ -163,12 +163,14 @@
       overlay
       behavior="mobile"
       :width="300"
+      class="cart-drawer"
       :touch-area-width="250"
       v-if="uiHydrated"
     >
       <q-no-ssr>
-      <q-scroll-area class="fit q-pa-sm">
-        <h4> Cart </h4>
+
+      <q-scroll-area :visible="false" class="fit">
+        <h4 class="sticky">Cart</h4>
         <div v-if="cart.hasItems.value">
         <div v-for="item in cart.state.items" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
           <img v-if="item.images" :src="item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
@@ -192,13 +194,6 @@
           </div>
         </div>
 
-        <router-link to="/checkout/">
-         <q-btn
-          color="secondary"
-          label="Checkout"
-        />
-        </router-link>
-
         </div>
         <div v-else class="q-pa-sm row items-center">
           <h5>seems like your cart is empty</h5>
@@ -209,6 +204,14 @@
             />
           </router-link>
         </div>
+        <div class="cart-details sticky">
+        <router-link to="/checkout/">
+         <q-btn
+          color="secondary"
+          label="Checkout"
+        />
+        </router-link>
+          </div>
 
       </q-scroll-area>
        </q-no-ssr>
@@ -287,7 +290,18 @@ import { matShoppingCart,
   matAdd,
   matClose,
   matRemove} from '@quasar/extras/material-icons'
+import { Capacitor } from '@capacitor/core'
+import { SplashScreen } from '@capacitor/splash-screen'
 //import { defineAsyncComponent } from 'vue'
+
+async function hideSplash() {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    await SplashScreen.hide({ fadeOutDuration: 500 })
+  } catch (err) {
+    console.warn('SplashScreen hide failed', err)
+  }
+}
 
 function normalizePermission(value) {
   if (value === 'prompt') { return 'default' } else if (value === 'initialized') { return 'granted' }
@@ -416,102 +430,92 @@ const uiHydrated = ref(false)              // Deferred functional UI
 const route = useRoute()
 const router = useRouter()
 
-const noDelayRoutes = ['/checkout', '/cart']
+const noDelayRoutes = ['/checkout/', '/cart/']
 
 const shouldDelayHydration = computed(() => {
   return !noDelayRoutes.includes(route.path)
 })
 
-onMounted(() => {
-  // Phase 1: Show the badges immediately
+onMounted(async () => {
+    console.log('onMounted START', performance.now()) // add this
+
   storeReady.value = true
 
-  const headerBtnClick = async(e) => {
-    await scheduler()
-    const btn = e.target.closest('[aria-label]');
-    if (btn) {
-      const label = btn.getAttribute('aria-label');
-      requestAnimationFrame(() => {
-        // Check for your specific button labels
-        if (label === 'Open menu') {
-          mobileMenuDrawer.value = true
-        } else if (label === 'Add to wishlist') {
-          wishlistDrawerOpen.value = true
-        } else if (label === 'View cart') {
-          cartDrawer.value = true
-        }
-      });
-    }
-  }
-  document.querySelector('header').addEventListener('click', headerBtnClick, {passive: true});
-  // Phase 2: Wait for the Hero to paint, then load the heavy stuff
-  const scheduler = async () => {
+  // Wait for router to resolve the current route before deciding hydration strategy.
+  // Without this, route.path may not reflect the actual page yet on SSR-hydrated loads,
+  // causing the no-delay check to miss and falling back to the 3s timeout.
+  await router.isReady()
+console.log('route.path:', route.path)
+console.log('shouldDelayHydration:', shouldDelayHydration.value)
+console.log('noDelayRoutes includes:', noDelayRoutes.includes(route.path))
 
+  const scheduler = async () => {
     if (uiHydrated.value) return
 
-// 2. Immediate cleanup of listeners
     window.removeEventListener('scroll', scheduler)
     window.removeEventListener('mousemove', scheduler)
     window.removeEventListener('touchstart', scheduler)
-    window.removeEventListener('click', headerBtnClick);
 
-    // 1. Pre-load the heavy scripts in the background
-    // This happens while the user is looking at the static SSR page
     try {
-      // We dynamic-import the utility, which then dynamic-imports Quasar.
-      // This 'double-hop' usually breaks the auto-preload scanner.
-      const {hydrate} = await import('../utils/lazy-quasar.js')
+      const { hydrate } = await import('../utils/lazy-quasar.js')
       await hydrate()
-
       requestAnimationFrame(() => {
         uiHydrated.value = true
+        hideSplash()
       })
     } catch (e) {
       console.error("Hydration prefetch failed", e)
-      uiHydrated.value = true // Fallback
+      uiHydrated.value = true
     }
 
     initLoadingBar(router)
-    initAuthPopup(router);
-    // 1. ALWAYS initialize tracking (Abandoned Cart logic)
-    // This doesn't ask for permission, it just sets up listeners.
-    if ( typeof window !== 'undefined' || Platform.is.capacitor ) {
-      initPush({ router })
-      const initialPermissions = await checkNativePermission();
-      permission.value = normalizePermission(initialPermissions)
-      console.log('🛒 Cart tracking active');
-    }
+    initAuthPopup(router)
 
+    if (typeof window !== 'undefined' || Platform.is.capacitor) {
+      initPush({ router })
+      const initialPermissions = await checkNativePermission()
+      permission.value = normalizePermission(initialPermissions)
+    }
 
     if (Platform.is.capacitor) {
       supported.value = true
-      /*const result = await initNativePush()
-      permission.value = normalizePermission(result)*/
     } else if ('Notification' in window) {
       supported.value = true
       permission.value = normalizePermission(Notification.permission)
     }
 
-    window.addEventListener('touchstart', handleTouchStart, {passive: true})
-    window.addEventListener('touchend', handleTouchEnd, {passive: true})
-    window.addEventListener('mousedown', handleMouseDown, {passive: true})
-    window.addEventListener('mouseup', handleMouseUp, {passive: true})
-
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+    window.addEventListener('touchend', handleTouchEnd, { passive: true })
+    window.addEventListener('mousedown', handleMouseDown, { passive: true })
+    window.addEventListener('mouseup', handleMouseUp, { passive: true })
   }
-    // 🚨 THIS IS THE IMPORTANT PART
-  if (!shouldDelayHydration.value) {
-    // 👉 hydrate immediately
-    scheduler()
-    return
-  } else {
-    window.addEventListener('scroll', scheduler, {passive: true})
-    window.addEventListener('mousemove', scheduler, {passive: true})
-    window.addEventListener('touchstart', scheduler, {passive: true})
 
-    // Safety fallback: Hydrate after 5 seconds if no interaction
+  // Define headerBtnClick after scheduler so it can reference it
+  const headerBtnClick = async (e) => {
+    await scheduler()
+    const btn = e.target.closest('[aria-label]')
+    if (btn) {
+      const label = btn.getAttribute('aria-label')
+      requestAnimationFrame(() => {
+        if (label === 'Open menu') mobileMenuDrawer.value = true
+        else if (label === 'Add to wishlist') wishlistDrawerOpen.value = true
+        else if (label === 'View cart') cartDrawer.value = true
+      })
+    }
+  }
+
+  document.querySelector('header').addEventListener('click', headerBtnClick, { passive: true })
+
+  if (!shouldDelayHydration.value) {
+    scheduler()
+    console.log('taking immediate path')
+  } else {
+    console.log('taking delayed path')
+    window.addEventListener('scroll', scheduler, { passive: true })
+    window.addEventListener('mousemove', scheduler, { passive: true })
+    window.addEventListener('touchstart', scheduler, { passive: true })
     setTimeout(scheduler, 3000)
   }
-
 })
 onUnmounted(() => {
   // Critical cleanup

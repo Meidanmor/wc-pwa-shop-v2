@@ -32,6 +32,101 @@ const state = reactive({
 })
 
 /* -------------------------
+   Cart fetch wrapper
+
+   Why Cart-Token is required here:
+   The WC Store API supports two session mechanisms:
+     1. Cookie (wp_woocommerce_session_xxx) -- only works same-origin
+     2. Cart-Token header -- designed for cross-origin / headless setups
+
+   Since this frontend runs on a different origin than WordPress,
+   the browser cannot persist the WC session cookie (blocked by
+   SameSite/Secure cookie restrictions). Every cookie-only request
+   looks like a brand new visitor -> empty cart.
+
+   The Cart-Token is a rolling token: WC returns a fresh one on every
+   response, but it always points to the same underlying session as long
+   as you echo the latest one back. We store the most recent token in
+   localStorage and send it on every request.
+
+   The token is scoped to this tab's localStorage, so incognito windows
+   get their own token -> their own isolated cart session.
+
+   Note: Cache-Control / Pragma headers are intentionally NOT sent.
+   They are non-simple headers that trigger a CORS preflight (OPTIONS)
+   request, which fails if the server doesn't explicitly allow them.
+   Caching is already disabled at the LiteSpeed level for /wp-json/wc/.
+   ------------------------- */
+const CART_TOKEN_COOKIE = 'wc_cart_token'
+const CART_TOKEN_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
+
+// Write token to both localStorage (fast client reads) and a cookie (SSR reads)
+function saveCartToken(res) {
+  try {
+    const token = res.headers.get('Cart-Token')
+    if (!token) return
+
+    // Client: localStorage for fast synchronous reads
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wc_cart_token', token)
+    }
+
+    // Cookie: readable by the SSR server on the next request.
+    // Not HttpOnly so JS can also read it as a fallback.
+    // SameSite=Strict prevents the cookie being sent on cross-site navigations.
+    if (typeof document !== 'undefined') {
+      const isSecure = location.protocol === 'https:' ? '; Secure' : ''
+      document.cookie = [
+        `${CART_TOKEN_COOKIE}=${encodeURIComponent(token)}`,
+        `Max-Age=${CART_TOKEN_COOKIE_MAX_AGE}`,
+        'Path=/',
+        'SameSite=Strict',
+        isSecure
+      ].filter(Boolean).join('; ')
+    }
+  } catch { /* ignore */ }
+}
+
+// Read the token — localStorage on client, cookie on SSR (or as client fallback)
+function getCartToken(ssrContext = null) {
+  // SSR: read from the incoming request cookie via ssrContext
+  if (ssrContext) {
+    try {
+      const cookieHeader = ssrContext.req?.headers?.cookie || ''
+      const match = cookieHeader.match(new RegExp(`(?:^|;*)${CART_TOKEN_COOKIE}=([^;]+)`))
+      return match ? decodeURIComponent(match[1]) : null
+    } catch { return null }
+  }
+
+  // Client: prefer localStorage (always up-to-date with latest rolling token)
+  try {
+    const fromStorage = localStorage.getItem('wc_cart_token')
+    if (fromStorage) return fromStorage
+  } catch { /* ignore */ }
+
+  // Client fallback: read from cookie (e.g. after a hard reload cleared localStorage)
+  try {
+    const match = document.cookie.match(new RegExp(`(?:^|;*)${CART_TOKEN_COOKIE}=([^;]+)`))
+    return match ? decodeURIComponent(match[1]) : null
+  } catch { return null }
+}
+
+async function cartFetch(url, options = {}, ssrContext = null) {
+  const token = getCartToken(ssrContext)
+  const res = await fetchWithToken(url, {
+    ...options,
+    headers: {
+      ...(token ? { 'Cart-Token': token } : {}),
+      ...options.headers  // caller headers win if explicitly set
+    }
+  }, ssrContext)
+
+  // Always persist the latest rolling token from the response
+  saveCartToken(res)
+  return res
+}
+
+/* -------------------------
    Tiny helpers
    ------------------------- */
 function notifyUser($q, type, message, icon) {
@@ -216,6 +311,8 @@ function buildLocalItemFromProduct(productLike, variation = [], quantity = 1) {
    Persistence
    ------------------------- */
 function persistLocalCart() {
+  const isClient = typeof window !== 'undefined'
+  if (!isClient) return
   try {
     const data = JSON.stringify(state.local_cart.items || [])
     localStorage.setItem(LOCAL_CART_KEY, data)
@@ -225,7 +322,18 @@ function persistLocalCart() {
   }
 }
 
+// Singleton promise — loadLocalCart() runs exactly once per page load.
+// Any caller that arrives while it's still running gets the same promise
+// rather than starting a second concurrent read from localStorage.
+let _localCartLoadPromise = null
+
 async function loadLocalCart() {
+  if (_localCartLoadPromise) return _localCartLoadPromise
+  _localCartLoadPromise = _doLoadLocalCart()
+  return _localCartLoadPromise
+}
+
+async function _doLoadLocalCart() {
   try {
     const raw = localStorage.getItem(LOCAL_CART_KEY)
     let items = []
@@ -247,6 +355,13 @@ async function loadLocalCart() {
         _removed: it._removed ?? false
       }
       const sig = itemSignature(normalized)
+
+      // Don't merge tombstones with live items — tombstones are kept as-is
+      if (normalized._removed) {
+        map.set(`__removed__${sig}`, normalized)
+        continue
+      }
+
       if (map.has(sig)) {
         const existing = map.get(sig)
         existing.quantity = (existing.quantity || 0) + (normalized.quantity || 0)
@@ -271,7 +386,7 @@ async function loadLocalCart() {
 
 /* -------------------------
    Merged view (local-first)
-   BUG FIX: filter out _removed tombstones before rendering
+   Filter out _removed tombstones before rendering
    ------------------------- */
 function rebuildMergedView() {
   const visible = (state.local_cart.items || []).filter(i => !i._removed)
@@ -288,7 +403,6 @@ function rebuildMergedView() {
 
 /* -------------------------
    applyServerSnapshot
-   Single helper that replaces 4 duplicated update blocks
    ------------------------- */
 function applyServerSnapshot(data) {
   state.cart_array = data || null
@@ -298,7 +412,10 @@ function applyServerSnapshot(data) {
   const serverMap = new Map(
     (state.cart_array?.items || []).map(i => [itemSignature(i), i])
   )
+
+  // Only reconcile non-tombstone local items
   for (const li of state.local_cart.items) {
+    if (li._removed) continue
     const match = serverMap.get(itemSignature(li))
     if (match) {
       li._synced = true
@@ -316,14 +433,16 @@ function applyServerSnapshot(data) {
    Signature equality check
    ------------------------- */
 function localAndServerSignaturesEqual() {
+  // Include quantity so a quantity-only change is detected as a diff
+  // and triggers a sync on next page load.
   const local = (state.local_cart.items || [])
     .filter(i => !i._removed)
-    .map(i => itemSignature(i))
+    .map(i => `${itemSignature(i)}:${i.quantity || 0}`)
     .sort()
     .join('|')
 
   const server = ((state.cart_array && state.cart_array.items) || [])
-    .map(i => itemSignature(i))
+    .map(i => `${itemSignature(i)}:${i.quantity || 0}`)
     .sort()
     .join('|')
 
@@ -338,12 +457,23 @@ const needsSyncComputed = computed(() => {
 
 /* -------------------------
    Debounced sync scheduler
+
+   cancelSync() lets individual mutations (like remove()) cancel any
+   in-flight debounce before doing their own direct API call, preventing
+   the debounced sync from firing afterwards with stale local state.
    ------------------------- */
 let __syncDebounceTimer = null
 const SYNC_DEBOUNCE_MS = 700
 
+function cancelPendingSync() {
+  if (__syncDebounceTimer) {
+    clearTimeout(__syncDebounceTimer)
+    __syncDebounceTimer = null
+  }
+}
+
 function scheduleSyncLocalToServer() {
-  if (__syncDebounceTimer) clearTimeout(__syncDebounceTimer)
+  cancelPendingSync()
   __syncDebounceTimer = setTimeout(() => {
     syncLocalCartWithServer().catch(err => {
       if (DEBUG) console.warn('[cart] scheduled sync failed', err)
@@ -353,99 +483,55 @@ function scheduleSyncLocalToServer() {
 }
 
 /* -------------------------
-   Item-by-item merge (FALLBACK ONLY)
-   Only called by syncLocalCartWithServer when the batch endpoint fails.
+   Sync guard — prevents overlapping sync calls.
+   If a sync is already running when a new one is triggered, the new
+   call waits for the current one to finish, then runs once more to
+   pick up any mutations that happened during the in-flight sync.
    ------------------------- */
-async function _mergeLocalIntoApiFallback() {
-  if (!state.local_cart.items.length || state.offline) return
+let __syncInFlight = null
+let __syncPendingAfter = false
 
-  const apiItems = state.cart_array?.items || []
-  const apiMap = new Map(apiItems.map(i => [itemSignature(i), i]))
+async function syncLocalCartWithServer() {
+  if (state.offline) return state.cart_array || null
+  if (typeof window === 'undefined') return state.cart_array || null
 
-  const actions = []
-  for (const localItem of state.local_cart.items) {
-    const sig = itemSignature(localItem)
-    const apiItem = apiMap.get(sig)
+  // If a sync is already running, queue exactly one follow-up
+  if (__syncInFlight) {
+    __syncPendingAfter = true
+    return __syncInFlight
+  }
 
-    if (localItem._removed) {
-      if (apiItem?.key) actions.push({ type: 'remove', payload: { key: apiItem.key } })
-      continue
-    }
-
-    const maxAllowed = getMaxAllowed(apiItem || localItem)
-    if (Number.isFinite(maxAllowed) && localItem.quantity > maxAllowed) {
-      localItem.quantity = maxAllowed
-    }
-
-    if (apiItem) {
-      if ((localItem.quantity || 0) !== (apiItem.quantity || 0)) {
-        if (apiItem.key) {
-          actions.push({ type: 'update', payload: { key: apiItem.key, quantity: Number(localItem.quantity) } })
-        } else {
-          actions.push({ type: 'add', payload: { id: localItem.id, quantity: localItem.quantity, variation: localItem.variation } })
-        }
+  __syncInFlight = _runSync()
+    .finally(() => {
+      __syncInFlight = null
+      if (__syncPendingAfter) {
+        __syncPendingAfter = false
+        // Re-run after the current stack unwinds
+        Promise.resolve().then(() => syncLocalCartWithServer())
       }
-    } else {
-      actions.push({ type: 'add', payload: { id: localItem.id, quantity: localItem.quantity, variation: localItem.variation } })
-    }
-  }
+    })
 
-  // If no diff, just refresh the server snapshot
-  if (!actions.length) {
-    try {
-      const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
-      if (res.ok) applyServerSnapshot(await res.json())
-    } catch (err) {
-      if (DEBUG) console.warn('[cart] fallback refresh failed', err)
-    }
-    return
-  }
-
-  state.loading.cart = true
-  for (const act of actions) {
-    try {
-      const endpoint =
-        act.type === 'add'    ? 'add-item' :
-        act.type === 'update' ? 'update-item' : 'remove-item'
-
-      let body = act.payload
-      if (act.type === 'add' && body.variation?.length) {
-        body = { ...body, variation: body.variation.map(v => ({ attribute: v.attribute, value: v.value })) }
-      }
-
-      const res = await fetchWithToken(`${API_BASE}/cart/${endpoint}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        if (DEBUG) console.warn(`[cart] fallback ${act.type} failed`, err)
-      }
-    } catch (err) {
-      if (DEBUG) console.warn('[cart] fallback action error', err)
-    }
-  }
-
-  // Refresh server snapshot after all actions
-  try {
-    const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
-    if (res.ok) applyServerSnapshot(await res.json())
-  } catch (err) {
-    if (DEBUG) console.warn('[cart] fallback final refresh failed', err)
-  } finally {
-    state.loading.cart = false
-  }
+  return __syncInFlight
 }
 
 /* -------------------------
-   PRIMARY SYNC
-   Batch POST first, item-by-item as fallback
-   ------------------------- */
-async function syncLocalCartWithServer() {
-  if (state.offline) return state.cart_array || null
+   PRIMARY SYNC — native WC Store API
 
+   Strategy:
+     1. Diff local vs server using itemSignature().
+     2. For each diff, call the appropriate Store API endpoint:
+          POST /cart/add-item        – new items
+          POST /cart/update-item     – quantity changes  (needs server `key`)
+          POST /cart/remove-item     – removals / tombstones (needs server `key`)
+     3. Every WC Store API endpoint returns the full cart on success.
+        We use the LAST successful response as the authoritative snapshot.
+        This is correct because actions are sequential — each response
+        reflects all prior mutations in this sync pass.
+     4. Clean up tombstones BEFORE calling applyServerSnapshot() so they
+        don't pollute the reconciliation loop inside applyServerSnapshot().
+   ------------------------- */
+async function _runSync() {
+  // Skip if nothing has actually changed
   if (state.synced === true) {
     try {
       if (localAndServerSignaturesEqual()) return state.cart_array || null
@@ -456,31 +542,170 @@ async function syncLocalCartWithServer() {
 
   state.loading.cart = true
   try {
-    const res = await fetchWithToken(`${API_BASE}/cart/sync-local-cart`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: state.local_cart.items,
-        coupons: state.coupons.map(c => c.code)
-      })
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data?.message || 'Batch sync failed')
+    const serverItems = state.cart_array?.items || []
+    const apiMap = new Map(serverItems.map(i => [itemSignature(i), i]))
 
-    applyServerSnapshot(data)
-    return data
-  } catch (batchErr) {
-    if (DEBUG) console.warn('[cart] batch sync failed, falling back to item-by-item', batchErr)
-    state.error = batchErr.message || String(batchErr)
-    state.synced = false
-    // Fallback: item-by-item merge
-    try {
-      await _mergeLocalIntoApiFallback()
-    } catch (fallbackErr) {
-      if (DEBUG) console.warn('[cart] fallback sync also failed', fallbackErr)
+    // ── Build action list ────────────────────────────────────────────────
+    const actions = []
+
+    for (const localItem of state.local_cart.items) {
+      const sig = itemSignature(localItem)
+      const apiItem = apiMap.get(sig)
+
+      // Tombstone → remove from server if it exists there
+      if (localItem._removed) {
+        const serverKey = apiItem?.key || localItem.remote_key
+        if (serverKey) {
+          actions.push({ type: 'remove', payload: { key: serverKey } })
+        }
+        // No server key means it never made it to the server — just drop it
+        continue
+      }
+
+      const maxAllowed = getMaxAllowed(apiItem || localItem)
+      if (Number.isFinite(maxAllowed) && localItem.quantity > maxAllowed) {
+        localItem.quantity = maxAllowed
+      }
+
+      if (apiItem) {
+        // Item exists on server — update quantity if different
+        if ((localItem.quantity || 0) !== (apiItem.quantity || 0)) {
+          if (apiItem.key) {
+            actions.push({
+              type: 'update',
+              payload: { key: apiItem.key, quantity: Number(localItem.quantity) }
+            })
+          } else {
+            // No server key yet — re-add with correct quantity
+            actions.push({
+              type: 'add',
+              payload: {
+                id: localItem.id,
+                quantity: Number(localItem.quantity),
+                variation: localItem.variation
+              }
+            })
+          }
+        }
+      } else {
+        // Item is not on server at all — add it
+        actions.push({
+          type: 'add',
+          payload: {
+            id: localItem.id,
+            quantity: Number(localItem.quantity),
+            variation: localItem.variation
+          }
+        })
+      }
     }
-    throw batchErr
+
+    // Check for items on server that are no longer local
+    // (e.g. cleared while offline then came back online)
+    const localSigs = new Set(
+      state.local_cart.items.filter(i => !i._removed).map(i => itemSignature(i))
+    )
+    for (const serverItem of serverItems) {
+      if (!localSigs.has(itemSignature(serverItem)) && serverItem.key) {
+        actions.push({ type: 'remove', payload: { key: serverItem.key } })
+      }
+    }
+
+    // Tombstones with no server key are already resolved (item was never on
+    // the server, or was already removed). Clean them up regardless of whether
+    // there are other actions to execute, so they don't linger in local state.
+    const hadKeylessTombstones = state.local_cart.items.some(
+      i => i._removed && !apiMap.get(itemSignature(i))?.key && !i.remote_key
+    )
+
+    if (actions.length === 0) {
+      // Clean up any keyless tombstones before snapshotting
+      if (hadKeylessTombstones) {
+        state.local_cart.items = state.local_cart.items.filter(i => !i._removed)
+        persistLocalCart()
+      }
+      applyServerSnapshot(state.cart_array)
+      return state.cart_array
+    }
+
+    // ── Execute actions, keep rolling the snapshot ───────────────────────
+    // FIX: finalData starts as null. It is updated on every *successful*
+    // response (each of which is a full cart). If no action succeeds,
+    // we fall back to the existing state.cart_array.
+    let finalData = null
+
+    for (const act of actions) {
+      const endpoint =
+        act.type === 'add'    ? 'add-item' :
+        act.type === 'update' ? 'update-item' :
+                                'remove-item'
+
+      let body = act.payload
+
+      // WC Store API expects variation as { attribute, value } objects
+      if (act.type === 'add' && Array.isArray(body.variation) && body.variation.length) {
+        body = {
+          ...body,
+          variation: body.variation.map(v => ({
+            attribute: v.attribute,
+            value: v.value
+          }))
+        }
+      }
+
+      try {
+        const res = await cartFetch(`${API_BASE}/cart/${endpoint}`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        })
+
+        const resData = await res.json().catch(() => null)
+
+        if (!res.ok) {
+          // Special case: remove-item returns 'invalid key' when the item was
+          // already gone from the server (e.g. user removed it, refreshed before
+          // the sync completed, and the tombstone was still in localStorage).
+          // The desired end state is already true (item gone from server), so
+          // treat this as a success. No cart body comes back, so finalData is
+          // not updated here -- after the loop we fall back to state.cart_array.
+          if (act.type === 'remove' && resData?.code === 'woocommerce_rest_cart_invalid_key') {
+            if (DEBUG) console.log('[cart] remove-item: item already gone, treating as success')
+            if (resData?.data?.cart) finalData = resData.data.cart
+            continue
+          }
+
+          if (DEBUG) console.warn(`[cart] Store API ${act.type} failed`, resData)
+          continue
+        } else {
+          // Each successful response IS the full cart -- roll it forward
+          if (resData) finalData = resData
+
+        }
+
+
+      } catch (err) {
+        if (DEBUG) console.warn(`[cart] Store API ${act.type} error`, err)
+        // Network error -- keep rolling, try next action
+      }
+    }
+
+    // ── FIX: Clean tombstones BEFORE applyServerSnapshot ─────────────────
+    // applyServerSnapshot() iterates local_cart.items to reconcile with the
+    // server. Tombstones still present during that loop appear as unmatched
+    // local items, causing phantom re-syncs on the next debounce tick.
+    state.local_cart.items = state.local_cart.items.filter(i => !i._removed)
+
+    // Use the last successful response, or fall back to current server state
+    applyServerSnapshot(finalData || state.cart_array)
+    return state.cart_array
+
+  } catch (err) {
+    if (DEBUG) console.warn('[cart] _runSync failed', err)
+    state.error = err.message || String(err)
+    state.synced = false
+    throw err
   } finally {
     state.loading.cart = false
   }
@@ -493,10 +718,16 @@ let cartFetchPromise = null
 
 async function fetchCartOnce(forceSync = false) {
   if (cartFetchPromise) return cartFetchPromise
+  const isClient = typeof window !== 'undefined'
 
   cartFetchPromise = (async () => {
     try {
-      loadLocalCart()
+      // FIX: await loadLocalCart() before checking needsSyncComputed.
+      // loadLocalCart() is a singleton — if it already ran, this resolves
+      // immediately. If it's still in progress, we wait for it.
+      // Without this await, needsSyncComputed sees an empty local cart
+      // and skips the sync even when localStorage has items.
+      if (isClient) await loadLocalCart()
       if (state.offline) return state.cart_array
 
       if (forceSync || needsSyncComputed.value) {
@@ -515,12 +746,15 @@ async function fetchCartOnce(forceSync = false) {
 /* -------------------------
    fetchCart
    ------------------------- */
-async function fetchCart(force = false) {
+async function fetchCart(force = false, ssrContext = null) {
   if (state.synced && !force) return
   if (DEBUG) console.log('[cart] fetchCart called')
 
+  const isClient = typeof window !== 'undefined'
+
   if (state.offline) {
-    loadLocalCart()
+    // loadLocalCart is a singleton — safe to call, resolves instantly if already loaded
+    if (isClient) await loadLocalCart()
     state.cart_array = null
     rebuildMergedView()
     return
@@ -528,30 +762,23 @@ async function fetchCart(force = false) {
 
   state.error = null
   try {
-    const res = await fetchWithToken(`${API_BASE}/cart`, { credentials: 'include' })
+    if (isClient) await loadLocalCart()
+
+    let res
+    res = await cartFetch(`${API_BASE}/cart`, { credentials: 'include' }, ssrContext)
+
     if (!res.ok) throw new Error('Failed to fetch cart')
     const data = await res.json()
 
-    const cartToken = res.headers.get('Cart-Token') || null
-    if (cartToken) {
-      if (DEBUG) console.log('[cart] Cart-Token received:', cartToken)
-      localStorage.setItem('wc_cart_token', cartToken)
+    if(ssrContext){
+      console.log(data)
+      return data;
     }
-
     state.cart_array = data
     rebuildMergedView()
-
-    // Push any local changes to server (background unless forced)
-    if (force) {
-      await _mergeLocalIntoApiFallback()
-    } else {
-      _mergeLocalIntoApiFallback().catch(err => {
-        if (DEBUG) console.warn('[cart] background merge failed', err)
-      })
-    }
   } catch (err) {
     state.error = err.message
-    loadLocalCart()
+    if (isClient) await loadLocalCart()
     state.cart_array = null
     rebuildMergedView()
     state.synced = false
@@ -728,18 +955,18 @@ async function decrease(cartItemKey) {
     item.quantity = (item.quantity || 0) - 1
 
     if (item.quantity <= 0) {
-      state.local_cart.items.splice(locIdx, 1)
-      const removalSig = itemSignature(item)
-      const removal = {
-        key: generateLocalKeyForSig(removalSig),
+      // FIX: Replace the live item with a tombstone in-place (same index)
+      // rather than splice + push. This prevents a brief moment where
+      // rebuildMergedView() sees neither the live item nor the tombstone.
+      state.local_cart.items.splice(locIdx, 1, {
+        key: generateLocalKeyForSig(itemSignature(item)),
         id: item.id,
         quantity: 0,
         variation: normalizeVariation(item.variation || []),
         _local: true,
         _removed: true,
         _synced: false
-      }
-      state.local_cart.items.push(removal)
+      })
     }
 
     persistLocalCart()
@@ -756,7 +983,7 @@ async function decrease(cartItemKey) {
 
   const desired = (apiItem.quantity || 1) - 1
   if (desired <= 0) {
-    const rm = {
+    state.local_cart.items.push({
       key: generateLocalKeyForSig(itemSignature(apiItem)),
       id: apiItem.id,
       quantity: 0,
@@ -764,10 +991,9 @@ async function decrease(cartItemKey) {
       _local: true,
       _removed: true,
       _synced: false
-    }
-    state.local_cart.items.push(rm)
+    })
   } else {
-    const override = {
+    state.local_cart.items.push({
       key: generateLocalKeyForSig(itemSignature(apiItem)),
       id: apiItem.id,
       name: apiItem.name,
@@ -780,8 +1006,7 @@ async function decrease(cartItemKey) {
         : { editable: true, maximum: getMaxAllowed(apiItem), minimum: 1, multiple_of: 1 },
       _local: true,
       _synced: false
-    }
-    state.local_cart.items.push(override)
+    })
   }
 
   persistLocalCart()
@@ -789,70 +1014,88 @@ async function decrease(cartItemKey) {
   scheduleSyncLocalToServer()
 }
 
+/* -------------------------
+   remove()
+
+   FIX: Unified to a single path — always goes optimistic-local-first,
+   then syncs via the debounced sync. The old "online + API item → remove
+   directly via Store API" fast path was the source of drift because:
+     1. It bypassed the debounce, but didn't cancel any pending debounced
+        sync, so the debounced sync could fire after and re-add the item.
+     2. It had its own applyServerSnapshot() call separate from the normal
+        sync flow, creating two competing sources of truth.
+
+   Now: mutate local immediately, cancel any pending debounce, and let
+   syncLocalCartWithServer() be the single place that talks to the API.
+   The cancelPendingSync() + immediate scheduleSyncLocalToServer() ensures
+   the remove fires in the next tick rather than waiting for the debounce
+   that was accumulating from a prior add/increase.
+   ------------------------- */
 async function remove(cartItemKey = null, cartItemAPIKey = null, $q = null) {
   markCartChanged()
-  state.loading.cart = true
   state.error = null
 
-  // Local item → remove directly
-  const idxLocal = state.local_cart.items.findIndex(i => i.key === cartItemKey)
-  if (idxLocal !== -1) {
-    state.local_cart.items.splice(idxLocal, 1)
+  // Find the item — check local first, then fall back to API cart
+  const localIdx = state.local_cart.items.findIndex(i => i.key === cartItemKey)
+
+  if (localIdx !== -1) {
+    // Live local item → replace with tombstone so the sync knows to remove it server-side
+    const item = state.local_cart.items[localIdx]
+    const remoteKey = item.remote_key || cartItemAPIKey || null
+
+    state.local_cart.items.splice(localIdx, 1, {
+      key: generateLocalKeyForSig(itemSignature(item)),
+      id: item.id,
+      quantity: 0,
+      variation: normalizeVariation(item.variation || []),
+      remote_key: remoteKey,
+      _local: true,
+      _removed: true,
+      _synced: false
+    })
+
     persistLocalCart()
     rebuildMergedView()
-    state.loading.cart = false
     notifyUser($q, 'positive', 'Removed from cart', matShoppingCart)
-    if (!state.offline) scheduleSyncLocalToServer()
-    return
-  }
 
-  // API item while offline → create local removal tombstone
-  const apiItem = (state.cart_array?.items || []).find(i => i.remote_key === cartItemAPIKey)
-  if (!apiItem || state.offline) {
-    if (apiItem) {
-      const rm = {
-        key: generateLocalKeyForSig(itemSignature(apiItem)),
-        id: apiItem.id,
-        name: apiItem.name,
-        quantity: 0,
-        variation: normalizeVariation(apiItem.variation || []),
-        _local: true,
-        _removed: true,
-        _synced: false
-      }
-      state.local_cart.items.push(rm)
-      persistLocalCart()
-      rebuildMergedView()
-      notifyUser($q, 'info', 'Removed from cart (local)', matCloudOff)
-      if (!state.offline) scheduleSyncLocalToServer()
+    if (!state.offline) {
+      // Cancel any accumulated debounce and fire sync immediately
+      cancelPendingSync()
+      scheduleSyncLocalToServer()
     }
-    state.loading.cart = false
     return
   }
 
-  // Online + API item → remove on server
-  try {
-    const res = await fetchWithToken(`${API_BASE}/cart/remove-item`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: cartItemAPIKey })
-    })
-    const data = await res.json().catch(() => null)
-    if (!res.ok) throw new Error((data && data.message) || 'Failed to remove item')
+  // Item isn't in local_cart — it only exists in cart_array (API-only item,
+  // e.g. loaded fresh from server before any local mutation).
+  const apiItem = (state.cart_array?.items || []).find(
+    i => i.key === cartItemAPIKey || i.remote_key === cartItemAPIKey
+  )
 
-    // Remove matching local items
-    const sig = itemSignature(apiItem)
-    state.local_cart.items = state.local_cart.items.filter(i => itemSignature(i) !== sig)
+  if (!apiItem) {
+    if (DEBUG) console.warn('[cart] remove(): item not found locally or in API cart', { cartItemKey, cartItemAPIKey })
+    return
+  }
 
-    applyServerSnapshot(data)
-    notifyUser($q, 'positive', 'Removed from cart.', matShoppingCart)
-  } catch (err) {
-    state.error = err.message
-    notifyUser($q, 'negative', 'Failed to remove.', matError)
-    if (!state.offline) scheduleSyncLocalToServer()
-  } finally {
-    state.loading.cart = false
+  // Create a tombstone for the API item so the sync can remove it
+  state.local_cart.items.push({
+    key: generateLocalKeyForSig(itemSignature(apiItem)),
+    id: apiItem.id,
+    quantity: 0,
+    variation: normalizeVariation(apiItem.variation || []),
+    remote_key: apiItem.key || cartItemAPIKey,
+    _local: true,
+    _removed: true,
+    _synced: false
+  })
+
+  persistLocalCart()
+  rebuildMergedView()
+  notifyUser($q, state.offline ? 'info' : 'positive', state.offline ? 'Removed from cart (local)' : 'Removed from cart', state.offline ? matCloudOff : matShoppingCart)
+
+  if (!state.offline) {
+    cancelPendingSync()
+    scheduleSyncLocalToServer()
   }
 }
 
@@ -872,7 +1115,7 @@ async function clear() {
    ------------------------- */
 async function applyCoupon(code) {
   try {
-    const res = await fetchWithToken(`${API_BASE}/cart/apply-coupon`, {
+    const res = await cartFetch(`${API_BASE}/cart/apply-coupon`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -880,7 +1123,7 @@ async function applyCoupon(code) {
     })
     const data = await res.json()
     if (!res.ok) throw new Error('Coupon failed')
-    state.cart_array = data || null
+    applyServerSnapshot(data || null)
   } catch (err) {
     if (DEBUG) console.error('[cart] applyCoupon failed', err)
     throw err
@@ -889,7 +1132,7 @@ async function applyCoupon(code) {
 
 async function removeCoupon(code) {
   try {
-    const res = await fetchWithToken(`${API_BASE}/cart/remove-coupon`, {
+    const res = await cartFetch(`${API_BASE}/cart/remove-coupon`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -897,7 +1140,7 @@ async function removeCoupon(code) {
     })
     const data = await res.json()
     if (!res.ok) throw new Error('Coupon removal failed')
-    state.cart_array = data || null
+    applyServerSnapshot(data || null)
   } catch (err) {
     if (DEBUG) console.error('[cart] removeCoupon failed', err)
     throw err
@@ -906,10 +1149,10 @@ async function removeCoupon(code) {
 
 /* -------------------------
    Checkout
-   BUG FIX: now uses syncLocalCartWithServer (batch) instead of mergeLocalIntoApi
+   Uses syncLocalCartWithServer (native Store API) before placing order
    ------------------------- */
 async function placeOrder(payload) {
-  // Ensure server reflects local cart before placing order (batch sync)
+  // Ensure server reflects local cart before placing order
   await syncLocalCartWithServer()
 
   try {
@@ -927,10 +1170,7 @@ async function placeOrder(payload) {
     if (!res.ok) throw new Error(data.message || 'Checkout failed')
 
     // Cancel any pending sync
-    if (__syncDebounceTimer) {
-      clearTimeout(__syncDebounceTimer)
-      __syncDebounceTimer = null
-    }
+    cancelPendingSync()
 
     // Clear local cart
     state.local_cart.items = []
@@ -951,7 +1191,9 @@ async function placeOrder(payload) {
    Init
    ------------------------- */
 if (typeof window !== 'undefined') {
-  loadLocalCart().then(() => rebuildMergedView())
+  loadLocalCart();
+  // No need to call it separately here — doing so would race with
+  // fetchCartOnce and cause needsSyncComputed to evaluate on a half-loaded state.
 
   window.addEventListener('online', async () => {
     state.offline = false
@@ -1001,6 +1243,9 @@ export default {
   removeCoupon,
   placeOrder,
   syncLocalCartWithServer,
+  // Exposed for post-hydration sync on pages that consume window.__CART_ARRAY__
+  loadLocalCart,
+  needsSync: () => needsSyncComputed.value,
   signatureFor(productId, variationArray) {
     const varArr = Array.isArray(variationArray) ? variationArray : normalizeVariation(variationArray)
     const varSig = varArr
