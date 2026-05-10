@@ -290,13 +290,12 @@ import { matShoppingCart,
   matAdd,
   matClose,
   matRemove} from '@quasar/extras/material-icons'
-import { Capacitor } from '@capacitor/core'
-import { SplashScreen } from '@capacitor/splash-screen'
 //import { defineAsyncComponent } from 'vue'
 
 async function hideSplash() {
-  if (!Capacitor.isNativePlatform()) return
+  if (!Platform.is.capacitor) return
   try {
+    const SplashScreen = await import('@capacitor/splash-screen')
     await SplashScreen.hide({ fadeOutDuration: 500 })
   } catch (err) {
     console.warn('SplashScreen hide failed', err)
