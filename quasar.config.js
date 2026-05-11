@@ -123,22 +123,28 @@ export default defineConfig((ctx) => {
       }*/
       // quasar.config.js -> build section
       extendViteConf(viteConf, {isClient}) {
-        viteConf.optimizeDeps = viteConf.optimizeDeps || {}
+        const isCapacitor = ctx.mode.capacitor;
 
-        viteConf.optimizeDeps.exclude = [
-          '@capgo/capacitor-social-login',
-          '@capacitor/splash-screen'
-        ]
+        viteConf.optimizeDeps = viteConf.optimizeDeps || {}
 
         // Externalize Capacitor plugins from the bundle (build time)
         // Applied to BOTH client and server passes to prevent Rollup resolution errors
         viteConf.build = viteConf.build || {}
         viteConf.build.rollupOptions = viteConf.build.rollupOptions || {}
-        viteConf.build.rollupOptions.external = [
-          ...(viteConf.build.rollupOptions.external || []),
-          '@capgo/capacitor-social-login',
-          '@capacitor/splash-screen'
-        ]
+
+        if (!isCapacitor) {
+          viteConf.optimizeDeps.exclude = [
+            '@capgo/capacitor-social-login',
+            '@capacitor/splash-screen'
+          ]
+
+          viteConf.build.rollupOptions.external = [
+            ...(viteConf.build.rollupOptions.external || []),
+            '@capgo/capacitor-social-login',
+            '@capacitor/splash-screen'
+          ]
+        }
+
 
         viteConf.build.modulePreload = {
           resolveDependencies: (filename, deps) => {
