@@ -436,18 +436,12 @@ const shouldDelayHydration = computed(() => {
 })
 
 onMounted(async () => {
-    console.log('onMounted START', performance.now()) // add this
-
   storeReady.value = true
 
   // Wait for router to resolve the current route before deciding hydration strategy.
   // Without this, route.path may not reflect the actual page yet on SSR-hydrated loads,
   // causing the no-delay check to miss and falling back to the 3s timeout.
   await router.isReady()
-console.log('route.path:', route.path)
-console.log('shouldDelayHydration:', shouldDelayHydration.value)
-console.log('noDelayRoutes includes:', noDelayRoutes.includes(route.path))
-
   const scheduler = async () => {
     if (uiHydrated.value) return
 
@@ -507,9 +501,7 @@ console.log('noDelayRoutes includes:', noDelayRoutes.includes(route.path))
 
   if (!shouldDelayHydration.value) {
     scheduler()
-    console.log('taking immediate path')
   } else {
-    console.log('taking delayed path')
     window.addEventListener('scroll', scheduler, { passive: true })
     window.addEventListener('mousemove', scheduler, { passive: true })
     window.addEventListener('touchstart', scheduler, { passive: true })

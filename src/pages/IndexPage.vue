@@ -410,7 +410,6 @@ defineOptions({
     ? process.env.VITE_API_BASE   // ✅ your server env (Vercel)
     : import.meta.env.VITE_API_BASE // ✅ client env
 
-    console.log('--- PreFetch Running for:', currentRoute.path)
     const {fetchSeoForPath} = await import('src/composables/useSeo')
     /*const seo = await fetchSeoForPath('homepage')
     //const seo = null;
@@ -548,7 +547,6 @@ const getChunks = (array, size) => {
 
 // UPDATE THIS FUNCTION:
 const recomputeSlides = async (forceRemount = false) => {
-    console.log('[recomputeSlides] called, isHydrated =', isHydrated.value)
   if (!isHydrated.value) return
 
   if (!productsStore.products.value.length) {
@@ -643,8 +641,6 @@ const subscribeNewsletter = () => {
 
 // ----------------- Mounted -----------------
 onMounted(async() => {
-    console.log('[onMounted] start', document.readyState)
-
     if (window.__PAGE_CONFIG__ && Object.keys(window.__PAGE_CONFIG__).length) {
       homeSettings.value = window.__PAGE_CONFIG__
     } else {
@@ -669,11 +665,7 @@ isHydrated.value = false
 
   const hydrateOnInteraction = () => {
     if (isHydrated.value) return
-    console.log('[hydrate] triggered')
-
     requestIdleCallback(() => {
-      console.log('[hydrate] inside requestIdleCallback')
-
       window.removeEventListener('scroll', hydrateOnInteraction)
       window.removeEventListener('mousemove', hydrateOnInteraction)
       window.removeEventListener('touchstart', hydrateOnInteraction)

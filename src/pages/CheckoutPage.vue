@@ -61,7 +61,7 @@
               <q-input v-model="couponCode" label="Coupon code" filled />
             </div>
             <div class="col-auto">
-              <q-btn label="Apply" color="secondary" @click="applyCoupon" />
+              <q-btn label="Apply" color="secondary" @click="applyCoupon(couponCode)" />
             </div>
           </div>
           <div v-if="couponApplied" class="text-positive q-mt-sm">
@@ -70,8 +70,8 @@
           <div v-if="couponError" class="text-negative q-mt-sm">
             {{ couponError }}
           </div>
-          <div v-if="cart.state.coupons.length">
-            <div v-for="coupon in cart.state.coupons" :key="coupon.code" class="q-mb-sm row items-center">
+          <div v-if="cart.state?.cart_array?.coupons.length">
+            <div v-for="coupon in cart.state.cart_array.coupons" :key="coupon.code" class="q-mb-sm row items-center">
               <q-chip color="secondary" text-color="white" class="q-mr-sm">
                 {{ coupon.code }}
               </q-chip>
@@ -150,8 +150,8 @@
       <!-- Total & Place Order -->
       <q-card class="q-mb-md">
         <q-card-section>
-          <div v-if="couponApplied">Total discount: {{formatCurrency(cart.state.totals.total_discount)}}</div>
-          <div class="text-h6">Total: <span v-if="couponApplied"><del>{{formatCurrency((Number(cart.state.totals.total_discount)+Number(cart.state.totals.total_price)))}}</del></span> {{ cartTotal }}</div>
+          <div v-if="couponApplied">Total discount: {{formatCurrency(cart.state.cart_array.totals.total_discount)}}</div>
+          <div class="text-h6">Total: <span v-if="couponApplied"><del>{{formatCurrency((Number(cart.state.cart_array.totals.total_discount)+Number(cart.state.cart_array.totals.total_price)))}}</del></span> {{ cartTotal }}</div>
         </q-card-section>
         <q-card-actions>
           <q-btn label="Place Order" type="submit" color="secondary" />
@@ -189,18 +189,13 @@ import { matError } from '@quasar/extras/material-icons'
 
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
-    console.log('preFetch START', performance.now())
     let cartData;
     if(ssrContext) {
-       cartData = await cart.fetchCart(true, ssrContext)
-    } else  {
-      if(cart.needsSync()){
-       cartData = await cart.fetchCart(true, ssrContext)
-      }
+      cartData = await cart.fetchCart(true, ssrContext)
+    } else if(cart.needsSync()) {
+      cartData = await cart.syncLocalCartWithServer()
     }
-      console.log('check', cart.state.cart_array);
-      console.log('check', cartData);
-      //const seo = await fetchSeoForPath('checkout')
+     //const seo = await fetchSeoForPath('checkout')
       const seo = {
         title: 'Checkout',
         description: 'Checkout page',
@@ -209,7 +204,6 @@ defineOptions({
     const isPreview = currentRoute.query.preview === 'true'
 
     const configData = await loadPageConfig('checkout', isPreview) // The helper we'll create
-    console.log(configData)
     if (ssrContext) {
 
       ssrContext.cartArray = cartData
@@ -219,7 +213,6 @@ defineOptions({
       window.__PAGE_CONFIG__ = configData;
       window.__CART_ARRAY__ = cartData
     }
-        console.log('preFetch END', performance.now())
 
   }
 })
@@ -249,7 +242,6 @@ const syncError = ref(null);
 const token = ref('');
 if(process.env.CLIENT) {
   token.value = localStorage.getItem('jwt_token');
-  console.log(!!token.value);
 }
 /*defineOptions({
   async preFetch () {
@@ -316,7 +308,7 @@ const paymentMethod = ref('bacs');
 const selectedShippingRateId = ref(null);
 const cartItems = computed(() => cart.state.cart_array?.items || []);
 const cartTotal = computed(() => {
-  const total = cart.state.totals?.total_price || '0';
+  const total = cart.state.cart_array?.totals?.total_price || '0';
   const formattedTotal = formatCurrency(total, {minorUnit: 2, decimalSeparator: '.', prefix: '₪', suffix: ''});
   return formattedTotal;
 });
@@ -428,8 +420,8 @@ function formatCurrency(amountStr, {
     maximumFractionDigits: minorUnit
   })}${suffix}${prefix}`;
 }
-const applyCoupon = () => cart.applyCoupon(couponCode.value);
-const removeCoupon = () => cart.removeCoupon(couponCode.value);
+const applyCoupon = (coupon) => cart.applyCoupon(coupon);
+const removeCoupon = (coupon) => cart.removeCoupon(coupon);
 // Fetch shipping methods
 const fetchShippingRates = async () => {
   if (!cart.state.cart_array) return
@@ -459,7 +451,6 @@ const onShippingMethodChange = async (newRateId) => {
     });
     // Re-fetch cart to get updated totals
     await cart.fetchCart();
-    console.log(cart);
   } catch (error) {
     console.error('Error updating shipping method:', error);
   }
@@ -512,11 +503,7 @@ const submitOrder = async () => {
       extensions: {},
       billing_same_as_shipping: billingSameAsShipping.value
     };
-    console.log(paymentMethod.value);
-    console.log(payload);
-    console.log(form);
     const response = await cart.placeOrder(payload)
-    console.log('Order placed:', response)
 
     router.push({
       name: 'thank-you',
@@ -585,7 +572,6 @@ watch(
 )
 
 onMounted(async () => {
-  console.log(cart.state.loading)
   if (window.__CART_ARRAY__ && !cart.state.cart_array) {
     cart.state.cart_array = window.__CART_ARRAY__
     cart.state.synced = true
@@ -596,9 +582,7 @@ onMounted(async () => {
     // while offline, or before the session was established.
     // Load local cart first, then let the sync diff decide what to do.
     await cart.loadLocalCart()
-    console.log(cart.needsSync());
     if (cart.needsSync()) {
-      console.log('cart is syncing !!!')
       await cart.syncLocalCartWithServer()
     }
   } else {

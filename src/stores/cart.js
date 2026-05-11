@@ -776,6 +776,8 @@ async function fetchCart(force = false, ssrContext = null) {
     }
     state.cart_array = data
     rebuildMergedView()
+    return data   // ← ADD THIS
+
   } catch (err) {
     state.error = err.message
     if (isClient) await loadLocalCart()
