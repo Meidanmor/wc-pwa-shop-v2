@@ -153,7 +153,7 @@ export default defineConfig((ctx) => {
 
             output: {
               ...viteConf.build.rollupOptions?.output,
-              manualChunks(id) {
+              /*manualChunks(id) {
                 // If the file is an observer, force it into its own async chunk
                 if (
                     id.includes('quasar/src/components/scroll-observer') ||
@@ -167,7 +167,7 @@ export default defineConfig((ctx) => {
                 // DO NOT group the rest of quasar here.
                 // Let Vite handle the rest automatically so your
                 // defineAsyncComponent logic actually creates separate files.
-              }
+              }*/
             }
           };
         }
