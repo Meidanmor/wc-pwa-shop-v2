@@ -123,10 +123,8 @@ export default defineConfig((ctx) => {
       }*/
       // quasar.config.js -> build section
       extendViteConf(viteConf, {isClient}) {
-        const isCapacitor = ctx.mode.capacitor
-
-        // Exclude Capacitor plugins from dep optimization (dev server)
         viteConf.optimizeDeps = viteConf.optimizeDeps || {}
+
         viteConf.optimizeDeps.exclude = [
           '@capgo/capacitor-social-login',
           '@capacitor/splash-screen'
@@ -144,43 +142,43 @@ export default defineConfig((ctx) => {
 
         viteConf.build.modulePreload = {
           resolveDependencies: (filename, deps) => {
-            return deps.filter(
-                dep =>
-                    !dep.includes('QLayout') &&
-                    !dep.includes('QList') &&
-                    !dep.includes('QItemSection') &&
-                    !dep.includes('use-quasar')
-            )
-          }
+            // Filter out Quasar components from the 'preload' list
+            // This forces the browser to wait until the 5-second timer to even start the download
+            return deps.filter(dep => !dep.includes('QLayout') && !dep.includes('QList') && !dep.includes('QItemSection') && !dep.includes('use-quasar'));
+          },
         }
-
         if (isClient) {
           viteConf.build.rollupOptions = {
             ...viteConf.build.rollupOptions,
+
             output: {
               ...viteConf.build.rollupOptions?.output,
               manualChunks(id) {
+                // If the file is an observer, force it into its own async chunk
                 if (
                     id.includes('quasar/src/components/scroll-observer') ||
                     id.includes('quasar/src/components/resize-observer') ||
                     id.includes('quasar/src/directives/touch-pan') ||
                     id.includes('quasar/src/directives/touch-hold') ||
-                    id.includes('quasar/src/utils/format')
-                ) {
-                  return 'quasar-observers-delayed'
+                    id.includes('quasar/src/utils/format')) {
+                  return 'quasar-observers-delayed';
                 }
+
+                // DO NOT group the rest of quasar here.
+                // Let Vite handle the rest automatically so your
+                // defineAsyncComponent logic actually creates separate files.
               }
             }
-          }
+          };
         }
-
-        // Swap push boot file based on platform
+        // ... inside extendViteConf
+        const isCapacitor = ctx.mode.capacitor;
         viteConf.resolve.alias = {
           'src/boot/push.js': isCapacitor
               ? path.resolve(__dirname, 'src/boot/push.native.js')
               : path.resolve(__dirname, 'src/boot/push.web.js'),
           ...viteConf.resolve.alias
-        }
+        };
       },
     },
 
