@@ -295,7 +295,7 @@ import { matShoppingCart,
 async function hideSplash() {
   if (!Platform.is.capacitor) return
   try {
-    const SplashScreen = await import(/* @vite-ignore */ '@capacitor/splash-screen')
+    const {SplashScreen} = await import(/* @vite-ignore */ '@capacitor/splash-screen')
     await SplashScreen.hide({ fadeOutDuration: 500 })
   } catch (err) {
     console.warn('SplashScreen hide failed', err)
