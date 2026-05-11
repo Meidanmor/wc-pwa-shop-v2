@@ -374,7 +374,7 @@ import { useQuasar, useMeta } from 'quasar'
 import { useRoute } from 'vue-router' // Standard import is tiny
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matStar } from '@quasar/extras/material-icons'
-import { defineAsyncComponent } from 'vue'
+import { defineAsyncComponent, nextTick } from 'vue'
 import { loadPageConfig } from 'src/utils/config-loader'
 import { useCarouselKeyboard } from 'src/composables/useCarouselKeyboard'
 import ProductCard from 'src/components/ProductCard.vue'
@@ -678,8 +678,8 @@ isHydrated.value = false
       window.removeEventListener('mousemove', hydrateOnInteraction)
       window.removeEventListener('touchstart', hydrateOnInteraction)
 
-      requestAnimationFrame(() => {
-        console.log('[hydrate] inside requestAnimationFrame, isHydrated =', isHydrated.value)
+      requestAnimationFrame(async () => {
+        await nextTick() // let SSR hydration fully settle first
         isHydrated.value = true
       })
 
