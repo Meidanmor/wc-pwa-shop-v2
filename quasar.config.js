@@ -19,13 +19,13 @@ export default defineConfig((ctx) => {
         script-src 'self' https://accounts.google.com 'unsafe-inline';
         style-src 'self' 'unsafe-inline';
         img-src 'self' data: https:;
-        connect-src 'self' https://nuxt.meidanm.com;
+        connect-src 'self' ${process.env.VITE_API_BASE};
         font-src 'self' https://fonts.gstatic.com;
         frame-src https://accounts.google.com;
   `,
       head: `
-    <link rel="preconnect" href="https://nuxt.meidanm.com" crossorigin>
-    <link rel="dns-prefetch" href="https://nuxt.meidanm.com">
+    <link rel="preconnect" href="${process.env.VITE_API_BASE}" crossorigin>
+    <link rel="dns-prefetch" href="${process.env.VITE_API_BASE}">
      `
     },
     htmlVariablesRender: {
@@ -33,7 +33,9 @@ export default defineConfig((ctx) => {
       head: (val) => val.trim()
     },
     boot: [
-        //{ path: 'auth-expired', client: true } ,
+
+        //{ path: 'splash' } ,
+        //{ path: 'scroll-restoration', client: true } ,
         //{ path: 'push', client: true } ,
         //{ path: 'woocommerce', client: true } ,
         //{ path: 'products' } ,
@@ -121,48 +123,64 @@ export default defineConfig((ctx) => {
       }*/
       // quasar.config.js -> build section
       extendViteConf(viteConf, {isClient}) {
+        const isCapacitor = ctx.mode.capacitor
+
+        // Exclude Capacitor plugins from dep optimization (dev server)
+        viteConf.optimizeDeps = viteConf.optimizeDeps || {}
+        viteConf.optimizeDeps.exclude = [
+          '@capgo/capacitor-social-login',
+          '@capacitor/splash-screen'
+        ]
+
+        // Externalize Capacitor plugins from the bundle (build time)
+        // Applied to BOTH client and server passes to prevent Rollup resolution errors
+        viteConf.build = viteConf.build || {}
+        viteConf.build.rollupOptions = viteConf.build.rollupOptions || {}
+        viteConf.build.rollupOptions.external = [
+          ...(viteConf.build.rollupOptions.external || []),
+          '@capgo/capacitor-social-login',
+          '@capacitor/splash-screen'
+        ]
+
         viteConf.build.modulePreload = {
           resolveDependencies: (filename, deps) => {
-            // Filter out Quasar components from the 'preload' list
-            // This forces the browser to wait until the 5-second timer to even start the download
-            return deps.filter(dep => !dep.includes('QLayout') && !dep.includes('QList') && !dep.includes('QItemSection') && !dep.includes('use-quasar'));
-          },
+            return deps.filter(
+                dep =>
+                    !dep.includes('QLayout') &&
+                    !dep.includes('QList') &&
+                    !dep.includes('QItemSection') &&
+                    !dep.includes('use-quasar')
+            )
+          }
         }
+
         if (isClient) {
           viteConf.build.rollupOptions = {
             ...viteConf.build.rollupOptions,
-                  external: [
-                      '@capgo/capacitor-social-login',
-'@capacitor/splash-screen'
-                  ],
             output: {
               ...viteConf.build.rollupOptions?.output,
               manualChunks(id) {
-                // If the file is an observer, force it into its own async chunk
                 if (
                     id.includes('quasar/src/components/scroll-observer') ||
                     id.includes('quasar/src/components/resize-observer') ||
                     id.includes('quasar/src/directives/touch-pan') ||
                     id.includes('quasar/src/directives/touch-hold') ||
-                    id.includes('quasar/src/utils/format')) {
-                  return 'quasar-observers-delayed';
+                    id.includes('quasar/src/utils/format')
+                ) {
+                  return 'quasar-observers-delayed'
                 }
-
-                // DO NOT group the rest of quasar here.
-                // Let Vite handle the rest automatically so your
-                // defineAsyncComponent logic actually creates separate files.
               }
             }
-          };
+          }
         }
-        // ... inside extendViteConf
-        const isCapacitor = ctx.mode.capacitor;
+
+        // Swap push boot file based on platform
         viteConf.resolve.alias = {
           'src/boot/push.js': isCapacitor
               ? path.resolve(__dirname, 'src/boot/push.native.js')
               : path.resolve(__dirname, 'src/boot/push.web.js'),
           ...viteConf.resolve.alias
-        };
+        }
       },
     },
 
@@ -187,18 +205,22 @@ export default defineConfig((ctx) => {
     framework: {
       config: {
         brand: {
-          primary: '#d8a7a7',
-          secondary: '#4C6E5D',
-          accent: 'rgb(163, 201, 168)',
+          primary: '#FEF9EA',
+          secondary: '#345646',
+          accent: '#345646',
           dark: '#1d1d1d',
           'dark-page': '#121212',
           positive: '#21BA45',
           negative: '#C10015',
           info: '#c9c5c0',
           warning: '#F2C037'
+        },
+        loadingBar: {
+          color: 'black',
+          size: '0px',
+          position: 'top'
         }
       },
-
       cssAddon: false,
 
       // iconSet: 'material-icons', // Quasar icon set
@@ -336,7 +358,11 @@ export default defineConfig((ctx) => {
             type: 'image/png'
           }
         ]
+      },
+      env: {
+        VITE_API_BASE: process.env.VITE_API_BASE
       }
+
 
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json',
@@ -355,7 +381,7 @@ export default defineConfig((ctx) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-capacitor-apps/configuring-capacitor
     capacitor: {
-      hideSplashscreen: true
+      hideSplashscreen: false
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/configuring-electron
