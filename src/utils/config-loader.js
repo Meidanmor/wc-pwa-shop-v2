@@ -4,6 +4,11 @@ export async function loadPageConfig(page, isPreview) {
     ? process.env.VITE_API_BASE
     : import.meta.env.VITE_API_BASE
 
+  const Base =
+  import.meta.env.SSR
+    ? process.env.API_BASE
+    : import.meta.env.API_BASE
+
   // --- SERVER SIDE LOGIC ---
 if (import.meta.env.SSR) {
   try {
@@ -28,7 +33,7 @@ if (import.meta.env.SSR) {
       const raw = await readFile(filePath, 'utf-8')
       return JSON.parse(raw)
     } else {
-      const url = `${API_BASE}/config/${page}.json`
+      const url = `${Base}/config/${page}.json`
       console.log(`[SSR] Fetching config via HTTP: ${url}`)
 
       const response = await fetch(url, { cache: 'no-store' })
