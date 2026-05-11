@@ -548,6 +548,7 @@ const getChunks = (array, size) => {
 
 // UPDATE THIS FUNCTION:
 const recomputeSlides = async (forceRemount = false) => {
+    console.log('[recomputeSlides] called, isHydrated =', isHydrated.value)
   if (!isHydrated.value) return
 
   if (!productsStore.products.value.length) {
@@ -642,6 +643,8 @@ const subscribeNewsletter = () => {
 
 // ----------------- Mounted -----------------
 onMounted(async() => {
+    console.log('[onMounted] start', document.readyState)
+
     if (window.__PAGE_CONFIG__ && Object.keys(window.__PAGE_CONFIG__).length) {
       homeSettings.value = window.__PAGE_CONFIG__
     } else {
@@ -663,24 +666,28 @@ isHydrated.value = false
     }*/
 
     // COLD START: Wait for user interaction
-    const hydrateOnInteraction = () => {
-      if (isHydrated.value) return
 
-      requestIdleCallback(() => {
+  const hydrateOnInteraction = () => {
+    if (isHydrated.value) return
+    console.log('[hydrate] triggered')
 
-        // Cleanup listeners
-        window.removeEventListener('scroll', hydrateOnInteraction)
-        window.removeEventListener('mousemove', hydrateOnInteraction)
-        window.removeEventListener('touchstart', hydrateOnInteraction)
-        requestAnimationFrame(() => {
-          isHydrated.value = true
-        })
+    requestIdleCallback(() => {
+      console.log('[hydrate] inside requestIdleCallback')
 
-        recomputeSlides()
-        recomputeTestimonialSlides();
+      window.removeEventListener('scroll', hydrateOnInteraction)
+      window.removeEventListener('mousemove', hydrateOnInteraction)
+      window.removeEventListener('touchstart', hydrateOnInteraction)
 
+      requestAnimationFrame(() => {
+        console.log('[hydrate] inside requestAnimationFrame, isHydrated =', isHydrated.value)
+        isHydrated.value = true
       })
-    }
+
+      recomputeSlides()
+      recomputeTestimonialSlides()
+    })
+
+  }
 
     window.addEventListener('scroll', hydrateOnInteraction, {passive: true})
     window.addEventListener('mousemove', hydrateOnInteraction, {passive: true})
