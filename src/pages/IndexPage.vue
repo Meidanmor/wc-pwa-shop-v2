@@ -374,7 +374,7 @@ import { useQuasar, useMeta } from 'quasar'
 import { useRoute } from 'vue-router' // Standard import is tiny
 import productsStore from 'src/stores/products'
 import { matChevronLeft, matChevronRight, matStar } from '@quasar/extras/material-icons'
-import { defineAsyncComponent } from 'vue'
+//import { defineAsyncComponent } from 'vue'
 import { loadPageConfig } from 'src/utils/config-loader'
 import { useCarouselKeyboard } from 'src/composables/useCarouselKeyboard'
 import ProductCard from 'src/components/ProductCard.vue'
@@ -382,11 +382,11 @@ import ProductCard from 'src/components/ProductCard.vue'
 // Add this here
 
 // Instead of standard imports, do this:
-const QCarousel = defineAsyncComponent(() => import('quasar').then(m => m.QCarousel))
+/*const QCarousel = defineAsyncComponent(() => import('quasar').then(m => m.QCarousel))
 const QCarouselSlide = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselSlide))
 const QCarouselControl = defineAsyncComponent(() => import('quasar').then(m => m.QCarouselControl))
 const QInput = defineAsyncComponent(() => import('quasar').then(m => m.QInput))
-
+*/
 const isHydrated = ref(false)
 const $q = useQuasar()
 
