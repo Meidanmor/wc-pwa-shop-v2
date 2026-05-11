@@ -132,7 +132,8 @@ export default defineConfig((ctx) => {
           viteConf.build.rollupOptions = {
             ...viteConf.build.rollupOptions,
                   external: [
-                      '@capgo/capacitor-social-login'
+                      '@capgo/capacitor-social-login',
+'@capacitor/splash-screen'
                   ],
             output: {
               ...viteConf.build.rollupOptions?.output,
