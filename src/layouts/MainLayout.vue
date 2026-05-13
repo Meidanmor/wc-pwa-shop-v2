@@ -1,6 +1,6 @@
 <template>
   <div v-if="!uiHydrated" class="minimal-fallback">
-<header class="q-header q-layout__section--marginal fixed-top"><div class="container">
+<header class="q-header q-layout__section--marginal sticky"><div class="container">
   <div class="q-toolbar row no-wrap items-center flex justify-between q-pa-sm" role="toolbar">
     <div class="flex"><!-- Desktop Navigation -->
       <div class="q-toolbar__title ellipsis nav-bar gt-sm"><!--v-if-->
@@ -42,7 +42,7 @@
   </div>
 
   <q-layout view="hHh lpR fFf" v-else>
-    <q-header>
+    <q-header class="sticky">
     <div class="container">
       <q-toolbar class="flex justify-between q-pa-sm">
        <div class="flex nav-items-el" v-if="uiHydrated">
@@ -268,6 +268,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useQuasar } from 'quasar'
 import cart from 'src/stores/cart'
 import wishlist from 'src/stores/wishlist'
 import WishlistDrawer from 'src/components/WishlistDrawer.vue'
@@ -289,7 +290,9 @@ import { matShoppingCart,
   matAdminPanelSettings,
   matAdd,
   matClose,
-  matRemove} from '@quasar/extras/material-icons'
+  matRemove,
+  matWifi,
+  matSignalWifiOff } from '@quasar/extras/material-icons'
 //import { defineAsyncComponent } from 'vue'
 
 async function hideSplash() {
@@ -332,7 +335,7 @@ const permission = ref('default')
 const supported = ref(false)
 const isSuperAdmin = computed(() => cart.state.user?.is_super_admin === true)
 
-//const $q = useQuasar()
+const $q = useQuasar()
 const mobileMenuDrawer = ref(false)
 
 const wishlistDrawerOpen = ref(false)
@@ -435,6 +438,41 @@ const shouldDelayHydration = computed(() => {
   return !noDelayRoutes.includes(route.path)
 })
 
+const initConnectivityListeners = () => {
+  if (window.__CONNECTIVITY_INITIALIZED__) return
+  window.__CONNECTIVITY_INITIALIZED__ = true
+
+  let wasOffline = !navigator.onLine
+
+  const updateOnlineStatus = async (isOnline) => {
+    console.log(isOnline)
+    const becameOnline  = isOnline && wasOffline
+    const becameOffline = !isOnline && !wasOffline
+
+    if (!becameOnline && !becameOffline) return  // no actual state change, bail early
+
+    wasOffline = !isOnline
+    cart.state.offline = !isOnline
+
+    if (becameOnline) {
+      $q.notify({ type: 'positive', message: 'You are back online!', icon: matWifi, timeout: 3000 })
+      await cart.fetchCart()
+      await cart.fetchWishlistItems()
+    } else {
+      $q.notify({ type: 'warning', message: 'You are offline. Some features may be limited.', icon: matSignalWifiOff, timeout: 3000 })
+    }
+  }
+
+  window.addEventListener('online',  () => updateOnlineStatus(true))
+  window.addEventListener('offline', () => updateOnlineStatus(false))
+  // Catches physical network changes (WiFi toggle) that window events miss
+  navigator.connection?.addEventListener('change', () => {
+    updateOnlineStatus(navigator.onLine)
+  })
+
+  console.log('[connectivity] listeners attached')
+}
+
 onMounted(async () => {
   storeReady.value = true
 
@@ -455,6 +493,7 @@ onMounted(async () => {
       requestAnimationFrame(() => {
         uiHydrated.value = true
         hideSplash()
+        initConnectivityListeners()
       })
     } catch (e) {
       console.error("Hydration prefetch failed", e)

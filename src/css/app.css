@@ -473,6 +473,10 @@ footer .footer-bottom {
     flex-direction: column;
     height: 100%;
 }
+header.sticky {
+    position: sticky;
+    top: 0;
+}
 .q-drawer .cart-details.sticky {
     position: sticky;
     bottom: 0;

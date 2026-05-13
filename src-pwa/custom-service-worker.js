@@ -9,7 +9,7 @@
 import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { NetworkFirst, NetworkOnly } from 'workbox-strategies'
+import { NetworkFirst } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { enable as enableNavigationPreload } from 'workbox-navigation-preload';
 
@@ -26,13 +26,13 @@ cleanupOutdatedCaches()
 // ─── WooCommerce API: products & categories ───────────────────────────────────
 registerRoute(
   ({ url }) =>
-    url.origin === `${API_BASE}` &&
+    url.origin === API_BASE &&
     (
       url.pathname === '/wp-json/wc/store/v1/products/categories' ||
       (url.pathname === '/wp-json/wc/store/v1/products' && url.searchParams.has('per_page'))
     ),
   new NetworkFirst({
-    cacheName: 'woocommerce-api-v2',
+    cacheName: 'woocommerce-api-v2.0',
     networkTimeoutSeconds: 1.5,
     plugins: [
       new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 })
@@ -43,11 +43,11 @@ registerRoute(
 // ─── SEO API ──────────────────────────────────────────────────────────────────
 registerRoute(
   ({ url }) =>
-    url.origin === `${API_BASE}` &&
+    url.origin === API_BASE &&
     url.pathname === '/wp-json/custom/v1/seo' &&
     url.searchParams.has('path'),
   new NetworkFirst({
-    cacheName: 'seo-api-v2',
+    cacheName: 'seo-api-v2.0',
     networkTimeoutSeconds: 1.5,
     plugins: [
       new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 })
@@ -128,9 +128,18 @@ registerRoute(
   ({ request, url }) =>
     request.mode === 'navigate' &&
     !url.searchParams.has('preview'),
-  new NetworkOnly()
-)
 
+  new NetworkFirst({
+    cacheName: 'ssr-pages-v1',
+
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 60 * 60 * 24 // 1 day
+      })
+    ]
+  })
+)
 // ─── Optional: offline fallback for public pages only ─────────────────────────
 //
 // If you want SOME offline support for pages that don't contain session
