@@ -15,8 +15,6 @@ import { enable as enableNavigationPreload } from 'workbox-navigation-preload';
 
 const API_BASE = '<%= VITE_API_BASE %>'
 
-enableNavigationPreload();
-
 self.skipWaiting()
 clientsClaim()
 
@@ -170,7 +168,12 @@ registerRoute(
           networkResponse.headers.get('content-type')?.includes('text/html')) {
 
         const cache = await caches.open('ssr-pages-v1')
-        cache.put(url.pathname, networkResponse.clone())
+        event.waitUntil(
+  cache.put(
+    url.pathname,
+    networkResponse.clone()
+  )
+)
       }
 
       return networkResponse
