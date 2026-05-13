@@ -3,7 +3,7 @@
     <div class="q-pa-md row q-col-gutter-lg">
       <!-- Product Images -->
       <div class="col-12 col-md-6">
-        <div v-if="product.images.length > 1">
+        <div v-if="product?.images?.length > 1">
           <q-carousel
               @touchstart.stop
             @mousedown.stop
@@ -20,7 +20,7 @@
               :navigation-icon="matLens"
           >
             <q-carousel-slide
-              v-for="(img, index) in product.images"
+              v-for="(img, index) in product?.images"
               :key="index"
               :name="index"
               :ratio="1"
@@ -52,7 +52,7 @@
       <div class="col-12 col-md-6">
         <q-breadcrumbs>
           <q-breadcrumbs-el label="Home" to="/" />
-          <q-breadcrumbs-el :to="`/product-category/${product.categories[0]?.slug}`"><span v-html="product.categories[0]?.name"></span></q-breadcrumbs-el>
+          <q-breadcrumbs-el :to="`/product-category/${product?.categories[0]?.slug}`"><span v-html="product.categories[0]?.name"></span></q-breadcrumbs-el>
           <q-breadcrumbs-el :label="product?.name" />
         </q-breadcrumbs>
 
@@ -460,6 +460,10 @@ async function fetchProduct(slug) {
 
 async function enhanceProduct()
 {
+  if (!product.value) {
+    console.log('[Product] enhance skipped - no product')
+    return
+  }
 
   // Fix categories fallback (your logic)
   if (!product.value?.categories?.length) {

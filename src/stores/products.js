@@ -201,7 +201,7 @@ if (isApiMode) {
         const term = search.toLowerCase()
 
         localProducts = localProducts.filter(p =>
-            p.name?.toLowerCase().includes(term)
+            p.name?.toLowerCase().includes(term) || p.permalink?.split('/').filter(Boolean).pop()
         )
       }
 
@@ -469,6 +469,10 @@ async function fetchProductsIfNeeded(ctx) {
 
 // --- consumer helpers ---
 async function fetchSingleProduct(slug) {
+  if (navigator && !navigator.onLine) {
+    console.log('fetching offline product');
+    await preFetchProducts({search: slug})
+  }
   // 1. Check if we already have it in the existing list
   const existing = products.value.find(p => {
     const pSlug = p.permalink?.split('/').filter(Boolean).pop()
