@@ -1,0 +1,20 @@
+{
+    "categories": {
+        "16": {
+            "min_price": 29.9,
+            "max_price": 80
+        },
+        "27": {
+            "min_price": 29.9,
+            "max_price": 435
+        },
+        "28": {
+            "min_price": 30,
+            "max_price": 80
+        },
+        "30": {
+            "min_price": 20,
+            "max_price": 489
+        }
+    }
+}
