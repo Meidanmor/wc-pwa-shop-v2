@@ -438,6 +438,10 @@ function decreaseQty() {
 }
 
 async function fetchProduct(slug) {
+  if (navigator && !navigator.onLine) {
+    console.log('fetching offline product');
+    await productsStore.preFetchProducts({search: slug})
+  }
   // 1. Try from store first (fast path)
   let existing = productsStore.products.value.find(p => {
     const pSlug = getSlugFromPermalink(p.permalink)
