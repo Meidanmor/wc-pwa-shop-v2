@@ -1,4 +1,8 @@
 {
+    "global": {
+        "min_price": 20,
+        "max_price": 489
+    },
     "categories": {
         "16": {
             "min_price": 29.9,
