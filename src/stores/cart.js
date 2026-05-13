@@ -531,6 +531,7 @@ async function syncLocalCartWithServer() {
         don't pollute the reconciliation loop inside applyServerSnapshot().
    ------------------------- */
 async function _runSync() {
+  if(state.offline === true) return;
   // Skip if nothing has actually changed
   if (state.synced === true) {
     try {

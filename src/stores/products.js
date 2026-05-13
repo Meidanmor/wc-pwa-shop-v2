@@ -3,6 +3,11 @@ import { ref } from 'vue'
 import api from 'src/boot/woocommerce'
 import { isAdmin } from 'src/stores/user' // Our new lightweight store
 
+ const Base =
+  import.meta.env.SSR
+    ? process.env.API_BASE
+    : import.meta.env.API_BASE
+
 // --- reactive state ---
 const products = ref([])
 const productsLoading = ref(false)
@@ -59,96 +64,216 @@ export async function preFetchProducts(ctx = {}, force = false) {
   // =========================
   // 🟢 NEW API MODE (ProductsPage)
   // =========================
-  if (isApiMode) {
+if (isApiMode) {
+  try {
+
+    if (!ctx.dryRun) {
+      productsLoading.value = true
+    }
+
+    const {
+      page = 1,
+      per_page = 6,
+      min_price,
+      max_price,
+      category,
+      search,
+      orderby,
+      order
+    } = ctx
+
+    const query = new URLSearchParams()
+
+    query.append('page', page)
+    query.append('per_page', per_page)
+
+    if (min_price !== undefined) {
+      query.append('min_price', Math.round(min_price))
+    }
+
+    if (max_price !== undefined) {
+      query.append('max_price', Math.round(max_price))
+    }
+
+    if (category) {
+      query.append('category', category)
+    }
+
+    if (search) {
+      query.append('search', search)
+    }
+
+    if (orderby && orderby !== 'menu_order') {
+      query.append('orderby', orderby)
+    }
+
+    if (order) {
+      query.append('order', order)
+    }
+
+    const url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products?${query.toString()}`
+
     try {
-      //productsLoading.value = true;
-      if (!ctx.dryRun) productsLoading.value = true  // ✅ only load if not a dry run
 
-      const {
-        page = 1,
-        per_page = 6,
-        min_price,
-        max_price,
-        category,
-        search,
-        orderby,
-        order
-      } = ctx;
+      // =========================
+      // PRIMARY: LIVE API
+      // =========================
 
-      const query = new URLSearchParams();
+      const res = await fetch(url)
 
-      query.append('page', page);
-      query.append('per_page', per_page);
-
-      if (min_price !== undefined) {
-        query.append('min_price', Math.round(min_price));
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`)
       }
 
-      if (max_price !== undefined) {
-        query.append('max_price', Math.round(max_price));
-      }
+      const data = await res.json()
 
-      if (category) {
-        query.append('category', category);
-      }
+      const total = res.headers.get('X-WP-Total')
+      const totalPagesHeader = res.headers.get('X-WP-TotalPages')
 
-      if (search) {
-        query.append('search', search);
-      }
-
-      if (orderby && orderby !== 'menu_order') {
-        query.append('orderby', orderby);
-      }
-
-      if (order) {
-        query.append('order', order);
-      }
-
-      const url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products?${query.toString()}`;
-
-      let data = [];
-      let total = 1;
-      let totalPagesHeader = 1;
-
-      try {
-        const res = await fetch(url);
-
-        if (!res.ok) {
-          throw new Error(`API error: ${res.status}`);
+      if (ctx.dryRun) {
+        return {
+          products: data || [],
+          total: total ? parseInt(total) : 0,
+          totalPages: totalPagesHeader ? parseInt(totalPagesHeader) : 1
         }
-
-        data = await res.json();
-
-        total = res.headers.get('X-WP-Total');
-        totalPagesHeader = res.headers.get('X-WP-TotalPages');
-
-        // ✅ If dryRun, return data without touching the shared store
-        if (ctx.dryRun) {
-          return {
-            products: data || [],
-            total: total ? parseInt(total) : 0,
-            totalPages: totalPagesHeader ? parseInt(totalPagesHeader) : 1
-          }
-        }
-
-      } catch (err) {
-        console.error('[SSR API ERROR]', err);
       }
-      products.value = data || [];
-      totalProducts.value = total ? parseInt(total) : 0;
-      totalPages.value = totalPagesHeader ? parseInt(totalPagesHeader) : 1;
+
+      products.value = data || []
+      totalProducts.value = total ? parseInt(total) : 0
+      totalPages.value = totalPagesHeader ? parseInt(totalPagesHeader) : 1
 
       return products.value
 
-    } catch (err) {
-      console.error('[products store] API fetch error', err);
-      products.value = [];
-      totalProducts.value = 0;
-      return [];
-    } finally {
-      productsLoading.value = false;
+    } catch (apiErr) {
+
+      console.warn('[products] API failed, using offline fallback', apiErr)
+
+      // =========================
+      // FALLBACK: products.json
+      // =========================
+
+      let localProducts = []
+
+      if (import.meta.env.DEV && import.meta.env.SSR) {
+
+        const {readFile} = await import('fs/promises')
+        const {resolve} = await import('path')
+
+        const filePath = resolve(process.cwd(), 'public', 'data', 'products.json')
+
+        console.log(`[SSR] Reading products from filesystem: ${filePath}`)
+
+        const raw = await readFile(filePath, 'utf-8')
+
+        localProducts = JSON.parse(raw)
+
+      } else {
+
+        let url
+
+        if (import.meta.env.SSR) {
+          url = `${Base}/data/products.json`
+          console.log(`[SSR] Fetching products via HTTP: ${url}`)
+        } else {
+          url = '/data/products.json'
+        }
+
+        const localRes = await fetch(url)
+
+        if (!localRes.ok) {
+          throw new Error('products.json fallback failed')
+        }
+
+        localProducts = await localRes.json()
+      }
+
+      // -------------------------
+      // LOCAL FILTERING
+      // -------------------------
+
+      if (category) {
+        localProducts = localProducts.filter(p =>
+            p.categories?.some(c => String(c.id) === String(category))
+        )
+      }
+
+      if (search) {
+        const term = search.toLowerCase()
+
+        localProducts = localProducts.filter(p =>
+            p.name?.toLowerCase().includes(term)
+        )
+      }
+
+      if (min_price !== undefined) {
+        localProducts = localProducts.filter(p => {
+          const price = parseFloat(p.prices?.price || 0) / 100
+          return price >= min_price
+        })
+      }
+
+      if (max_price !== undefined) {
+        localProducts = localProducts.filter(p => {
+          const price = parseFloat(p.prices?.price || 0) / 100
+          return price <= max_price
+        })
+      }
+
+      // -------------------------
+      // LOCAL SORTING
+      // -------------------------
+
+      if (orderby === 'price') {
+        localProducts.sort((a, b) => {
+          const aPrice = parseFloat(a.prices?.price || 0)
+          const bPrice = parseFloat(b.prices?.price || 0)
+
+          return order === 'desc'
+              ? bPrice - aPrice
+              : aPrice - bPrice
+        })
+      }
+
+      // -------------------------
+      // LOCAL PAGINATION
+      // -------------------------
+
+      const total = localProducts.length
+      const pages = Math.ceil(total / per_page)
+
+      const start = (page - 1) * per_page
+      const end = start + per_page
+
+      const paginated = localProducts.slice(start, end)
+
+      if (ctx.dryRun) {
+        return {
+          products: paginated,
+          total,
+          totalPages: pages
+        }
+      }
+
+      products.value = paginated
+      totalProducts.value = total
+      totalPages.value = pages
+
+      return paginated
     }
+
+  } catch (err) {
+
+    console.error('[products store] catastrophic failure', err)
+
+    // IMPORTANT:
+    // preserve previous products instead of nuking UI
+
+    return products.value || []
+
+  } finally {
+    productsLoading.value = false
   }
+}
 
   // =========================
   // 🔵 ORIGINAL LOGIC (UNCHANGED)

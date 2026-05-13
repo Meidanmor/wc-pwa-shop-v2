@@ -9,7 +9,7 @@
 import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { NetworkFirst } from 'workbox-strategies'
+import { NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { enable as enableNavigationPreload } from 'workbox-navigation-preload';
 
@@ -39,6 +39,21 @@ registerRoute(
     ]
   })
 );
+
+registerRoute(
+  ({ request }) => request.destination === 'image',
+
+  new StaleWhileRevalidate({
+    cacheName: 'product-images-v1',
+
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 60 * 60 * 24 * 30
+      })
+    ]
+  })
+)
 
 // ─── SEO API ──────────────────────────────────────────────────────────────────
 registerRoute(
@@ -124,7 +139,7 @@ self.addEventListener('notificationclick', function (event) {
 // If you want offline fallback for non-session pages (e.g. homepage
 // when logged out), see the commented block below.
 //
-registerRoute(
+/*registerRoute(
   ({ request, url }) =>
     request.mode === 'navigate' &&
     !url.searchParams.has('preview'),
@@ -139,6 +154,76 @@ registerRoute(
       })
     ]
   })
+)*/
+// ─── Navigation: Offline-first SSR pages ─────────────────────────────
+
+const PRECACHE_ROUTES = [
+  '/',
+  '/products/',
+  '/cart/',
+]
+
+// Warm critical pages immediately after SW install
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open('ssr-pages-v1').then(async (cache) => {
+      await cache.addAll(PRECACHE_ROUTES)
+    })
+  )
+})
+
+registerRoute(
+  ({ request, url }) =>
+    request.mode === 'navigate' &&
+    !url.searchParams.has('preview'),
+
+  async ({ event }) => {
+    const requestUrl = new URL(event.request.url)
+
+    try {
+      // Network first
+      const networkResponse = await fetch(event.request)
+
+      // Cache successful navigations
+      const cache = await caches.open('ssr-pages-v1')
+
+      cache.put(event.request, networkResponse.clone())
+
+      return networkResponse
+
+    } catch (err) {
+        console.log(err);
+      // Exact cached page
+      const cachedPage = await caches.match(event.request)
+
+      if (cachedPage) {
+        return cachedPage
+      }
+
+      // Fallback to app shell homepage
+      const fallback = await caches.match('/')
+
+      if (fallback) {
+        // inject original path into header
+        const headers = new Headers(fallback.headers)
+
+        headers.set(
+          'x-offline-fallback-route',
+          requestUrl.pathname
+        )
+
+        const body = await fallback.text()
+
+        return new Response(body, {
+          status: 200,
+          statusText: 'OK',
+          headers
+        })
+      }
+
+      return Response.error()
+    }
+  }
 )
 // ─── Optional: offline fallback for public pages only ─────────────────────────
 //

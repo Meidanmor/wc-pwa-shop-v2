@@ -173,7 +173,7 @@
         <h4 class="sticky">Cart</h4>
         <div v-if="cart.hasItems.value">
         <div v-for="item in cart.state.items" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
-          <img v-if="item.images" :src="item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
+          <img v-if="item.images" :src="cart.state.offline === true ? item?.images[0]?.src : item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
           <div class="q-ml-sm column">
             <div>{{ item.name }}</div>
            <div v-if="item.variation && item.variation.length > 0">

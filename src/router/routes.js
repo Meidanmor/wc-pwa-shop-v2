@@ -1,12 +1,16 @@
+import ProductsPage from 'pages/ProductsPage.vue'
+import ProductPage from 'pages/ProductPage.vue'
+import CartPage from 'pages/CartPage.vue'
+
 const routes = [
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') },
-      { path: 'product/:slug', component: () => import('pages/ProductPage.vue') },
-      { path: 'product-category/:slug', component: () => import('pages/CategoryPage.vue') },
-      { path: 'cart', component: () => import('pages/CartPage.vue') },
+      { path: 'product/:slug', component: ProductPage },
+      { path: 'product-category/:slug', component: ProductsPage },
+      { path: 'cart', component: () => CartPage },
       {
         path: 'checkout',
         component: () => import('pages/CheckoutPage.vue'),

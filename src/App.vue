@@ -1,9 +1,14 @@
 <template>
   <div>
-    <q-banner v-if="isOnline === false" class="bg-orange text-white q-pa-sm" dense>
+    <q-banner
+      v-if="cart.state.offline"
+      class="bg-orange text-white q-pa-sm"
+      dense
+    >
       <template #avatar>
-        <q-icon name="wifi_off" />
+        <q-icon :name="matWifiOff" />
       </template>
+
       You are currently offline. Some features may be limited.
     </q-banner>
 
@@ -12,61 +17,30 @@
 </template>
 
 <script setup>
-//import { SplashScreen } from '@capacitor/splash-screen'
-import { ref, onMounted/*, nextTick /*, onBeforeUnmount*/, watch } from 'vue';
-//import { useQuasar } from 'quasar';
+import {matWifiOff} from '@quasar/extras/material-icons'
 import cart from "src/stores/cart.js";
+import { onMounted } from "vue";
+import { useRouter } from "vue-router";
 
-//const $q = useQuasar();
-const isOnline = ref(true); // Assume online by default
-watch(() => cart.state.offline, (off) => {
-  isOnline.value = !off; // update banner
-});
+const router = useRouter();
 
 onMounted(async () => {
-  /*await nextTick()
+  if (!cart.state.offline) return
 
-  requestAnimationFrame(async () => {
-    await SplashScreen.hide()
-  })*/
-/*  if (typeof navigator !== 'undefined') {
-    isOnline.value = navigator.onLine;
+  const navEntries = performance.getEntriesByType('navigation')
 
-const updateOnlineStatus = () => {
-  isOnline.value = navigator.onLine;
-  cart.state.offline = !navigator.onLine;
-  console.log('[cart.js] Went '+isOnline.value);
+  const isReload =
+    navEntries.length &&
+    navEntries[0].type === 'reload'
 
-  $q.notify({
-    type: navigator.onLine ? 'positive' : 'warning',
-    message: navigator.onLine ? 'You are back online!' : 'You are offline. Some features may be limited.',
-    icon: navigator.onLine ? 'wifi' : 'signal_wifi_off',
-    timeout: 3000
-  });
+  if (!isReload) return
 
-  cart.fetchCart();
-  cart.fetchWishlistItems();
+  const originalPath =
+    window.location.pathname
 
-};
-
-
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-console.log('[cart.js] online/offline status listener attached');
-
-    // Cleanup
-    onBeforeUnmount(() => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
-    });
-  }*/
-});
+  // avoid loop
+  if (router.currentRoute.value.path !== originalPath) {
+    await router.replace(originalPath)
+  }
+})
 </script>
-
-<style scoped>
-.q-banner {
-  position: sticky;
-  top: 0;
-  z-index: 999;
-}
-</style>
