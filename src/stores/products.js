@@ -8,6 +8,10 @@ import { isAdmin } from 'src/stores/user' // Our new lightweight store
     ? process.env.API_BASE
     : import.meta.env.API_BASE
 
+  const isOffline =
+  typeof navigator !== 'undefined' &&
+  navigator.onLine === false
+
 // --- reactive state ---
 const products = ref([])
 const productsLoading = ref(false)
@@ -16,6 +20,8 @@ let loadingPromise = null // The "Gatekeeper"
 const SSR_KEY = '__PRODUCTS_DATA__'
 export const totalProducts = ref(0)
 export const totalPages = ref(1);
+const categories = ref([]);
+const priceMeta = ref(null);
 
 /*function getByIds(ids = []) {
   if (!Array.isArray(ids) || !ids.length) return []
@@ -207,14 +213,14 @@ if (isApiMode) {
 
       if (min_price !== undefined) {
         localProducts = localProducts.filter(p => {
-          const price = parseFloat(p.prices?.price || 0) / 100
+          const price = parseFloat(p.prices?.price || 0)
           return price >= min_price
         })
       }
 
       if (max_price !== undefined) {
         localProducts = localProducts.filter(p => {
-          const price = parseFloat(p.prices?.price || 0) / 100
+          const price = parseFloat(p.prices?.price || 0)
           return price <= max_price
         })
       }
@@ -469,7 +475,7 @@ async function fetchProductsIfNeeded(ctx) {
 
 // --- consumer helpers ---
 async function fetchSingleProduct(slug) {
-  if (navigator && !navigator.onLine) {
+  if (isOffline) {
     console.log('fetching offline product');
     await preFetchProducts({search: slug})
   }
@@ -504,8 +510,121 @@ function getById(id) {
   return products.value.find(p => p.id === id) || null
 }
 
+async function prefetchCategories() {
+
+  if (isOffline) {
+
+    let localCategories = [];
+
+    if (import.meta.env.DEV && import.meta.env.SSR) {
+
+      const {readFile} = await import('fs/promises')
+      const {resolve} = await import('path')
+
+      const filePath = resolve(process.cwd(), 'public', 'data', 'categories.json')
+
+      console.log(`[SSR] Reading categories from filesystem: ${filePath}`)
+
+      const raw = await readFile(filePath, 'utf-8')
+
+      localCategories = JSON.parse(raw)
+
+    } else {
+
+      let url
+
+      if (import.meta.env.SSR) {
+        url = `${Base}/data/categories.json`
+        console.log(`[SSR] Fetching categories via HTTP: ${url}`)
+      } else {
+        url = '/data/categories.json'
+      }
+
+      const localRes = await fetch(url)
+
+      if (!localRes.ok) {
+        throw new Error('categories.json fallback failed')
+      }
+
+      localCategories = await localRes.json()
+    }
+
+    categories.value = localCategories;
+  } else {
+    categories.value = await api.getCategories()
+  }
+
+  return categories.value;
+}
+
+async function prefetchPriceMeta(cat='') {
+
+  if (isOffline) {
+
+    let localPriceMeta = [];
+
+    if (import.meta.env.DEV && import.meta.env.SSR) {
+
+      const {readFile} = await import('fs/promises')
+      const {resolve} = await import('path')
+
+      const filePath = resolve(process.cwd(), 'public', 'data', 'price-meta.json')
+
+      console.log(`[SSR] Reading price-meta from filesystem: ${filePath}`)
+
+      const raw = await readFile(filePath, 'utf-8')
+
+      localPriceMeta = JSON.parse(raw)
+
+    } else {
+
+      let url
+
+      if (import.meta.env.SSR) {
+        url = `${Base}/data/price-meta.json`
+        console.log(`[SSR] Fetching price-meta via HTTP: ${url}`)
+      } else {
+        url = '/data/price-meta.json'
+      }
+
+      const localRes = await fetch(url)
+
+      if (!localRes.ok) {
+        throw new Error('price-meta.json fallback failed')
+      }
+
+      localPriceMeta = await localRes.json()
+    }
+
+    if (!cat) {
+      localPriceMeta = localPriceMeta?.global
+    } else {
+      localPriceMeta = localPriceMeta?.categories?.[cat]
+    }
+
+    priceMeta.value = localPriceMeta
+  } else {
+      let url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta`
+
+    if (cat) {
+      url += `?category=${cat}`
+    } else {
+      cat = 'global';
+    }
+    const apiPriceMeta = await fetch(url);
+    const jsonPriceMeta = await apiPriceMeta.json();
+    priceMeta.value = jsonPriceMeta?.global;
+  }
+
+  return priceMeta.value;
+}
+
 export default {
   products,
+  categories,
+  priceMeta,
+  prefetchPriceMeta,
+  prefetchCategories,
   productsLoading,
   initialized,
   preFetchProducts,

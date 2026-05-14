@@ -166,7 +166,6 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import api from 'src/boot/woocommerce'
 import { useQuasar, useMeta, scroll } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
@@ -185,7 +184,6 @@ function scrollToTop() {
   // window.scrollTo(0, 0)
 }
 // Refs and state
-const categories = ref([])
 const selectedCategory = ref([])
 const search = ref('')
 const currentPage = ref(1)
@@ -207,11 +205,6 @@ const sortOptions = [
 // Inside your Page or Layout
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
-    const API_BASE =
-  import.meta.env.SSR
-    ? process.env.VITE_API_BASE   // ✅ your server env (Vercel)
-    : import.meta.env.VITE_API_BASE // ✅ client env
-
     console.log('--- PreFetch Running for:', currentRoute.path)
     const seo = await fetchSeoForPath('shop')
 
@@ -229,10 +222,9 @@ defineOptions({
         dryRun: true  // ✅ don't touch the store yet
       })
 
-      categories = await api.getCategories()
+      categories = await productsStore.prefetchCategories()
 
-      const res = await fetch(`${API_BASE}/wp-json/wc/store/v1/products-meta`)
-      priceMeta = await res.json()
+      priceMeta = await productsStore.prefetchPriceMeta();
 
     if(ssrContext) {
       ssrContext.productsData = result.products
@@ -362,7 +354,7 @@ if (process.env.CLIENT) {
 
   // --- SSR hydration path (correct category) ---
   if (isSSRMatch) {
-    categories.value = window.__CATEGORIES_DATA__ || []
+    productsStore.categories.value = window.__CATEGORIES_DATA__ || []
 
     productsStore.products.value = window.__PRODUCTS_DATA__
     productsStore.initialized.value = true
@@ -380,7 +372,7 @@ if (process.env.CLIENT) {
 
   // --- Client nav path: preFetch already loaded the correct category ---
   else if (productsStore.initialized.value) {
-    categories.value = window.__CATEGORIES_DATA__ || []
+    productsStore.categories.value = window.__CATEGORIES_DATA__ || []
 
     if (window.__PRICE_META__) {
       priceMin.value = Number(window.__PRICE_META__.min_price)
@@ -393,10 +385,6 @@ if (process.env.CLIENT) {
 
   isReady.value = true
 }
-// Fetch categories
-const fetchCategories = async () => {
-  categories.value = await api.getCategories()
-}
 
 const decodeHtml = (html) => {
   const txt = document.createElement("textarea");
@@ -406,9 +394,9 @@ const decodeHtml = (html) => {
 
 // Computed: category options
 const categoryOptions = computed(() => {
-  if (!Array.isArray(categories.value)) return []
+  if (!Array.isArray(productsStore.categories.value)) return []
 
-  return categories.value.map((cat) => ({
+  return productsStore.categories.value.map((cat) => ({
     label: decodeHtml(cat.name),
     value: cat.id
   }))
@@ -493,18 +481,11 @@ const categoryChanged =
   prev &&
   JSON.stringify([...filters.category].sort()) !==
   JSON.stringify([...prev.category].sort())
-    /*if (categoryChanged) {
-      console.log('Category changed → fetching price meta')
 
-      productsStore.productsLoading.value = true
-      await fetchPriceMeta(filters.category)
-
-      //return
-    }*/
     if (categoryChanged) {
       productsStore.productsLoading.value = true
 
-      await fetchPriceMeta(filters.category)
+      await productsStore.fetchPriceMeta(filters.category)
 
       priceMin.value = pendingPriceRange.value.min
       priceMax.value = pendingPriceRange.value.max
@@ -608,49 +589,19 @@ onMounted(async () => {
     priceRange.value = {...pendingPriceRange.value}
   }
 
-  if (!Array.isArray(categories.value) || !categories.value.length) {
-    await fetchCategories()
+  if (!Array.isArray(productsStore.categories.value) || !productsStore.categories.value.length) {
+    await productsStore.prefetchCategories()
   }
 
   if (!isReady.value) {
     isReady.value = true  // only set if not already set
   }
-  /*// 🟢 Fetch missing data only if needed
-  if (!hasSSRProducts) {
-    productsStore.products.value = []
-    productsStore.preFetchProducts({
-      api: true,
-      page: 1,
-      per_page: perPage
-    })
-  }
 
-  if (!priceMin.value) {
-    await fetchPriceMeta()
-    priceRange.value = pendingPriceRange.value
-    priceMin.value = pendingPriceRange.value.min
-    priceMax.value = pendingPriceRange.value.max
-  }
-
-  if (!Array.isArray(categories.value) || !categories.value.length) {
-    await fetchCategories()
-  }
-
-
-
-  isReady.value = true*/
 })
 // Function to recalculate price limits based on a product list
 
 async function fetchPriceMeta(category = null) {
-  let url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta`
-
-  if (category) {
-    url += `?category=${category}`
-  }
-
-  const res = await fetch(url)
-  const data = await res.json()
+  const data = await productsStore.prefetchPriceMeta(category)
 
   // ❗ DON'T update UI yet
   pendingPriceRange.value = {
