@@ -528,142 +528,94 @@ function getById(id) {
 }
 
 async function prefetchCategories() {
-  const isOffline =
-  typeof navigator !== 'undefined' &&
-  navigator.onLine === false
+  try {
+    const url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/products/categories`
+    const apiCats = await fetch(url)
+    const jsonCats = await apiCats.json()
 
-  if (isOffline) {
+    categories.value = jsonCats
 
+  } catch {
     let localCategories = [];
 
+    console.log('fetching local categories')
     if (import.meta.env.DEV && import.meta.env.SSR) {
-
-      const {readFile} = await import('fs/promises')
-      const {resolve} = await import('path')
-
+      const { readFile } = await import('fs/promises')
+      const { resolve } = await import('path')
       const filePath = resolve(process.cwd(), 'public', 'data', 'categories.json')
-
       console.log(`[SSR] Reading categories from filesystem: ${filePath}`)
-
       const raw = await readFile(filePath, 'utf-8')
-
       localCategories = JSON.parse(raw)
-
     } else {
-
-      let url
-
-      if (import.meta.env.SSR) {
-        url = `${Base}/data/categories.json`
-        console.log(`[SSR] Fetching categories via HTTP: ${url}`)
-      } else {
-        url = '/data/categories.json'
-      }
-
+      const url = import.meta.env.SSR ? `${Base}/data/categories.json` : '/data/categories.json'
+      if (import.meta.env.SSR) console.log(`[SSR] Fetching categories via HTTP: ${url}`)
       const localRes = await fetch(url)
-
-      if (!localRes.ok) {
-        throw new Error('categories.json fallback failed')
-      }
-
+      if (!localRes.ok) throw new Error('categories.json fallback failed')
       localCategories = await localRes.json()
     }
 
-    categories.value = localCategories;
-  } else {
-    categories.value = await api.getCategories()
+    categories.value = localCategories
   }
 
   return categories.value;
 }
 
-async function prefetchPriceMeta(cat=null) {
-
-  const isOffline =
-  typeof navigator !== 'undefined' &&
-  navigator.onLine === false
-
-  if (isOffline) {
-
-    let localPriceMeta = [];
-
-    if (import.meta.env.DEV && import.meta.env.SSR) {
-
-      const {readFile} = await import('fs/promises')
-      const {resolve} = await import('path')
-
-      const filePath = resolve(process.cwd(), 'public', 'data', 'price-meta.json')
-
-      console.log(`[SSR] Reading price-meta from filesystem: ${filePath}`)
-
-      const raw = await readFile(filePath, 'utf-8')
-
-      localPriceMeta = JSON.parse(raw)
-
-    } else {
-
-      let url
-
-      if (import.meta.env.SSR) {
-        url = `${Base}/data/price-meta.json`
-        console.log(`[SSR] Fetching price-meta via HTTP: ${url}`)
-      } else {
-        url = '/data/price-meta.json'
-      }
-
-      const localRes = await fetch(url)
-
-      if (!localRes.ok) {
-        throw new Error('price-meta.json fallback failed')
-      }
-
-      localPriceMeta = await localRes.json()
-    }
-
-    console.log(localPriceMeta)
-    if (!cat || (Array.isArray(cat) && cat.length === 0)) {
-      localPriceMeta = localPriceMeta?.global
-    } else {
-      // Normalize: cat could be "12,45" or [12, 45] or a single value
-      const catIds = Array.isArray(cat)
-          ? cat.map(String)
-          : String(cat).split(',').map(id => id.trim()).filter(Boolean)
-
-      if (catIds.length === 1) {
-        // Single category — direct lookup
-        localPriceMeta = localPriceMeta?.categories?.[catIds[0]]
-      } else {
-        // Multiple categories — merge min/max across all matched entries
-        const matched = catIds
-            .map(id => localPriceMeta?.categories?.[id])
-            .filter(Boolean)
-
-        if (matched.length) {
-          localPriceMeta = {
-            min_price: Math.min(...matched.map(m => m.min_price)),
-            max_price: Math.max(...matched.map(m => m.max_price))
-          }
-        } else {
-          // None matched, fall back to global
-          localPriceMeta = localPriceMeta?.global
-        }
-      }
-    }
-    console.log(localPriceMeta);
-    priceMeta.value = localPriceMeta
-  } else {
-      let url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta`
-
+async function prefetchPriceMeta(cat = null) {
+  try {
+    let url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/products-meta`
     console.log('category is:', cat)
     if (cat) {
       url += `?category=${cat}`
     } else {
-      cat = 'global';
+      //cat = 'global';
+    }
+    const apiPriceMeta = await fetch(url)
+    const jsonPriceMeta = await apiPriceMeta.json()
+    console.log('jsonPriceMeta', jsonPriceMeta)
+    priceMeta.value = jsonPriceMeta?.global ? jsonPriceMeta.global : jsonPriceMeta
+  } catch {
+    console.log('using catch method')
+    let localPriceMeta = [];
+
+    if (import.meta.env.DEV && import.meta.env.SSR) {
+      const { readFile } = await import('fs/promises')
+      const { resolve } = await import('path')
+      const filePath = resolve(process.cwd(), 'public', 'data', 'price-meta.json')
+      console.log(`[SSR] Reading price-meta from filesystem: ${filePath}`)
+      const raw = await readFile(filePath, 'utf-8')
+      localPriceMeta = JSON.parse(raw)
+    } else {
+      const url = import.meta.env.SSR ? `${Base}/data/price-meta.json` : '/data/price-meta.json'
+      if (import.meta.env.SSR) console.log(`[SSR] Fetching price-meta via HTTP: ${url}`)
+      const localRes = await fetch(url)
+      if (!localRes.ok) throw new Error('price-meta.json fallback failed')
+      localPriceMeta = await localRes.json()
     }
 
-    const apiPriceMeta = await fetch(url);
-    const jsonPriceMeta = await apiPriceMeta.json();
-    priceMeta.value = jsonPriceMeta?.global ? jsonPriceMeta.global : jsonPriceMeta;
+    console.log(localPriceMeta)
+    console.log(cat)
+    console.log(!cat || (Array.isArray(cat) && cat.length === 0))
+    if (!cat || (Array.isArray(cat) && cat.length === 0)) {
+      localPriceMeta = localPriceMeta?.global
+    } else {
+      const catIds = Array.isArray(cat)
+        ? cat.map(String)
+        : String(cat).split(',').map(id => id.trim()).filter(Boolean)
+
+      if (catIds.length === 1) {
+        localPriceMeta = localPriceMeta?.categories?.[catIds[0]]
+      } else {
+        const matched = catIds
+          .map(id => localPriceMeta?.categories?.[id])
+          .filter(Boolean)
+
+        localPriceMeta = matched.length
+          ? { min_price: Math.min(...matched.map(m => m.min_price)), max_price: Math.max(...matched.map(m => m.max_price)) }
+          : localPriceMeta?.global
+      }
+    }
+
+    priceMeta.value = localPriceMeta
   }
 
   return priceMeta.value;

@@ -466,8 +466,25 @@ const initConnectivityListeners = () => {
   window.addEventListener('online',  () => updateOnlineStatus(true))
   window.addEventListener('offline', () => updateOnlineStatus(false))
   // Catches physical network changes (WiFi toggle) that window events miss
-  navigator.connection?.addEventListener('change', () => {
+
+  navigator.serviceWorker.addEventListener('message', ({ data }) => {
+    console.log(data);
+    if (data.type === 'OFFLINE') {
+      updateOnlineStatus(false)
+    } else if (data.type === 'ONLINE'){
+      updateOnlineStatus(true)
+    }
+  });
+  /*navigator.connection?.addEventListener('change', async() => {
     updateOnlineStatus(navigator.onLine)
+  })*/
+  navigator.connection?.addEventListener('change', async () => {
+    try {
+      await fetch(window.location.origin, {method: 'HEAD', cache: 'no-store'})
+      updateOnlineStatus(true)
+    } catch {
+      updateOnlineStatus(false)
+    }
   })
 
   console.log('[connectivity] listeners attached')
@@ -475,7 +492,6 @@ const initConnectivityListeners = () => {
 
 onMounted(async () => {
   storeReady.value = true
-
   if (!('serviceWorker' in navigator)) return
 
   const warm = () => {
@@ -496,7 +512,6 @@ onMounted(async () => {
     try {
       const { hydrate } = await import('../utils/lazy-quasar.js')
       await hydrate()
-
       requestAnimationFrame(() => {
         uiHydrated.value = true
         hideSplash()

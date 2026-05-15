@@ -182,3 +182,37 @@ registerRoute(
     }
   }
 )
+
+// service-worker.js
+let isOnline = true;
+
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // Only check connectivity on external/API requests, ignore same-origin
+  const isExternalRequest = url.origin !== self.location.origin;
+
+  if (!isExternalRequest) {
+    return; // let the browser handle it normally, don't use it for connectivity
+  }
+
+  event.respondWith(
+    fetch(event.request).then(response => {
+      if (!isOnline) {
+        isOnline = true;
+        self.clients.matchAll().then(clients =>
+          clients.forEach(c => c.postMessage({ type: 'ONLINE' }))
+        );
+      }
+      return response;
+    }).catch(err => {
+      if (isOnline) {
+        isOnline = false;
+        self.clients.matchAll().then(clients =>
+          clients.forEach(c => c.postMessage({ type: 'OFFLINE' }))
+        );
+      }
+      throw err;
+    })
+  );
+});
