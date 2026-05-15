@@ -76,7 +76,8 @@
                     "name": "test",
                     "slug": "test"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -149,7 +150,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -222,7 +224,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -295,7 +298,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -368,7 +372,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -441,7 +446,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -514,7 +520,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -577,7 +584,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -640,7 +648,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -703,7 +712,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -776,7 +786,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -839,7 +850,8 @@
                     "name": "Beauty &amp; Wellness",
                     "slug": "beauty-and-wellness"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -937,7 +949,8 @@
                     "name": "test",
                     "slug": "test"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -1181,7 +1194,8 @@
                     "name": "test",
                     "slug": "test"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -1285,7 +1299,8 @@
                     "name": "Uncategorized",
                     "slug": "uncategorized"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -1371,7 +1386,8 @@
                     "name": "Uncategorized",
                     "slug": "uncategorized"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -1475,7 +1491,8 @@
                     "name": "Uncategorized",
                     "slug": "uncategorized"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -1555,7 +1572,8 @@
                     "name": "Uncategorized",
                     "slug": "uncategorized"
                 }
-            }
+            },
+            "offline_order": []
         }
     },
     {
@@ -1635,7 +1653,8 @@
                     "name": "Uncategorized",
                     "slug": "uncategorized"
                 }
-            }
+            },
+            "offline_order": []
         }
     }
 ]
