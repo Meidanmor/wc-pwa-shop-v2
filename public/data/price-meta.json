@@ -1,12 +1,12 @@
 {
     "global": {
         "min_price": 20,
-        "max_price": 489
+        "max_price": 435
     },
     "categories": {
         "16": {
             "min_price": 29.9,
-            "max_price": 80
+            "max_price": 29.9
         },
         "27": {
             "min_price": 29.9,
@@ -18,7 +18,7 @@
         },
         "30": {
             "min_price": 20,
-            "max_price": 489
+            "max_price": 189
         }
     }
 }
