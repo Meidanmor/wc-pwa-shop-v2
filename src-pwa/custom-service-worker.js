@@ -9,7 +9,7 @@
 import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { NetworkFirst, StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
+import { NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { enable as enableNavigationPreload } from 'workbox-navigation-preload';
 
