@@ -183,17 +183,17 @@ if (isApiMode) {
       // LOCAL FILTERING
       // -------------------------
 
-     if (category) {
-       const categoryIds = String(category)
-           .split(',')
-           .map(id => id.trim())
-           .filter(Boolean)
+      if (category) {
+        const categoryIds = String(category)
+            .split(',')
+            .map(id => id.trim())
+            .filter(Boolean)
 
-       localProducts = localProducts.filter(p =>
-           p.categories?.some(c => categoryIds.includes(String(c.id))) ||
-           categoryIds.includes(String(p.extensions?.mpress?.default_category?.id))
-       )
-     }
+        localProducts = localProducts.filter(p =>
+            p.categories?.some(c => categoryIds.includes(String(c.id))) ||
+            categoryIds.includes(String(p.extensions?.mpress?.default_category?.id))
+        )
+      }
 
       if (search) {
         const term = search.toLowerCase()
@@ -230,11 +230,27 @@ if (isApiMode) {
         localProducts.sort((a, b) => {
           const aPrice = parseFloat(a.prices?.price || 0)
           const bPrice = parseFloat(b.prices?.price || 0)
-
-          return order === 'desc'
-              ? bPrice - aPrice
-              : aPrice - bPrice
+          return order === 'desc' ? bPrice - aPrice : aPrice - bPrice
         })
+      } else if (orderby === 'date') {
+        localProducts.sort((a, b) => {
+          return order === 'desc'
+              ? new Date(b.date_created) - new Date(a.date_created)
+              : new Date(a.date_created) - new Date(b.date_created)
+        })
+      } else if (orderby === 'title') {
+        localProducts.sort((a, b) => {
+          return order === 'desc'
+              ? b.name.localeCompare(a.name)
+              : a.name.localeCompare(b.name)
+        })
+      } else if (orderby === 'popularity') {
+        localProducts.sort((a, b) => (b.extensions?.offline_order?.total_sales || 0) - (a.extensions?.offline_order?.total_sales || 0))
+      } else if (orderby === 'rating') {
+        localProducts.sort((a, b) => (b.extensions?.offline_order?.average_rating || 0) - (a.extensions?.offline_order?.average_rating || 0))
+      } else {
+        // menu_order default
+        //localProducts.sort((a, b) => (a.extensions?.offline_order?.menu_order || 0) - (b.extensions?.offline_order?.menu_order || 0))
       }
 
       // -------------------------

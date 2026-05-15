@@ -313,7 +313,7 @@ export default defineConfig((ctx) => {
             },
           }
         ],
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}', 'data/categories.json', 'data/price-meta.json'],
       },
       workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
       injectManifest: {
