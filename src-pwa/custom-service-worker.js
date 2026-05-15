@@ -173,12 +173,11 @@ registerRoute(
       const cache = await caches.open('ssr-pages-v1')
       const cachedPage =
         await cache.match(url.pathname) ||
-        await cache.match('/') ||
-        await cache.match('/index.html')
+        await cache.match('/')
 
       if (cachedPage) return cachedPage
 
-      return new Response('Offline', { status: 503 })
+      return
     }
   }
 )
