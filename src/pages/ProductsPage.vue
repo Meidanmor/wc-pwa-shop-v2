@@ -485,7 +485,7 @@ const categoryChanged =
     if (categoryChanged) {
       productsStore.productsLoading.value = true
 
-      await productsStore.fetchPriceMeta(filters.category)
+      await fetchPriceMeta(filters.category)
 
       priceMin.value = pendingPriceRange.value.min
       priceMax.value = pendingPriceRange.value.max

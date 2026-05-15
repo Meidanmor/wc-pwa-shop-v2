@@ -8,10 +8,6 @@ import { isAdmin } from 'src/stores/user' // Our new lightweight store
     ? process.env.API_BASE
     : import.meta.env.API_BASE
 
-  const isOffline =
-  typeof navigator !== 'undefined' &&
-  navigator.onLine === false
-
 // --- reactive state ---
 const products = ref([])
 const productsLoading = ref(false)
@@ -93,11 +89,11 @@ if (isApiMode) {
     query.append('page', page)
     query.append('per_page', per_page)
 
-    if (min_price !== undefined) {
+    if (min_price !== undefined && !isNaN(min_price)) {
       query.append('min_price', Math.round(min_price))
     }
 
-    if (max_price !== undefined) {
+    if (max_price !== undefined && !isNaN(max_price)) {
       query.append('max_price', Math.round(max_price))
     }
 
@@ -206,8 +202,10 @@ if (isApiMode) {
       if (search) {
         const term = search.toLowerCase()
 
+        //const slug = p.permalink?.split('/').filter(Boolean).pop() || ''
+
         localProducts = localProducts.filter(p =>
-            p.name?.toLowerCase().includes(term) || p.permalink?.split('/').filter(Boolean).pop()
+            p.name?.toLowerCase().includes(term) || p.permalink?.split('/').filter(term).pop() || ''
         )
       }
 
@@ -475,6 +473,10 @@ async function fetchProductsIfNeeded(ctx) {
 
 // --- consumer helpers ---
 async function fetchSingleProduct(slug) {
+  const isOffline =
+  typeof navigator !== 'undefined' &&
+  navigator.onLine === false
+
   if (isOffline) {
     console.log('fetching offline product');
     await preFetchProducts({search: slug})
@@ -511,6 +513,9 @@ function getById(id) {
 }
 
 async function prefetchCategories() {
+  const isOffline =
+  typeof navigator !== 'undefined' &&
+  navigator.onLine === false
 
   if (isOffline) {
 
@@ -557,7 +562,11 @@ async function prefetchCategories() {
   return categories.value;
 }
 
-async function prefetchPriceMeta(cat='') {
+async function prefetchPriceMeta(cat=null) {
+
+  const isOffline =
+  typeof navigator !== 'undefined' &&
+  navigator.onLine === false
 
   if (isOffline) {
 
@@ -606,14 +615,16 @@ async function prefetchPriceMeta(cat='') {
   } else {
       let url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta`
 
+    console.log('category is:', cat)
     if (cat) {
       url += `?category=${cat}`
     } else {
       cat = 'global';
     }
+
     const apiPriceMeta = await fetch(url);
     const jsonPriceMeta = await apiPriceMeta.json();
-    priceMeta.value = jsonPriceMeta?.global;
+    priceMeta.value = jsonPriceMeta?.global ? jsonPriceMeta.global : jsonPriceMeta;
   }
 
   return priceMeta.value;

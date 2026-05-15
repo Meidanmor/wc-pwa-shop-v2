@@ -9,11 +9,10 @@ import { register } from 'register-service-worker'
 
 // We wait for the 'load' event, which fires when the initial
 // resources (like your Hero Image) are finished.
-window.addEventListener('load', () => {
 
   // We add an extra delay to ensure the "Main Thread" has
   // finished hydrating the page and painting the LCP.
-  setTimeout(() => {
+  requestIdleCallback(() => {
     console.log('--- Non-Critical: Registering Service Worker ---')
 
     register(process.env.SERVICE_WORKER_FILE, {
@@ -28,5 +27,4 @@ window.addEventListener('load', () => {
       }
       // Keep your other hooks (offline, error, etc.) if you need them
     })
-  }, 4000) // 4 seconds is the "sweet spot" for slow 4G devices
-})
+  }) // 4 seconds is the "sweet spot" for slow 4G devices
