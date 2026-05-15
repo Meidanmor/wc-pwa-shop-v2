@@ -183,11 +183,17 @@ if (isApiMode) {
       // LOCAL FILTERING
       // -------------------------
 
-      if (category) {
-        localProducts = localProducts.filter(p =>
-            p.categories?.some(c => String(c.id) === String(category))
-        )
-      }
+     if (category) {
+       const categoryIds = String(category)
+           .split(',')
+           .map(id => id.trim())
+           .filter(Boolean)
+
+       localProducts = localProducts.filter(p =>
+           p.categories?.some(c => categoryIds.includes(String(c.id))) ||
+           categoryIds.includes(String(p.extensions?.mpress?.default_category?.id))
+       )
+     }
 
       if (search) {
         const term = search.toLowerCase()
@@ -201,6 +207,7 @@ if (isApiMode) {
 
       if (min_price !== undefined) {
         console.log(min_price);
+        console.log(localProducts);
         localProducts = localProducts.filter(p => {
           const price = parseFloat(p.prices?.price || 0)
           console.log(price);
@@ -597,12 +604,36 @@ async function prefetchPriceMeta(cat=null) {
       localPriceMeta = await localRes.json()
     }
 
-    if (!cat) {
+    console.log(localPriceMeta)
+    if (!cat || (Array.isArray(cat) && cat.length === 0)) {
       localPriceMeta = localPriceMeta?.global
     } else {
-      localPriceMeta = localPriceMeta?.categories?.[cat]
-    }
+      // Normalize: cat could be "12,45" or [12, 45] or a single value
+      const catIds = Array.isArray(cat)
+          ? cat.map(String)
+          : String(cat).split(',').map(id => id.trim()).filter(Boolean)
 
+      if (catIds.length === 1) {
+        // Single category — direct lookup
+        localPriceMeta = localPriceMeta?.categories?.[catIds[0]]
+      } else {
+        // Multiple categories — merge min/max across all matched entries
+        const matched = catIds
+            .map(id => localPriceMeta?.categories?.[id])
+            .filter(Boolean)
+
+        if (matched.length) {
+          localPriceMeta = {
+            min_price: Math.min(...matched.map(m => m.min_price)),
+            max_price: Math.max(...matched.map(m => m.max_price))
+          }
+        } else {
+          // None matched, fall back to global
+          localPriceMeta = localPriceMeta?.global
+        }
+      }
+    }
+    console.log(localPriceMeta);
     priceMeta.value = localPriceMeta
   } else {
       let url = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products-meta`
