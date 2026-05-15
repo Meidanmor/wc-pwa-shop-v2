@@ -19,16 +19,6 @@ export const totalPages = ref(1);
 const categories = ref([]);
 const priceMeta = ref(null);
 
-/*function getByIds(ids = []) {
-  if (!Array.isArray(ids) || !ids.length) return []
-
-  const map = new Map(products.value.map(p => [p.id, p]))
-
-  return ids
-    .map(id => map.get(Number(id))) // ✅ FIX
-    .filter(Boolean)
-}*/
-
 async function getByIds(ids = []) {
   if (!Array.isArray(ids) || !ids.length) return []
 
@@ -205,13 +195,15 @@ if (isApiMode) {
         //const slug = p.permalink?.split('/').filter(Boolean).pop() || ''
 
         localProducts = localProducts.filter(p =>
-            p.name?.toLowerCase().includes(term) || p.permalink?.split('/').filter(term).pop() || ''
+            p.name?.toLowerCase().includes(term) || p.permalink?.split('/').filter(Boolean).pop()?.includes(term)
         )
       }
 
       if (min_price !== undefined) {
+        console.log(min_price);
         localProducts = localProducts.filter(p => {
           const price = parseFloat(p.prices?.price || 0)
+          console.log(price);
           return price >= min_price
         })
       }

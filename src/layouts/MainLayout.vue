@@ -476,10 +476,16 @@ const initConnectivityListeners = () => {
 onMounted(async () => {
   storeReady.value = true
 
-  // Wait for router to resolve the current route before deciding hydration strategy.
-  // Without this, route.path may not reflect the actual page yet on SSR-hydrated loads,
-  // causing the no-delay check to miss and falling back to the 3s timeout.
+  if (!('serviceWorker' in navigator)) return
+
+  const warm = () => {
+    navigator.serviceWorker.ready.then(registration => {
+      registration.active?.postMessage({ type: 'WARM_PRODUCTS_CACHE' })
+    })
+  }
+
   await router.isReady()
+
   const scheduler = async () => {
     if (uiHydrated.value) return
 
@@ -490,36 +496,40 @@ onMounted(async () => {
     try {
       const { hydrate } = await import('../utils/lazy-quasar.js')
       await hydrate()
+
       requestAnimationFrame(() => {
         uiHydrated.value = true
         hideSplash()
         initConnectivityListeners()
+        warm()
+
+        initLoadingBar(router)
+        initAuthPopup(router)
+
+        if (typeof window !== 'undefined' || Platform.is.capacitor) {
+          initPush({ router })
+          checkNativePermission().then(initialPermissions => {
+            permission.value = normalizePermission(initialPermissions)
+          })
+        }
+
+        if (Platform.is.capacitor) {
+          supported.value = true
+        } else if ('Notification' in window) {
+          supported.value = true
+          permission.value = normalizePermission(Notification.permission)
+        }
+
+        window.addEventListener('touchstart', handleTouchStart, { passive: true })
+        window.addEventListener('touchend', handleTouchEnd, { passive: true })
+        window.addEventListener('mousedown', handleMouseDown, { passive: true })
+        window.addEventListener('mouseup', handleMouseUp, { passive: true })
       })
+
     } catch (e) {
-      console.error("Hydration prefetch failed", e)
+      console.error('Hydration prefetch failed', e)
       uiHydrated.value = true
     }
-
-    initLoadingBar(router)
-    initAuthPopup(router)
-
-    if (typeof window !== 'undefined' || Platform.is.capacitor) {
-      initPush({ router })
-      const initialPermissions = await checkNativePermission()
-      permission.value = normalizePermission(initialPermissions)
-    }
-
-    if (Platform.is.capacitor) {
-      supported.value = true
-    } else if ('Notification' in window) {
-      supported.value = true
-      permission.value = normalizePermission(Notification.permission)
-    }
-
-    window.addEventListener('touchstart', handleTouchStart, { passive: true })
-    window.addEventListener('touchend', handleTouchEnd, { passive: true })
-    window.addEventListener('mousedown', handleMouseDown, { passive: true })
-    window.addEventListener('mouseup', handleMouseUp, { passive: true })
   }
 
   // Define headerBtnClick after scheduler so it can reference it
@@ -541,10 +551,21 @@ onMounted(async () => {
   if (!shouldDelayHydration.value) {
     scheduler()
   } else {
+    const cleanup = () => {
+      window.removeEventListener('scroll', scheduler)
+      window.removeEventListener('mousemove', scheduler)
+      window.removeEventListener('touchstart', scheduler)
+      clearTimeout(fallbackTimer)
+    }
+
+    const fallbackTimer = setTimeout(() => {
+      cleanup()
+      scheduler()
+    }, 3000)
+
     window.addEventListener('scroll', scheduler, { passive: true })
     window.addEventListener('mousemove', scheduler, { passive: true })
     window.addEventListener('touchstart', scheduler, { passive: true })
-    setTimeout(scheduler, 3000)
   }
 })
 onUnmounted(() => {

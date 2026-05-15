@@ -9,14 +9,13 @@
 import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies'
+import { NetworkFirst, StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { enable as enableNavigationPreload } from 'workbox-navigation-preload';
 
 const API_BASE = '<%= VITE_API_BASE %>'
 
 enableNavigationPreload();
-
 self.skipWaiting()
 clientsClaim()
 
@@ -33,7 +32,7 @@ registerRoute(
     ),
   new NetworkFirst({
     cacheName: 'woocommerce-api-v2.0',
-    networkTimeoutSeconds: 1.5,
+    networkTimeoutSeconds: 3,  // was 1.5 — too aggressive
     plugins: [
       new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 })
     ]
@@ -42,10 +41,8 @@ registerRoute(
 
 registerRoute(
   ({ request }) => request.destination === 'image',
-
   new StaleWhileRevalidate({
-    cacheName: 'product-images-v1',
-
+    cacheName: 'product-images-v2',
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
@@ -63,12 +60,49 @@ registerRoute(
     url.searchParams.has('path'),
   new NetworkFirst({
     cacheName: 'seo-api-v2.0',
-    networkTimeoutSeconds: 1.5,
+    networkTimeoutSeconds: 3,
     plugins: [
       new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 })
     ]
   })
 );
+
+// ─── products.json: StaleWhileRevalidate (large file, scalable) ───────────────
+// - Serves from cache instantly if available (good offline)
+// - Always revalidates in background (stays fresh)
+// - Cache is warmed on first real use, or via the message below
+registerRoute(
+  ({ url }) => url.pathname === '/data/products.json',
+  new StaleWhileRevalidate({
+    cacheName: 'static-data-v1',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 1,
+        maxAgeSeconds: 60 * 60 * 24  // 1 day
+      })
+    ]
+  })
+);
+
+// ─── Background warm-up: client tells SW to cache products.json ───────────────
+// Called from your app after first meaningful paint
+self.addEventListener('message', async (event) => {
+  if (event.data?.type !== 'WARM_PRODUCTS_CACHE') return;
+
+  try {
+    const cache = await caches.open('static-data-v1');
+    const existing = await cache.match('/data/products.json');
+    if (existing) return; // already cached, skip
+
+    const response = await fetch('/data/products.json');
+    if (response.ok) {
+      await cache.put('/data/products.json', response);
+      console.log('[SW] products.json warmed into cache');
+    }
+  } catch (err) {
+    console.warn('[SW] products.json warm-up failed', err);
+  }
+});
 
 // ─── Push notifications ───────────────────────────────────────────────────────
 self.addEventListener('push', event => {
@@ -115,124 +149,36 @@ self.addEventListener('notificationclick', function (event) {
   );
 });
 
-// ─── Navigation: SSR HTML pages ───────────────────────────────────────────────
-//
-// THE FIX:
-//
-// The old strategy cached the entire SSR HTML response (including the
-// window.__CART_ARRAY__ that the server baked in). On the next refresh,
-// if the network was slow or the 2s timeout elapsed, the SW served the
-// stale cached HTML — meaning the user saw the old cart data even though
-// the server had already computed the fresh one.
-//
-// The root cause: window.__CART_ARRAY__ is session-specific data. It
-// changes on every request for every user. It must never be cached at
-// the SW layer.
-//
-// Strategy: NetworkOnly for all navigation requests.
-//   - The SW acts as a transparent pass-through for page loads.
-//   - Navigation preload is still enabled so the network request fires
-//     in parallel with SW startup — no extra latency vs. no SW at all.
-//   - If the network is truly dead, the browser's own offline page shows
-//     (acceptable — a stale cart is worse than an honest offline screen).
-//
-// If you want offline fallback for non-session pages (e.g. homepage
-// when logged out), see the commented block below.
-//
-/*registerRoute(
-  ({ request, url }) =>
-    request.mode === 'navigate' &&
-    !url.searchParams.has('preview'),
-
-  new NetworkFirst({
-    cacheName: 'ssr-pages-v1',
-
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 60 * 60 * 24 // 1 day
-      })
-    ]
-  })
-)*/
-// ─── Navigation: Offline-first SSR pages ─────────────────────────────
-
+// ─── Navigation: Offline-first SSR pages ─────────────────────────────────────
 registerRoute(
   ({ request }) => request.mode === 'navigate',
-
   async ({ event }) => {
     const url = new URL(event.request.url)
 
     try {
+      const preloadResponse = await event.preloadResponse
+      const networkResponse = preloadResponse || await fetch(event.request)
 
-        const preloadResponse = await event.preloadResponse
+      if (networkResponse.ok &&
+          networkResponse.headers.get('content-type')?.includes('text/html')) {
+        const cache = await caches.open('ssr-pages-v1')
+        event.waitUntil(cache.put(url.pathname, networkResponse.clone()))
+      }
 
-        const networkResponse =
-            preloadResponse || await fetch(event.request)
-        if (networkResponse.ok &&
-            networkResponse.headers.get('content-type')?.includes('text/html')) {
+      return networkResponse
 
-            const cache = await caches.open('ssr-pages-v1')
-            event.waitUntil(
-                cache.put(
-                    url.pathname,
-                    networkResponse.clone()
-                )
-            )
-        }
-
-        return networkResponse
-    } catch {
+    } catch (err) {
+      console.warn('[SW] Navigation offline fallback for', url.pathname, err)  // log the error
 
       const cache = await caches.open('ssr-pages-v1')
-
-      // IMPORTANT: normalize key
       const cachedPage =
         await cache.match(url.pathname) ||
         await cache.match('/') ||
         await cache.match('/index.html')
 
-      if (cachedPage) {
-        return cachedPage
-      }
+      if (cachedPage) return cachedPage
 
       return new Response('Offline', { status: 503 })
     }
   }
 )
-// ─── Optional: offline fallback for public pages only ─────────────────────────
-//
-// If you want SOME offline support for pages that don't contain session
-// data, you can cache them selectively using a custom plugin that inspects
-// the response body before storing it. But the safest rule is:
-//
-//   Any page whose HTML contains window.__CART_ARRAY__ (or any other
-//   per-user injected state) must use NetworkOnly.
-//
-// If your SSR always injects __CART_ARRAY__ on every page (even as null),
-// NetworkOnly for all navigation is the correct and simplest choice.
-//
-// If only certain routes inject it, you can scope NetworkOnly like this:
-//
-// registerRoute(
-//   ({ request, url }) =>
-//     request.mode === 'navigate' &&
-//     SESSION_ROUTES.some(path => url.pathname.startsWith(path)),
-//   new NetworkOnly()
-// )
-//
-// registerRoute(
-//   ({ request, url }) =>
-//     request.mode === 'navigate' &&
-//     !SESSION_ROUTES.some(path => url.pathname.startsWith(path)),
-//   new NetworkFirst({
-//     cacheName: 'ssr-public-pages',
-//     networkTimeoutSeconds: 3,
-//     plugins: [
-//       new ExpirationPlugin({
-//         maxEntries: 20,
-//         maxAgeSeconds: 60 * 5   // 5 minutes max — public pages change too
-//       })
-//     ]
-//   })
-// )
