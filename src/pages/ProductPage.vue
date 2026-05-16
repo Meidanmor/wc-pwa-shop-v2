@@ -438,30 +438,22 @@ function decreaseQty() {
 }
 
 async function fetchProduct(slug) {
-  if (navigator && !navigator.onLine) {
-    console.log('fetching offline product');
-    await productsStore.preFetchProducts({search: slug})
-  }
-  // 1. Try from store first (fast path)
   let existing = productsStore.products.value.find(p => {
     const pSlug = getSlugFromPermalink(p.permalink)
     return pSlug === slug
   })
 
   if (existing) {
-    product.value = JSON.parse(JSON.stringify(existing)) // 🔥 avoid reference reuse
+    product.value = JSON.parse(JSON.stringify(existing))
   } else {
     product.value = await productsStore.fetchSingleProduct(slug)
   }
 
-  // ❗ Safety check (important)
   if (!product.value) {
     console.error('Product not found:', slug)
     return
   }
-
 }
-
 async function enhanceProduct()
 {
   if (!product.value) {

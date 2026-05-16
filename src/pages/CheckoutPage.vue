@@ -5,7 +5,7 @@
         <GoogleLoginButton />
       </div>
 
-      <q-form class="flex" v-if="cart.state.cart_array && itemsCount !== '0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
+      <q-form class="flex" v-if="displayCart && itemsCount !== '0'" @submit.prevent="submitOrder" @validation-error="onValidationError">
       <div class="float-left">
       <!-- Personal Info -->
       <q-card class="q-mb-md">
@@ -91,7 +91,7 @@
           <div v-for="item in cartItems" :key="item.key" class="q-my-sm flex items-center">
           <div>
              <q-img
-              v-if="item.images.length"
+              v-if="item?.images?.length"
               :src="item.images[0].src"
               :alt="item.name"
               height="100px"
@@ -114,7 +114,17 @@
              </div>
           </div>
          </div>
-              × {{ item.quantity }} - {{ formatCurrency(item.totals?.line_total, {minorUnit: item.totals?.currency_minor_unit, decimalSeparator: item.totals?.currency_decimal_separator, prefix: item.totals?.currency_prefix, suffix: item.totals?.currency_suffix}) }}
+              × {{ item.quantity }} - {{   formatCurrency(
+    item.totals?.line_total ??
+    (parseInt(toRaw(item.prices)?.price || 0) * item.quantity).toString(),
+    {
+      minorUnit: item.totals?.currency_minor_unit ?? 2,
+      decimalSeparator: item.totals?.currency_decimal_separator ?? '.',
+      prefix: item.totals?.currency_prefix ?? '₪',
+      suffix: item.totals?.currency_suffix ?? ''
+    }
+  )
+ }}
             </div>
           </div>
         </q-card-section>
@@ -160,7 +170,7 @@
         </div>
     </q-form>
 
-      <div v-else-if="cart.state.cart_array && itemsCount === '0'">
+      <div v-else-if="displayCart && itemsCount === '0'">
         Your cart is empty!
         <router-link to="/products/">Go to shop</router-link>
       </div>
@@ -170,6 +180,12 @@
         <q-spinner color="secondary" size="2em" />
         <div>Synchronizing cart, please wait...</div>
       </div>
+
+      <!-- Offline banner inside the form, at the top -->
+      <div v-if="displayCart?._offline" class="bg-warning text-dark q-pa-sm q-mb-md rounded-borders">
+        You're offline. Your form data is being saved locally and your order will be submitted when you reconnect.
+      </div>
+
       <div v-if="syncError" class="text-negative q-mt-md text-center">
         {{ syncError }}
         <q-btn label="Retry Sync" color="secondary" @click="syncCart" class="q-ml-md" />
@@ -178,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, watch, onMounted, useSSRContext } from 'vue';
+import { ref, computed, reactive, watch, onMounted, useSSRContext, toRaw } from 'vue';
 import cart from 'src/stores/cart';
 import { useRouter } from 'vue-router';
 import { useMeta, useQuasar } from 'quasar';
@@ -256,7 +272,7 @@ if(process.env.CLIENT) {
   }
 })*/
 const checkoutReady = computed(() => {
-  return !!cart.state.cart_array
+  return !!displayCart.value
 })
 const isLoggedIn = ref(!!token.value)
 const router = useRouter();
@@ -283,36 +299,80 @@ const form = reactive({
 
 // 3. COMPUTED OPTIONS: Make shipping and payment methods computed
 // so they react instantly to the cart_array fetched in preFetch
-const shippingOptions = computed(() => {
+/*const shippingOptions = computed(() => {
   const rates = cart.state.cart_array?.shipping_rates?.[0]?.shipping_rates || [];
   return rates.map(rate => ({
     label: `${rate.name} – ${formatCurrency(rate.price, { minorUnit: 2, prefix: '₪' })}`,
     value: rate.rate_id
   }));
-});
+});*/
 
-const paymentMethods = computed(() => {
+/*const paymentMethods = computed(() => {
   const methods = cart.state.cart_array?.payment_methods || [];
   return methods.map(method => ({
     label: method === 'bacs' ? 'Bank transfer' : method,
     value: method
   }));
-});
+});*/
+// Replace cart_array references for display with this
+const displayCart = computed(() => {
+  if (cart.state.cart_array) return cart.state.cart_array
 
-const itemsCount = computed(() => cart.state.cart_array?.items_count || '0');
+  const local = cart.state.local_cart
+  const visibleItems = local.items.filter(i => !i._removed)
+    console.log('offline items prices:', visibleItems.map(i => ({ name: i.name, prices: i.prices })))
+
+  if (cart.state.offline && local?.items?.length) {
+    return {
+      items: visibleItems,
+      items_count: String(visibleItems.length),
+      coupons: [],
+      shipping_rates: [],
+      payment_methods: ['bacs'],
+      billing_address: local.billing_address || {},
+      shipping_address: local.shipping_address || {},
+      totals: {
+    total_price: visibleItems.reduce((sum, item) => {
+      const price = parseInt(toRaw(item.prices)?.price || 0)
+      return sum + price * (item.quantity || 1)
+    }, 0).toString(),
+        total_discount: '0',
+        currency_minor_unit: 2,
+        currency_prefix: '₪'
+      },
+      _offline: true
+    }
+  }
+
+  return null
+})
+
 const billingSameAsShipping = ref(false)
 const couponCode = ref('');
-const couponApplied = computed(() => {return cart.state.cart_array?.coupons?.length > 0});
 const couponError = ref(null);
 const paymentMethod = ref('bacs');
 const selectedShippingRateId = ref(null);
-const cartItems = computed(() => cart.state.cart_array?.items || []);
+const itemsCount = computed(() => displayCart.value?.items_count || '0')
+const cartItems = computed(() => displayCart.value?.items || [])
 const cartTotal = computed(() => {
-  const total = cart.state.cart_array?.totals?.total_price || '0';
-  const formattedTotal = formatCurrency(total, {minorUnit: 2, decimalSeparator: '.', prefix: '₪', suffix: ''});
-  return formattedTotal;
-});
-// More reliable slug extractor using regex
+  const total = displayCart.value?.totals?.total_price || '0'
+  return formatCurrency(total, { minorUnit: 2, decimalSeparator: '.', prefix: '₪', suffix: '' })
+})
+const shippingOptions = computed(() => {
+  const rates = displayCart.value?.shipping_rates?.[0]?.shipping_rates || []
+  return rates.map(rate => ({
+    label: `${rate.name} – ${formatCurrency(rate.price, { minorUnit: 2, prefix: '₪' })}`,
+    value: rate.rate_id
+  }))
+})
+const paymentMethods = computed(() => {
+  const methods = displayCart.value?.payment_methods || []
+  return methods.map(method => ({
+    label: method === 'bacs' ? 'Bank transfer' : method,
+    value: method
+  }))
+})
+const couponApplied = computed(() => displayCart.value?.coupons?.length > 0)// More reliable slug extractor using regex
 const getSlugFromPermalink = (permalink) => {
   if(permalink) {
     const match = permalink.match(/product\/([^/]+)\/?$/)
@@ -321,44 +381,36 @@ const getSlugFromPermalink = (permalink) => {
   return '';
 }
 const initializeFormFromCart = async () => {
-  const cartData = cart.state.cart_array
+  const cartData = displayCart.value
+  if (!cartData) return
 
-  if (!cartData) {
-    console.warn('Cart not ready yet, skipping form init')
-    return
+  const saved = localStorage.getItem('checkout_form')
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved)
+      Object.assign(form, parsed)
+      return
+    } catch (err) {
+      console.error('error', err)
+    }
   }
-
-  //paymentMethods.value = []
-
-  /*if (Array.isArray(cartData.payment_methods)) {
-    cartData.payment_methods.forEach(method => {
-      paymentMethods.value.push({
-        label: method === 'bacs' ? 'Bank transfer' : method,
-        value: method
-      })
-    })
-  }*/
-
-  //itemsCount.value = cartData.items_count || '0'
 
   const billing = cartData.billing_address || {}
   const shipping = cartData.shipping_address || {}
-
   form.first_name = shipping.first_name || ''
   form.last_name = shipping.last_name || ''
   form.email = billing.email || ''
   form.phone = billing.phone || ''
-
   form.shipping.address_1 = shipping.address_1 || ''
   form.shipping.city = shipping.city || ''
   form.shipping.postcode = shipping.postcode || ''
   form.shipping.country = shipping.country || 'IL'
-
   form.billing.address_1 = billing.address_1 || ''
   form.billing.city = billing.city || ''
   form.billing.postcode = billing.postcode || ''
   form.billing.country = billing.country || 'IL'
-};
+}
+
 const updateShippingAddress = async () => {
   try {
     const response = await fetchWithToken(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/cart/update-customer`, {
@@ -398,13 +450,35 @@ const updateShippingAddress = async () => {
     console.error('Error updating shipping address:', error.message);
   }
 };
-const handleInputBlur = (field) => {
+/*const handleInputBlur = (field) => {
   const value = form.shipping[field] ? form.shipping[field] : form[field];
   if (value && value.length > 1) {
     updateShippingAddress();
     fetchShippingRates();
   }
-};
+};*/
+const saveFormToLocalStorage = () => {
+  localStorage.setItem('checkout_form', JSON.stringify({
+    first_name: form.first_name,
+    last_name: form.last_name,
+    email: form.email,
+    phone: form.phone,
+    shipping: { ...form.shipping },
+    billing: { ...form.billing }
+  }))
+}
+
+const handleInputBlur = (field) => {
+  const value = form.shipping[field] ?? form[field]
+  saveFormToLocalStorage()
+
+  if (value && value.length > 1 && !cart.state.offline) {
+    updateShippingAddress()
+    fetchShippingRates()
+  }
+}
+
+
 function formatCurrency(amountStr, {
   minorUnit = 2,
   decimalSeparator = '.',
@@ -516,6 +590,8 @@ const submitOrder = async () => {
   } catch (err) {
     console.error('Checkout error:', err.message)
   }
+  localStorage.removeItem('checkout_form')
+
 }
 const syncCart = async () => {
   syncError.value = null
@@ -560,11 +636,11 @@ const needsSync = computed(() => {
   return false
 })
 
+// Watch displayCart instead of cart_array
 watch(
-  () => cart.state.cart_array,
+  () => displayCart.value,
   (cartData) => {
     if (!cartData) return
-
     initializeFormFromCart()
     fetchShippingRates()
   },
@@ -572,7 +648,8 @@ watch(
 )
 
 onMounted(async () => {
-  if (window.__CART_ARRAY__ && !cart.state.cart_array) {
+  console.log('LOCAL CART', cart.state.local_cart)
+  if (window.__CART_ARRAY__ && !cart.state.cart_array && !cart.state.offline) {
     cart.state.cart_array = window.__CART_ARRAY__
     cart.state.synced = true
     window.__CART_ARRAY__ = null
@@ -582,11 +659,17 @@ onMounted(async () => {
     // while offline, or before the session was established.
     // Load local cart first, then let the sync diff decide what to do.
     await cart.loadLocalCart()
+    console.log(cart.state.local_cart)
     if (cart.needsSync()) {
       await cart.syncLocalCartWithServer()
     }
   } else {
-    cart.fetchCart()
+    await cart.loadLocalCart()
+    if (cart.needsSync()) {
+      await cart.syncLocalCartWithServer()
+    }
+    // Only fetch after sync is complete so we never show stale data
+    await cart.fetchCart()
   }
   if (window.__PAGE_CONFIG__ && Object.keys(window.__PAGE_CONFIG__).length) {
     pageConfig.value = window.__PAGE_CONFIG__

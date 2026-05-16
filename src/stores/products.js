@@ -1,7 +1,8 @@
 // src/stores/products.js
 import { ref } from 'vue'
 import api from 'src/boot/woocommerce'
-import { isAdmin } from 'src/stores/user' // Our new lightweight store
+import { isAdmin } from 'src/stores/user'
+//import { fetchWithToken } from 'src/composables/useApiFetch.js'
 
  const Base =
   import.meta.env.SSR
@@ -200,8 +201,10 @@ if (isApiMode) {
 
         //const slug = p.permalink?.split('/').filter(Boolean).pop() || ''
 
-        localProducts = localProducts.filter(p =>
-            p.name?.toLowerCase().includes(term) || p.permalink?.split('/').filter(Boolean).pop()?.includes(term)
+        localProducts = localProducts.filter((p) => {
+              const pSlug = p.permalink?.split('/').filter(Boolean).pop();
+              return p.name?.toLowerCase().includes(term) || pSlug === term
+            }
         )
       }
 
@@ -488,14 +491,6 @@ async function fetchProductsIfNeeded(ctx) {
 
 // --- consumer helpers ---
 async function fetchSingleProduct(slug) {
-  const isOffline =
-  typeof navigator !== 'undefined' &&
-  navigator.onLine === false
-
-  if (isOffline) {
-    console.log('fetching offline product');
-    await preFetchProducts({search: slug})
-  }
   // 1. Check if we already have it in the existing list
   const existing = products.value.find(p => {
     const pSlug = p.permalink?.split('/').filter(Boolean).pop()
@@ -509,7 +504,9 @@ async function fetchSingleProduct(slug) {
     productsLoading.value = true
     // You'll need a method in your woocommerce boot file that calls
     // `wp-json/wc/v3/products?slug=...`
-    const data = await api.getProductBySlug(slug)
+    const fetchSingleProduct = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/products/${slug}`)
+
+    const data = await fetchSingleProduct.json();
 
     if (data) {
       // Add it to our local state so other components can use it
@@ -518,6 +515,12 @@ async function fetchSingleProduct(slug) {
     }
   } catch (err) {
     console.error('Error fetching single product:', err)
+    const results = await preFetchProducts({search: slug, api: true})
+    const found = Array.isArray(results) ? results[0] : results?.products?.[0] ?? null
+    if (found) {
+      products.value.push(found)
+      return found
+    }
   } finally {
     productsLoading.value = false
   }

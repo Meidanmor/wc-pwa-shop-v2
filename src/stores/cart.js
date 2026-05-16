@@ -1,4 +1,4 @@
-import { reactive, computed } from 'vue'
+import { reactive, computed, toRaw } from 'vue'
 import { fetchWithToken } from 'src/composables/useApiFetch.js'
 import productsStore from 'src/stores/products'
 import { matShoppingCart, matError, matCloudOff } from '@quasar/extras/material-icons'
@@ -314,9 +314,10 @@ function persistLocalCart() {
   const isClient = typeof window !== 'undefined'
   if (!isClient) return
   try {
-    const data = JSON.stringify(state.local_cart.items || [])
+    const raw = state.local_cart.items.map(item => toRaw(item))
+    const data = JSON.stringify(raw)
     localStorage.setItem(LOCAL_CART_KEY, data)
-    localStorage.setItem(LEGACY_OFFLINE_KEY, data) // legacy compat
+    localStorage.setItem(LEGACY_OFFLINE_KEY, data)
   } catch (err) {
     if (DEBUG) console.warn('[cart] persistLocalCart failed', err)
   }

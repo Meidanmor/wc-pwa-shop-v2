@@ -1,6 +1,7 @@
 import ProductsPage from 'pages/ProductsPage.vue'
 import ProductPage from 'pages/ProductPage.vue'
 import CartPage from 'pages/CartPage.vue'
+import CheckoutPage from 'pages/CheckoutPage.vue'
 
 const routes = [
   {
@@ -13,7 +14,7 @@ const routes = [
       { path: 'cart', component: CartPage },
       {
         path: 'checkout',
-        component: () => import('pages/CheckoutPage.vue'),
+        component: CheckoutPage,
         /*beforeEnter: async (to, from, next) => {
           const cartStore = (await import('src/stores/cart')).default;
           // Perform the heavy lifting before the route changes
