@@ -292,7 +292,8 @@ import { matShoppingCart,
   matClose,
   matRemove,
   matWifi,
-  matSignalWifiOff } from '@quasar/extras/material-icons'
+  matSignalWifiOff,
+  matError } from '@quasar/extras/material-icons'
 //import { defineAsyncComponent } from 'vue'
 
 async function hideSplash() {
@@ -597,5 +598,20 @@ watch(() => cart.state.drawerOpen, val => {
     //cart.fetchCart()
   }
 })
+watch(
+  () => cart.state.rejected_items,
+  (rejected) => {
+    if (rejected?.length) {
+      rejected.forEach(item => {
+        $q.notify({
+          type: 'warning',
+          message: `"${item.name}" was removed — no longer available`,
+          icon: matError,
+          timeout: 8000
+        })
+      })
+    }
+  }
+)
 
 </script>

@@ -27,6 +27,7 @@ const state = reactive({
   offline: typeof window !== 'undefined' ? !navigator.onLine : false,
   drawerOpen: false,
   synced: false,
+  rejected_items: [],
   get user() { return userState.data },
   set user(val) { setUser(val) }
 })
@@ -426,7 +427,24 @@ function applyServerSnapshot(data) {
     }
   }
 
-  persistLocalCart()
+  // ✅ Remove local items that the server rejected (out of stock, deleted, etc.)
+  // These are non-removed local items that attempted to sync but aren't on the server
+  const rejectedItems = state.local_cart.items.filter(i =>
+    !i._removed && i._synced === false && state.cart_array !== null
+  )
+
+  if (rejectedItems.length) {
+    // Store them separately so we can notify the user
+    state.rejected_items = rejectedItems.map(i => ({ ...toRaw(i) }))
+    // Remove them from local cart
+    state.local_cart.items = state.local_cart.items.filter(i =>
+      i._removed || i._synced === true
+    )
+    persistLocalCart()
+  } else {
+    state.rejected_items = []
+  }
+
   rebuildMergedView()
 }
 

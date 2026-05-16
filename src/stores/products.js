@@ -20,6 +20,50 @@ export const totalPages = ref(1);
 const categories = ref([]);
 const priceMeta = ref(null);
 
+async function getFeaturedProducts(ids = []) {
+  if (!Array.isArray(ids) || !ids.length) return []
+
+  try {
+    const query = new URLSearchParams()
+    ids.forEach(id => query.append('include', id))
+    query.append('per_page', ids.length)
+
+    const res = await fetch(
+      `${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/products?${query.toString()}`
+    )
+
+    if (!res.ok) throw new Error(`API error: ${res.status}`)
+
+    const data = await res.json()
+
+    // Update master store so other components benefit
+    if (data?.length) {
+      const masterMap = new Map(products.value.map(p => [p.id, p]))
+      data.forEach(p => masterMap.set(p.id, p))
+      products.value = Array.from(masterMap.values())
+    }
+
+    return data || []
+
+  } catch (err) {
+    console.error('[products store] getFeaturedProducts failed, trying fallback', err)
+
+    // API failed (offline or server error) — try store cache first
+    const masterMap = new Map(products.value.map(p => [p.id, p]))
+    const cached = ids.map(id => masterMap.get(Number(id))).filter(Boolean)
+    if (cached.length) return cached
+
+    // Nothing in cache — try products.json
+    try {
+      const res = await fetch('/data/products.json')
+      const all = await res.json()
+      return all.filter(p => ids.map(Number).includes(Number(p.id)))
+    } catch {
+      return []
+    }
+  }
+}
+
 async function getByIds(ids = []) {
   if (!Array.isArray(ids) || !ids.length) return []
 
@@ -638,6 +682,7 @@ export default {
   getById,
   getByIds,
   fetchSingleProduct,
+  getFeaturedProducts,
   totalProducts,
   totalPages
 }

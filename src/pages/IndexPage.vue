@@ -429,8 +429,8 @@ defineOptions({
     //const leanProducts = productsStore.products.value.slice(0, 6)
     const featuredIds = configData?.featured_products || []
     const leanProducts = featuredIds.length
-  ? await productsStore.getByIds(featuredIds)
-  : productsStore.products.value.slice(0, 6)
+  ? await productsStore.getFeaturedProducts(featuredIds)
+  : await productsStore.preFetchProducts({ api: true, per_page: 6, dryRun: true }).then(r => r.products)
 
     if (ssrContext) {
       // Initialize the state object if it doesn't exist
@@ -549,29 +549,34 @@ const getChunks = (array, size) => {
 const recomputeSlides = async (forceRemount = false) => {
   if (!isHydrated.value) return
 
-  if (!productsStore.products.value.length) {
-    await productsStore.preFetchProducts('', true)
+  const ids = homeSettings.value?.featured_products || []
+
+  if (ids.length) {
+    const missing = ids.filter(id => !productsStore.products.value.find(p => p.id == id))
+    if (missing.length) {
+      await productsStore.getFeaturedProducts(missing)
+    }
+  } else if (!productsStore.products.value.length) {
+    await productsStore.preFetchProducts({ api: true, per_page: 6, dryRun: false })
   }
 
-  const ids = homeSettings.value?.featured_products || []
-  const allProducts = await productsStore.getByIds(ids) || []
-
   let items = ids.length
-  ? ids.map(id => allProducts.find(p => p.id == id)).filter(Boolean)
-  : allProducts.slice(0, 6)
+    ? ids.map(id => productsStore.products.value.find(p => p.id == id)).filter(Boolean)
+    : productsStore.products.value.slice(0, 6)
 
   const chunkSize = $q.screen.lt.sm ? 1 : $q.screen.lt.md ? 2 : 3
 
-  if(chunkSize === 3) {
-    // pad to always 3
+  if (chunkSize === 3) {
     while (items.length < 3) {
-      items.push({__placeholder: true, id: `placeholder-${items.length}`})
+      items.push({ __placeholder: true, id: `placeholder-${items.length}` })
     }
   }
+
   if (forceRemount) carouselKey.value++
 
   slideChunks.value = getChunks(items, chunkSize)
 }
+
 const showCarouselControls = computed(() => {
   return slideChunks.value.length > 1
 })
