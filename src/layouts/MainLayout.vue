@@ -309,8 +309,9 @@ function normalizePermission(value) {
   if (value === 'prompt') { return 'default' } else if (value === 'initialized') { return 'granted' }
   return value
 }
-
+/* eslint-disable no-unused-vars */
 const _responsiveClasses = 'gt-sm lt-md gt-md lt-sm'
+/* eslint-enable no-unused-vars */
 
 const permission = ref('default')
 const supported = ref(false)
