@@ -294,7 +294,6 @@ import { matShoppingCart,
   matWifi,
   matSignalWifiOff,
   matError } from '@quasar/extras/material-icons'
-//import { defineAsyncComponent } from 'vue'
 
 async function hideSplash() {
   if (!Platform.is.capacitor) return
@@ -311,26 +310,7 @@ function normalizePermission(value) {
   return value
 }
 
-// Explicitly define these as Async to remove them from the Critical Path
-/* eslint-disable no-unused-vars */
 const _responsiveClasses = 'gt-sm lt-md gt-md lt-sm'
-/*const QList = defineAsyncComponent(() => import('quasar/src/components/item/QList.js'))
-const QItem = defineAsyncComponent(() => import('quasar/src/components/item/QItem.js'))
-const QItemSection = defineAsyncComponent(() => import('quasar/src/components/item/QItemSection.js'))
-const QHeader = defineAsyncComponent(() => import('quasar/src/components/header/QHeader.js'))
-const QDrawer = defineAsyncComponent(() => import('quasar/src/components/drawer/QDrawer.js'))
-const QLayout = defineAsyncComponent(() => import('quasar/src/components/layout/QLayout.js'))
-const QPageContainer = defineAsyncComponent(() => import('quasar/src/components/page/QPageContainer.js'))
-const QScrollObserver = defineAsyncComponent(() => import('quasar/src/components/scroll-observer/QScrollObserver.js'))
-const QResizeObserver = defineAsyncComponent(() => import('quasar/src/components/resize-observer/QResizeObserver.js'))
-const QToolbar = defineAsyncComponent(() => import('quasar/src/components/toolbar/QToolbar.js'))
-const QToolbarTitle = defineAsyncComponent(() => import('quasar/src/components/toolbar/QToolbarTitle.js'))
-*/
-/* eslint-enable no-unused-vars */
-
-// Move these from standard imports to Async imports
-//const WishlistDrawer = defineAsyncComponent(() => import('src/components/WishlistDrawer.vue'))
-//const AiAssistant = defineAsyncComponent(() => import('src/components/AiAssistant.vue'))
 
 const permission = ref('default')
 const supported = ref(false)
@@ -389,28 +369,6 @@ const toggleWishlistDrawer = () => (wishlistDrawerOpen.value = !wishlistDrawerOp
 const increase = (id) => cart.increase(id)
 const decrease = (id) => cart.decrease(id)
 const remove = (itemKey=null, itemAPIkey=null) => cart.remove(itemKey,itemAPIkey)
-
-/*function onPan(evt) {
-  if (evt.isFinal) {
-    //if (evt.direction === 'right') cartDrawer.value = true
-    const screenWidth = window.innerWidth
-    const swipePercent = (evt.distance.x / screenWidth) * 100
-
-    console.log('Swipe percent:', swipePercent)
-
-    console.log(evt.evt.target.closest('.q-carousel'));
-    if(swipePercent > 20) {
-      if (evt.direction === 'left') {
-        cartDrawer.value = true
-        console.log(evt);
-
-      } else if(evt.direction === 'right'){
-        mobileMenuDrawer.value = true;
-      }
-    }
-    // Do NOT call evt.preventDefault() unless you want to block child interactions
-  }
-}*/
 
 async function handleSubscribe() {
   if (Platform.is.capacitor) {
@@ -476,9 +434,7 @@ const initConnectivityListeners = () => {
       updateOnlineStatus(true)
     }
   });
-  /*navigator.connection?.addEventListener('change', async() => {
-    updateOnlineStatus(navigator.onLine)
-  })*/
+
   navigator.connection?.addEventListener('change', async () => {
     try {
       await fetch(window.location.origin, {method: 'HEAD', cache: 'no-store'})

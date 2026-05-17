@@ -25,7 +25,7 @@ async function getFeaturedProducts(ids = []) {
 
   try {
     const query = new URLSearchParams()
-    ids.forEach(id => query.append('include', id))
+    query.append('include', ids.join(','))
     query.append('per_page', ids.length)
 
     const res = await fetch(
@@ -41,6 +41,9 @@ async function getFeaturedProducts(ids = []) {
       const masterMap = new Map(products.value.map(p => [p.id, p]))
       data.forEach(p => masterMap.set(p.id, p))
       products.value = Array.from(masterMap.values())
+
+// Return in the requested ids order
+      return ids.map(id => masterMap.get(Number(id))).filter(Boolean)
     }
 
     return data || []

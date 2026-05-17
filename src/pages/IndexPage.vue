@@ -9,10 +9,17 @@
         Ethically sourced botanical formulations designed to nurture your skin’s natural radiance with high-potency organic ingredients.
       </p>
 
-      <button class="hero-btn q-btn">
-        <span class="q-focus-helper" tabindex="-1"></span>
-        Browse Products
-      </button>
+      <a v-if="!isHydrated" title="Go to products page" class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle q-btn--rounded bg-secondary text-primary q-btn--actionable q-focusable q-hoverable" tabindex="0" href="/products" style="font-size: 14px;"><span class="q-focus-helper" tabindex="-1"></span><span class="q-btn__content text-center col items-center q-anchor--skip justify-center row"><span class="block">Browse Products</span></span></a>
+      <q-btn v-else
+             title="Go to products page"
+              label="Browse Products"
+              color="secondary"
+              text-color="primary"
+              :rounded="true"
+              size="md"
+              to="/products"
+            />
+
     </div>
 
     <div class="lcp-wrapper col-12 col-md-6">
@@ -222,10 +229,39 @@ ingredient is ethically harvested at its peak potency.</p>
   <h2 class="text-h4 text-weight-light text-center q-mb-lg">
     What Our Customers Say
   </h2>
+<div v-if="!isHydrated" class="q-carousel q-panel-parent q-carousel--without-padding q-carousel--navigation-bottom rounded-borders" style="height: 100%;">
+  <div class="q-carousel__slides-container">
+    <div class="q-panel scroll" role="tabpanel" style="--q-transition-duration: 300ms;">
+      <div class="q-carousel__slide">
+        <div class="row q-col-gutter-md">
+          <div
+            v-for="(testimonial, index) in visibleStaticTestimonials"
+            :key="index"
+            class="col-12 col-md-4"
+            :class="{ 'gt-xs': index === 1, 'gt-sm': index === 2 }"
+          >
+            <div class="q-card q-pa-md">
+              <article itemscope itemtype="https://schema.org/Review">
+                <h3 class="text-subtitle1 q-mb-sm" itemprop="author" itemscope itemtype="https://schema.org/Person">
+                  <span itemprop="name">{{ testimonial.name }}</span>
+                </h3>
+                <div itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating" class="q-mb-sm">
+                  <meta itemprop="ratingValue" :content="testimonial.rating" />
+                  <meta itemprop="bestRating" content="5" />
+                </div>
+                <p itemprop="reviewBody" class="text-body2">{{ testimonial.feedback }}</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <q-carousel
     tabindex="0"
-    v-if="isHydrated"
+    v-else-if="isHydrated"
     :key="testimonialCarouselKey"
   v-model="testimonialsSlide"
   @touchstart.stop
@@ -614,6 +650,13 @@ const recomputeTestimonialSlides = async (forceRemount = false) => {
 
   testimonialSlideChunks.value = getChunks(testimonials.value, chunkSize)
 }
+const visibleStaticTestimonials = computed(() => {
+  const items = testimonials.value.slice(0, 3)
+  while (items.length < 3) {
+    items.push({ __placeholder: true, id: `placeholder-${items.length}` })
+  }
+  return items
+})
 
 const showTestimonialCarouselControls = computed(() => {
   return testimonialSlideChunks.value.length > 1
@@ -679,7 +722,6 @@ isHydrated.value = false
         isHydrated.value = true
       })
 
-      recomputeSlides()
       recomputeTestimonialSlides()
     })
 
@@ -696,41 +738,30 @@ isHydrated.value = false
 })
 
 watch(isHydrated, async (val) => {
-  if (!val) return;
-
+  if (!val) return
   try {
-
-    // 4. UI INITIALIZATION
-    // Now that data is guaranteed to be in the store, we setup the carousel
-    await recomputeSlides(true);
-
-    await recomputeTestimonialSlides(true);
-    // 1. DATA FETCHING (Parallel)
-    const {fetchSeoForPath} = await import('src/composables/useSeo');
-    // 2. SEO UPDATE
-    seoData.value = await fetchSeoForPath('homepage');
-
-    // 5. RESPONSIVE LISTENER
-    // We only start listening to screen/store changes AFTER initial hydration is done
-
+    await recomputeSlides(true)
+    await recomputeTestimonialSlides(true)
+    const { fetchSeoForPath } = await import('src/composables/useSeo')
+    seoData.value = await fetchSeoForPath('homepage')
   } catch (err) {
-    console.error('Hydration error:', err);
+    console.error('Hydration error:', err)
   }
-}, { immediate: true });
+}, )
+
 
 watch(
   [() => productsStore.products.value, () => $q.screen.name, () => homeSettings.value],
   () => {
     if (!isHydrated.value) return
-    recomputeSlides(true)
-    recomputeTestimonialSlides(true);
-
+    recomputeSlides(false) // no forceRemount
+    recomputeTestimonialSlides(false)
   }
 )
 </script>
 
 <style scoped>
-.hero-section-sec{--text:#1e1e1e;--muted:#6f6f6f;/*--primary1:#f6f2e7;--primary2:#e9ddc4;--primary3:#d0c1a3;--primary4:#bfa07c;--primary5:#a88360;*/--card-shadow:0 12px 40px rgba(16,16,16,0.08);position:relative;inset:0;/*display:flex;align-items:center}.hero-section-sec:before{content:"";position:absolute;width:100%;height:100%;z-index:0;top:0;left:0;background:radial-gradient(circle at 20% 30%,#fff 0,transparent 60%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.7) 0,transparent 60%),radial-gradient(circle at 50% 50%,rgba(255,255,255,.38) 0,#00000000 60%);background-size:200% 200%*/ background: var(--q-primary);}.hero-section{padding:0 20px;position:relative;overflow:hidden;z-index:1;width:100%}.hero-content h1{overflow-wrap:anywhere;text-indent:-4px;font-weight:400;font-size:14vw;line-height:1.1;margin-top:0;margin-bottom:12px;display:block}.hero-content .text-h6{max-width:450px;margin-bottom:24px!important}.lcp-wrapper{display:block;width:100%;aspect-ratio:3/2;position:relative;overflow:hidden;border-radius:50px;/*background:rgba(0,0,0,.03);contain:paint;transform:translateZ(0)*/}.hero-img{width:100%;height:100%;display:block;object-fit:cover}.hero-content button.hero-btn{border-radius:50px;padding:10px 24px;color:#fff;background:var(--primary-gradient);border:none;cursor:pointer;position:relative;font-weight:400;height:44px;display:inline-flex;align-items:center;justify-content:center}.hero-content button:before{content:"";display:block;position:absolute;inset:0;border-radius:inherit;box-shadow:0 1px 5px rgba(0,0,0,.2),0 2px 2px rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.12);transition:box-shadow .3s cubic-bezier(.25,.8,.5,1)}.hero-content button:hover .q-focus-helper{opacity:1}@media (min-width:768px){.lcp-wrapper{width:50%}.hero-content h1{font-size:4rem}}
+.hero-section-sec{--text:#1e1e1e;--muted:#6f6f6f;/*--primary1:#f6f2e7;--primary2:#e9ddc4;--primary3:#d0c1a3;--primary4:#bfa07c;--primary5:#a88360;*/--card-shadow:0 12px 40px rgba(16,16,16,0.08);position:relative;inset:0;/*display:flex;align-items:center}.hero-section-sec:before{content:"";position:absolute;width:100%;height:100%;z-index:0;top:0;left:0;background:radial-gradient(circle at 20% 30%,#fff 0,transparent 60%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.7) 0,transparent 60%),radial-gradient(circle at 50% 50%,rgba(255,255,255,.38) 0,#00000000 60%);background-size:200% 200%*/ background: var(--q-primary);}.hero-section{padding:0 20px;position:relative;overflow:hidden;z-index:1;width:100%}.hero-content h1{overflow-wrap:anywhere;text-indent:-4px;font-weight:400;font-size:14vw;line-height:1.1;margin-top:0;margin-bottom:12px;display:block}.hero-content .text-h6{max-width:450px;margin-bottom:24px!important}.lcp-wrapper{display:block;width:100%;aspect-ratio:3/2;position:relative;overflow:hidden;border-radius:50px;/*background:rgba(0,0,0,.03);contain:paint;transform:translateZ(0)*/}.hero-img{width:100%;height:100%;display:block;object-fit:cover}@media (min-width:768px){.lcp-wrapper{width:50%}.hero-content h1{font-size:4rem}}
 
 @keyframes gradientAnimation {
   0% {background-position: 0% 50%;}
@@ -751,10 +782,6 @@ div.q-img__loading > svg{
   object-fit: cover;
   pointer-events: none;
   border-radius: 20px;
-}
-
-.hero-content button:hover .q-focus-helper:after {
-  opacity: 0.15;
 }
 
 .pre-animate {
