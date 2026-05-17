@@ -53,18 +53,18 @@
         "grouped_products": [],
         "has_options": false,
         "is_purchasable": true,
-        "is_in_stock": true,
+        "is_in_stock": false,
         "is_on_backorder": false,
         "low_stock_remaining": null,
         "stock_availability": {
-            "text": "",
-            "class": "in-stock"
+            "text": "Out of stock",
+            "class": "out-of-stock"
         },
         "sold_individually": false,
         "add_to_cart": {
-            "text": "Add to cart",
-            "description": "Add to cart: &ldquo;New product check&rdquo;",
-            "url": "?add-to-cart=515",
+            "text": "Read more",
+            "description": "Read more about &ldquo;New product check&rdquo;",
+            "url": "https://nuxt.meidanm.com/product/new-product-check/",
             "minimum": 1,
             "maximum": 9999,
             "multiple_of": 1
