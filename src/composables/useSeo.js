@@ -11,6 +11,7 @@ export async function fetchSeoForPath(path) {
     title: 'NaturaBloom',
     description: "Let's Bloom Together",
     robots: 'index, follow, max-image-preview:large',
+    canonical: '',
     og_image: '',
     og_type: 'website'
   }

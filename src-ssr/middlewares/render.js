@@ -61,7 +61,7 @@ export default defineSsrMiddleware(({ app, resolve, render, /*serve*/ }) => {
                 const safeRobots = escapeHTML(seoData?.robots || 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
                 const safeOgType = escapeHTML(seoData?.og_type || 'website');
                 const safeOgImage = escapeHTML(seoData?.og_image || '');
-
+                const safeCanonical = escapeHTML(seoData?.canonical || '');
                 // 1. GENERATE SCHEMA (JSON-LD)
                 // This allows Google to show Price, Rating, and Stock in search results.
                 let schemaHtml = '';
@@ -94,7 +94,8 @@ export default defineSsrMiddleware(({ app, resolve, render, /*serve*/ }) => {
     <title>${safeTitle}</title>
     <meta name="description" content="${safeDesc}">
     <meta name="robots" content="${safeRobots}">
-    
+    <link rel="canonical" href="${safeCanonical}">
+
     <meta property="og:title" content="${safeTitle}">
     <meta property="og:description" content="${safeDesc}">
     <meta property="og:image" content="${safeOgImage}">

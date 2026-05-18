@@ -508,7 +508,13 @@ useMeta(() => {
       description: { name: 'description', content: seo.description, key: 'description' },
       'og:title': { property: 'og:title', content: seo.title },
       'og:image': { property: 'og:image', content: seo.og_image },
-    }
+    },
+    link: [
+      {
+        rel: 'canonical',
+        href: seo?.canonical || window?.location?.href || ''
+      }
+    ]
   };
 });
 /*(() => {

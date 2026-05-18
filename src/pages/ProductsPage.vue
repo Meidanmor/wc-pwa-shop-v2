@@ -326,26 +326,47 @@ if (process.env.CLIENT) {
   // --- SEO ---
   if (window.__SEO_DATA__) seoData.value = window.__SEO_DATA__
 
-  useMeta(() => {
-    const seo = seoData.value
-    return {
-      title: seo?.title || 'NaturaBloom',
-      meta: {
-        description: {
-          name: 'description',
-          content: seo?.description || "Let's Bloom Together"
-        },
-        'og:title': {
-          property: 'og:title',
-          content: seo?.title || 'NaturaBloom'
-        },
-        'og:description': {
-          property: 'og:description',
-          content: seo?.description || "Let's Bloom Together"
-        }
+useMeta(() => {
+  const seo = seoData.value
+
+  return {
+    title: seo?.title || 'NaturaBloom',
+
+    meta: {
+      description: {
+        name: 'description',
+        content: seo?.description || "Let's Bloom Together"
+      },
+
+      robots: {
+        name: 'robots',
+        content: seo?.robots || 'index, follow'
+      },
+
+      'og:title': {
+        property: 'og:title',
+        content: seo?.title || 'NaturaBloom'
+      },
+
+      'og:description': {
+        property: 'og:description',
+        content: seo?.description || "Let's Bloom Together"
+      },
+
+      'og:image': {
+        property: 'og:image',
+        content: seo?.og_image || ''
       }
-    }
-  })
+    },
+
+    link: [
+      {
+        rel: 'canonical',
+        href: seo?.canonical || window?.location?.href || ''
+      }
+    ]
+  }
+})
   const hasSSRProducts =
     Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length
 

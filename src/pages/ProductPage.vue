@@ -306,7 +306,13 @@ if (window.__SEO_DATA__) {
           property: 'og:description',
           content: seo?.description || "Let's Bloom Together"
         }
+      },
+      link: [
+      {
+        rel: 'canonical',
+        href: seo?.canonical || window?.location?.href || ''
       }
+    ]
     }
   })
 }
