@@ -1,5 +1,6 @@
 import ProductsPage from 'pages/ProductsPage.vue'
 import ProductPage from 'pages/ProductPage.vue'
+import CategoryPage from 'pages/CategoryPage.vue'
 import CartPage from 'pages/CartPage.vue'
 import CheckoutPage from 'pages/CheckoutPage.vue'
 
@@ -10,7 +11,7 @@ const routes = [
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') },
       { path: 'product/:slug', component: ProductPage },
-      { path: 'product-category/:slug', component: ProductsPage },
+      { path: 'product-category/:slug', component: CategoryPage },
       { path: 'cart', component: CartPage },
       {
         path: 'checkout',
@@ -22,7 +23,7 @@ const routes = [
           next();
         }*/
       },
-      { path: 'products', name: 'products', component: () => import('pages/ProductsPage.vue') },
+      { path: 'products', name: 'products', component: ProductsPage },
       { path: 'thank-you', name: 'thank-you', component: () => import('pages/ThankYouPage.vue') },
       { path: 'my-account', name: 'my-account', component: () => import('pages/AccountPage.vue') },
         {
