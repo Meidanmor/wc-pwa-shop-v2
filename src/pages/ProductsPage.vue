@@ -11,20 +11,17 @@
       <div class="archive-layout flex no-wrap">
       <div class="filters-wrap flex" :class="{ 'shown': filtersOpen }" >
         <q-btn
-  v-if="isHydrated && $q.screen.width <= 767"
+            class="mobile-only"
   :icon="matClose"
   color="secondary"
   @click="filtersOpen = false"
 />
       <!-- Search and Filter -->
-        <div class="col-xs-12 col-md-6" v-if="!isHydrated">
-          <q-skeleton type="rect" class="q-mb-md"/>
-        </div>
-        <div class="col-xs-12 col-md-6" v-else>
+        <div class="col-xs-12 col-md-6">
             <q-input filled v-model="search" label="Search products..." debounce="300" />
         </div>
 
-        <div class="col-xs-12 col-md-6"  v-if="!isHydrated || !categoryOptions.length">
+        <div class="col-xs-12 col-md-6"  v-if="!isHydrated && !categoryOptions.length">
           <q-skeleton type="rect" class="q-mb-md"/>
         </div>
 
@@ -90,7 +87,7 @@
 
 />
           <q-btn
-  v-if="isHydrated && $q.screen.width <= 767"
+              class="mobile-only"
   :icon="matFilterList"
   label="Filters"
   color="secondary"
@@ -98,7 +95,7 @@
 />
         </div>
 
-      <div v-if="productsStore.productsLoading.value && isHydrated" class="products-inner row q-col-gutter-md">
+      <div v-if="productsStore.productsLoading.value" class="products-inner row q-col-gutter-md">
   <div
     v-for="n in 6"
     :key="'skeleton-' + n"
@@ -165,14 +162,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useQuasar, useMeta, scroll } from 'quasar'
+import { ref, computed, onMounted, watch, useSSRContext } from 'vue'
+import { useMeta, scroll } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFilterList } from '@quasar/extras/material-icons'
 import ProductCard from 'src/components/ProductCard.vue'
 
-const $q = useQuasar()
 const { setVerticalScrollPosition } = scroll
 
 function scrollToTop() {
@@ -214,19 +210,19 @@ defineOptions({
     let categories = []
     let priceMeta = null
 
-      // 🟢 ONLY BLOCK SSR
-      result = await productsStore.preFetchProducts({
-        api: true,
-        page: 1,
-        per_page: 6,
-        dryRun: true  // ✅ don't touch the store yet
-      })
+    // 🟢 ONLY BLOCK SSR
+    result = await productsStore.preFetchProducts({
+      api: true,
+      page: 1,
+      per_page: 6,
+      dryRun: true  // ✅ don't touch the store yet
+    })
 
-      categories = await productsStore.prefetchCategories()
+    categories = await productsStore.prefetchCategories()
 
-      priceMeta = await productsStore.prefetchPriceMeta();
+    priceMeta = await productsStore.prefetchPriceMeta();
 
-    if(ssrContext) {
+    if (ssrContext) {
       ssrContext.productsData = result.products
       ssrContext.categoriesData = categories
       ssrContext.priceMetaData = priceMeta
@@ -234,7 +230,7 @@ defineOptions({
       ssrContext.pagesTotal = result.totalPages
     } else {
       // ✅ Client-side navigation: populate store directly
-     /* productsStore.products.value = products
+      /* productsStore.products.value = products
       productsStore.initialized.value = true
       productsStore.productsLoading.value = false
       window.__CATEGORIES_DATA__ = categories
@@ -247,8 +243,11 @@ defineOptions({
       window.__PRICE_META__ = priceMeta
       // Do NOT set productsStore.products.value here
 
-
     }
+    productsStore.products.value = result.products
+    productsStore.totalProducts.value = result.total
+    productsStore.totalPages.value = result.totalPages
+    productsStore.productsLoading.value = false
     if (ssrContext) {
       ssrContext.seoData = seo
     }
@@ -259,33 +258,6 @@ const seoData = ref({
   title: 'Products',
   description: 'Products description'
 });
-// This only runs in the browser
-/*if (process.env.CLIENT) {
-  if (window.__SEO_DATA__) {
-    seoData.value = window.__SEO_DATA__
-  }
-
-  useMeta(() => {
-    const seo = seoData.value;
-    return {
-      title: seo?.title || 'NaturaBloom',
-      meta: {
-        description: {
-          name: 'description',
-          content: seo?.description || "Let's Bloom Together"
-        },
-        'og:title': {
-          property: 'og:title',
-          content: seo?.title || 'NaturaBloom'
-        },
-        'og:description': {
-          property: 'og:description',
-          content: seo?.description || "Let's Bloom Together"
-        }
-      }
-    }
-  })
-}*/
 
 const paginatedProducts = computed(() => {
   return productsStore.products.value || []
@@ -297,31 +269,20 @@ const priceMin = ref(null)
 const priceMax = ref(null)
 const priceRange = ref({ min: 0, max: 1000 })
 
-/*if (process.env.CLIENT) {
+if (process.env.SERVER) {
+  const ssrContext = useSSRContext()
 
-  if (Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length) {
-    productsStore.products.value = window.__PRODUCTS_DATA__
-    productsStore.initialized.value = true
-  }
+  if (ssrContext?.priceMetaData) {
+    priceMin.value = Number(ssrContext.priceMetaData.min_price) || 0
+    priceMax.value = Number(ssrContext.priceMetaData.max_price) || 0
 
-  if (Array.isArray(window.__CATEGORIES_DATA__)) {
-    categories.value = window.__CATEGORIES_DATA__
-  } else {
-    categories.value = [] // 🔥 critical fallback
-  }
-
-  if (Array.isArray(window.__CATEGORIES_DATA__)) {
-    priceMin.value = Number(window.__PRICE_META__.min_price)
-    priceMax.value = Number(window.__PRICE_META__.max_price)
     priceRange.value = {
-      min: Number(window.__PRICE_META__.min_price),
-      max: Number(window.__PRICE_META__.max_price)
+      min: priceMin.value,
+      max: priceMax.value
     }
   }
+}
 
-  // 🔥 THIS CHANGES EVERYTHING
-  isReady.value = true
-}*/
 if (process.env.CLIENT) {
   // --- SEO ---
   if (window.__SEO_DATA__) seoData.value = window.__SEO_DATA__
@@ -382,8 +343,8 @@ useMeta(() => {
     productsStore.productsLoading.value = false
 
     if (window.__PRICE_META__) {
-      priceMin.value = Number(window.__PRICE_META__.min_price)
-      priceMax.value = Number(window.__PRICE_META__.max_price)
+      priceMin.value = Number(window.__PRICE_META__.min_price) || 0
+      priceMax.value = Number(window.__PRICE_META__.max_price) || 0
       priceRange.value = { min: priceMin.value, max: priceMax.value }
     }
 
@@ -407,11 +368,14 @@ useMeta(() => {
   isReady.value = true
 }
 
-const decodeHtml = (html) => {
-  const txt = document.createElement("textarea");
-  txt.innerHTML = html;
-  return txt.value;
-};
+const decodeHtml = (html = '') => {
+  return html
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+}
 
 // Computed: category options
 const categoryOptions = computed(() => {
@@ -490,18 +454,18 @@ watch(
   }),
   async (filters, prev) => {
     if (
-  !isReady.value ||
-  priceRange.value.min === null ||
-  priceRange.value.max === null
+        !isReady.value ||
+        priceRange.value.min === null ||
+        priceRange.value.max === null
     ) return
     if (isFetching.value) return
 
     const currentRequest = ++requestId
 
-const categoryChanged =
-  prev &&
-  JSON.stringify([...filters.category].sort()) !==
-  JSON.stringify([...prev.category].sort())
+    const categoryChanged =
+        prev &&
+        JSON.stringify([...filters.category].sort()) !==
+        JSON.stringify([...prev.category].sort())
 
     if (categoryChanged) {
       productsStore.productsLoading.value = true
@@ -528,25 +492,11 @@ const categoryChanged =
     }
 
     isFetching.value = true
-if (currentRequest !== requestId) return
-    console.log('Products fetch watcher triggered!!!')
-/*const source = categoryChanged
-  ? pendingPriceRange.value
-  : priceRange.value*/
+    if (currentRequest !== requestId) return
     const source = priceRange.value
 
-const min = Math.floor(source.min * 100)
-const max = Math.ceil(source.max * 100)
-console.log('========== FILTER DEBUG ==========')
-console.log('selectedCategory:', filters.category)
-console.log('joined category:', filters.category.join(','))
-console.log('search:', filters.search)
-console.log('page:', filters.page)
-console.log('priceRange:', priceRange.value)
-console.log('min/max:', min, max)
-console.log('categoryChanged:', categoryChanged)
-console.log('requestId:', currentRequest)
-
+    const min = Math.floor(source.min * 100)
+    const max = Math.ceil(source.max * 100)
     const sortParams = getSortParams(filters.sort)
     console.log(sortParams)
     await productsStore.preFetchProducts({
@@ -563,22 +513,14 @@ console.log('requestId:', currentRequest)
     })
 
     // 4. NOW update UI together 💥
-if (categoryChanged) {
-  priceMin.value = pendingPriceRange.value.min
-  priceMax.value = pendingPriceRange.value.max
-  priceRange.value = pendingPriceRange.value
-}
+    if (categoryChanged) {
+      priceMin.value = pendingPriceRange.value.min
+      priceMax.value = pendingPriceRange.value.max
+      priceRange.value = pendingPriceRange.value
+    }
     isFetching.value = false
   }
 )
-/*const hasSSRProducts =
-  process.env.CLIENT &&
-  Array.isArray(window.__PRODUCTS_DATA__) &&
-  window.__PRODUCTS_DATA__.length > 0
-const hasSelectedCategory =
-  process.env.CLIENT &&
-  window.__SELECTED_CATEGORY_DATA__ &&
-  Object.keys(window.__SELECTED_CATEGORY_DATA__).length > 0*/
 // Lifecycle
 onMounted(async () => {
   isHydrated.value = true

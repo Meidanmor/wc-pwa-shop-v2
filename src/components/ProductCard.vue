@@ -6,7 +6,7 @@
           </div>
 
           <q-card class="my-card full-height">
-            <q-img
+            <img
             :img-src="product.images[0]?.src"
             :src="product.images[0]?.src"
             :srcset="product.images[0]?.srcset"
@@ -16,7 +16,7 @@
             :fetchpriority="priority ? 'high' : 'auto'"
             height="250px"
             width="auto"
-            class="rounded-borders"
+            class="rounded-borders product-img"
             />
             <div class="flex q-pa-md">
               <div class="full-width q-mb-sm">
@@ -43,7 +43,6 @@ import { defineAsyncComponent } from 'vue'
 const $q = useQuasar()
 
 const QCard = defineAsyncComponent(() => import('quasar').then(m => m.QCard))
-const QImg = defineAsyncComponent(() => import('quasar').then(m => m.QImg))
 
 defineProps({
   product: {

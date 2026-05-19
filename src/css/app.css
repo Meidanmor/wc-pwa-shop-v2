@@ -342,6 +342,9 @@ i.q-icon.on-left.notranslate.material-icons {
     flex-direction: column;
     justify-content: space-between;
 }
+img.product-img {
+    object-fit: cover;
+}
 .q-breadcrumbs a.q-breadcrumbs__el.q-link {
     color: var(--q-secondary);
     font-weight: 600;
@@ -456,6 +459,12 @@ footer .footer-bottom {
     header .nav-items-el {
         margin-right: auto;
         margin-left: 30px;
+    }
+}
+
+@media(min-width: 768px){
+    .mobile-only {
+        display: none;
     }
 }
 
