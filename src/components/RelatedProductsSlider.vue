@@ -117,7 +117,7 @@
             style="font-size: 5px;padding: 0"
             round
             dense
-            :aria-label="`Go to slide ${index + 1}`"
+            :aria-label="`Go to slide ${name + 1}`"
             @click="onClick"
         />
       </template>
