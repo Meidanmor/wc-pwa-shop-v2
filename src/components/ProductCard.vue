@@ -4,7 +4,6 @@
               <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-if="wishlist.state.items && Object.values(wishlist.state.items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
               <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
           </div>
-
           <q-card class="my-card full-height">
             <img
             :img-src="product.images[0]?.src"
@@ -25,7 +24,7 @@
               </div>
               <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
               <q-btn v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(product)" />
-              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" :to="`/product/${getSlugFromPermalink(product.permalink)}`" label="Choose options" color="secondary" />
+              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" label="Choose options" color="secondary" />
               <div v-else>Out of stock</div>
               </div>
           </q-card>
@@ -33,9 +32,8 @@
 </template>
 
 <script setup>
-//import { computed } from 'vue'
 import { matFavorite, matFavoriteBorder } from '@quasar/extras/material-icons'
-import cart from 'src/stores/cart' // your existing cart.js
+import cart from 'src/stores/cart'
 import wishlist from 'src/stores/wishlist'
 import { useQuasar } from 'quasar'
 import { defineAsyncComponent } from 'vue'

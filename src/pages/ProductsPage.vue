@@ -58,105 +58,91 @@
               color="secondary"
               :step="0.01"
               @change="onPriceChange"
-          />
-        </q-card>
-
-      </div>
-
-      <div class="products-wrap">
-        <div class="flex justify-between q-mb-md total-products">
-      <!-- Total Products -->
-      <div v-if="totalProducts" class="text-subtitle1 q-mb-sm">
-        Found {{ totalProducts || 0 }} product{{ totalProducts === 1 ? '' : 's' }}
-      </div>
-
+            />
+          </q-card>
         </div>
 
-        <div class="flex justify-between q-mb-md sticky">
-          <q-select
-  filled
-  v-model="sortBy"
-  label="Sort by"
-  emit-value
-  map-options
-  :options="sortOptions"
-  :dropdown-icon="matArrowDropDown"
-  :loading-icon="matAutorenew"
-  :clear-icon="matClose"
-  color="secondary"
+        <div class="products-wrap">
+          <div class="flex justify-between q-mb-md total-products">
+            <div v-if="totalProducts" class="text-subtitle1 q-mb-sm">
+              Found {{ totalProducts || 0 }} product{{ totalProducts === 1 ? '' : 's' }}
+            </div>
+          </div>
 
-/>
-          <q-btn
+          <div class="flex justify-between q-mb-md sticky">
+            <q-select
+              filled
+              v-model="sortBy"
+              label="Sort by"
+              emit-value
+              map-options
+              :options="sortOptions"
+              :dropdown-icon="matArrowDropDown"
+              :loading-icon="matAutorenew"
+              :clear-icon="matClose"
+              color="secondary"
+            />
+            <q-btn
               class="mobile-only"
-  :icon="matFilterList"
-  label="Filters"
-  color="secondary"
-  @click="filtersOpen = !filtersOpen"
-/>
-        </div>
+              :icon="matFilterList"
+              label="Filters"
+              color="secondary"
+              @click="filtersOpen = !filtersOpen"
+            />
+          </div>
 
       <div v-if="productsStore.productsLoading.value" class="products-inner row q-col-gutter-md">
-  <div
-    v-for="n in 6"
-    :key="'skeleton-' + n"
-    class="col-xs-12 col-sm-6 col-md-4"
-  >
-    <q-card class="my-card full-height">
+            <div
+              v-for="n in 6"
+              :key="'skeleton-' + n"
+              class="col-xs-12 col-sm-6 col-md-4"
+            >
+              <q-card class="my-card full-height">
+                <q-skeleton height="250px" square />
+                <q-card-section>
+                  <q-skeleton type="text" width="70%" />
+                  <q-skeleton type="text" width="40%" />
+                </q-card-section>
+                <q-card-actions class="q-gutter-sm">
+                  <q-skeleton type="rect" width="100px" height="36px" />
+                  <q-skeleton type="rect" width="70px" height="36px" />
+                </q-card-actions>
+              </q-card>
+            </div>
+          </div>
 
-      <!-- Image skeleton -->
-      <q-skeleton height="250px" square />
+          <!-- Product grid -->
+          <div v-else-if="paginatedProducts.length" class="products-inner row q-col-gutter-md">
+            <div
+              v-for="(product, index) in paginatedProducts"
+              :key="product.id"
+              class="col-xs-12 col-sm-6 col-md-4 relative-position"
+            >
+              <ProductCard :product="product" :priority="index < 3" />
+            </div>
+          </div>
 
-      <q-card-section>
-        <!-- Title -->
-        <q-skeleton type="text" width="70%" />
+          <!-- Empty state -->
+          <div v-else class="text-center q-mt-lg">
+            No products found
+          </div>
 
-        <!-- Price -->
-        <q-skeleton type="text" width="40%" />
-      </q-card-section>
-
-      <q-card-actions class="q-gutter-sm">
-        <!-- Buttons -->
-        <q-skeleton type="rect" width="100px" height="36px" />
-        <q-skeleton type="rect" width="70px" height="36px" />
-      </q-card-actions>
-
-    </q-card>
-  </div>
-</div>
-      <div v-else-if="paginatedProducts.length" class="products-inner row q-col-gutter-md">
-        <!-- Product Grid -->
-        <div
-          v-for="(product, index) in paginatedProducts"
-          :key="product.id"
-          class="col-xs-12 col-sm-6 col-md-4 relative-position"
-        >
-          <ProductCard :product="product" :priority="index < 3" />
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="q-mt-lg flex flex-center pagination-btns">
+            <q-pagination
+              v-model="currentPage"
+              :max="totalPages || 1"
+              max-pages="6"
+              boundary-numbers
+              direction-links
+              :icon-prev="matKeyboardArrowLeft"
+              :icon-next="matKeyboardArrowRight"
+              color="secondary"
+              @update:model-value="scrollToTop"
+            />
+          </div>
         </div>
       </div>
-      <!-- Empty -->
-      <div v-else class="text-center q-mt-lg">
-        No products found
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="q-mt-lg flex flex-center pagination-btns">
-        <q-pagination
-            v-model="currentPage"
-            :max="totalPages || 1"
-            max-pages="6"
-            boundary-numbers
-            direction-links
-            :icon-prev="matKeyboardArrowLeft"
-            :icon-next="matKeyboardArrowRight"
-            color="secondary"
-            @update:model-value="scrollToTop"
-        />
-      </div>
-
-      </div>
-
-      </div>
-
     </div>
   </div>
 </template>
@@ -172,13 +158,9 @@ import ProductCard from 'src/components/ProductCard.vue'
 const { setVerticalScrollPosition } = scroll
 
 function scrollToTop() {
-  // Option A: Smooth scroll using Quasar utility (Best feel)
-  // window is the target, 0 is the position, 300 is the duration in ms
   setVerticalScrollPosition(window, 187, 300)
-
-  // Option B: Instant jump (Fastest feel)
-  // window.scrollTo(0, 0)
 }
+
 // Refs and state
 const selectedCategory = ref([])
 const search = ref('')
@@ -228,29 +210,21 @@ defineOptions({
       ssrContext.priceMetaData = priceMeta
       ssrContext.productsTotal = result.total
       ssrContext.pagesTotal = result.totalPages
+      ssrContext.seoData = seo
     } else {
-      // ✅ Client-side navigation: populate store directly
-      /* productsStore.products.value = products
-      productsStore.initialized.value = true
-      productsStore.productsLoading.value = false
-      window.__CATEGORIES_DATA__ = categories
-      window.__PRICE_META__ = priceMeta*/
-      // ✅ AFTER: stage the data in a window buffer, don't touch the store yet
+      // Client-side navigation
       window.__PREFETCH_PRODUCTS__ = result.products
       window.__PREFETCH_TOTAL__ = result.total
       window.__PREFETCH_PAGES__ = result.totalPages
       window.__CATEGORIES_DATA__ = categories
       window.__PRICE_META__ = priceMeta
-      // Do NOT set productsStore.products.value here
-
+      window.__SEO_DATA__  = seo
     }
     productsStore.products.value = result.products
     productsStore.totalProducts.value = result.total
     productsStore.totalPages.value = result.totalPages
     productsStore.productsLoading.value = false
-    if (ssrContext) {
-      ssrContext.seoData = seo
-    }
+
   }
 })
 

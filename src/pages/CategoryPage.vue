@@ -10,45 +10,46 @@
       <h1 v-html="selectedCategoryOBJ?.name || 'Products'"></h1>
 
       <div class="archive-layout flex no-wrap">
-        <div class="filters-wrap flex" :class="{ 'shown': filtersOpen }">
-          <q-btn
-            v-if="isHydrated && $q.screen.width <= 767"
-            :icon="matClose"
-            color="secondary"
-            @click="filtersOpen = false"
-          />
-
-          <!-- Search -->
-          <div class="col-xs-12 col-md-6" v-if="!isHydrated">
-            <q-skeleton type="rect" class="q-mb-md" />
-          </div>
-          <div class="col-xs-12 col-md-6" v-else>
+      <div class="filters-wrap flex" :class="{ 'shown': filtersOpen }" >
+        <q-btn
+            class="mobile-only"
+  :icon="matClose"
+  color="secondary"
+  @click="filtersOpen = false"
+/>
+      <!-- Search and Filter -->
+        <div class="col-xs-12 col-md-6">
             <q-input filled v-model="search" label="Search products..." debounce="300" />
-          </div>
+        </div>
 
-          <!-- Category filter -->
-          <div class="col-xs-12 col-md-6" v-if="!isHydrated || !categoryOptions.length">
-            <q-skeleton type="rect" class="q-mb-md" />
-          </div>
-          <div class="col-xs-12 col-md-6" v-else>
-            <q-card class="q-pa-md q-mb-md">
-              <div class="text-subtitle1 q-mb-sm">Filter by Category</div>
-              <q-option-group
+        <div class="col-xs-12 col-md-6"  v-if="!isHydrated && !categoryOptions.length">
+          <q-skeleton type="rect" class="q-mb-md"/>
+        </div>
+
+        <div class="col-xs-12 col-md-6" v-else>
+          <q-card class="q-pa-md q-mb-md">
+            <div class="text-subtitle1 q-mb-sm">
+              Filter by Category
+            </div>
+            <q-option-group
                 v-model="selectedCategory"
                 :options="categoryOptions"
                 type="checkbox"
                 color="secondary"
-              />
-            </q-card>
-          </div>
+            />
+          </q-card>
+        </div>
 
-          <!-- Price filter -->
-          <div class="q-pa-md q-mb-md" v-if="!priceMin">
-            <q-skeleton type="rect" class="q-mb-md" />
-          </div>
-          <q-card class="price-range-wrap q-pa-md q-mb-md" v-else>
-            <div class="text-subtitle1 q-mb-sm">Filter by Price</div>
-            <q-range
+      <div class="q-pa-md q-mb-md" v-if="!priceMin">
+        <q-skeleton type="rect" class="q-mb-md"/>
+      </div>
+
+        <q-card
+            class="price-range-wrap q-pa-md q-mb-md"
+            v-else
+        >
+          <div class="text-subtitle1 q-mb-sm">Filter by Price</div>
+          <q-range
               v-model="priceRange"
               :min="priceMin"
               :max="priceMax"
@@ -83,7 +84,7 @@
               color="secondary"
             />
             <q-btn
-              v-if="isHydrated && $q.screen.width <= 767"
+              class="mobile-only"
               :icon="matFilterList"
               label="Filters"
               color="secondary"
@@ -91,8 +92,7 @@
             />
           </div>
 
-          <!-- Loading skeletons -->
-          <div v-if="productsStore.productsLoading.value && isHydrated" class="products-inner row q-col-gutter-md">
+      <div v-if="productsStore.productsLoading.value" class="products-inner row q-col-gutter-md">
             <div
               v-for="n in 6"
               :key="'skeleton-' + n"
@@ -150,14 +150,13 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, useSSRContext } from 'vue'
-import { useQuasar, useMeta, scroll } from 'quasar'
+import { useMeta, scroll } from 'quasar'
 import { useRoute } from 'vue-router'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFilterList } from '@quasar/extras/material-icons'
 import ProductCard from 'src/components/ProductCard.vue'
 
-const $q = useQuasar()
 const { setVerticalScrollPosition } = scroll
 const route = useRoute()
 
@@ -233,7 +232,13 @@ defineOptions({
       window.__CATEGORIES_DATA__         = categories
       window.__PRICE_META__              = priceMeta
       window.__SELECTED_CATEGORY_DATA__  = currentCat
+      window.__SEO_DATA__  = seo
     }
+    productsStore.products.value = result.products
+    productsStore.totalProducts.value = result.total
+    productsStore.totalPages.value = result.totalPages
+    productsStore.productsLoading.value = false
+
   }
 })
 
@@ -243,8 +248,18 @@ if (process.env.SERVER) {
   const ssr = useSSRContext()
   if (ssr) {
     productsStore.categories.value = ssr.categoriesData || []
-    selectedCategoryOBJ.value      = ssr.selectedCategoryData || null
-    selectedCategory.value         = ssr.selectedCategoryData ? [ssr.selectedCategoryData.id] : []
+    selectedCategoryOBJ.value = ssr.selectedCategoryData || null
+    selectedCategory.value = ssr.selectedCategoryData ? [ssr.selectedCategoryData.id] : []
+
+    if (ssr?.priceMetaData) {
+      priceMin.value = Number(ssr.priceMetaData.min_price) || 0
+      priceMax.value = Number(ssr.priceMetaData.max_price) || 0
+
+      priceRange.value = {
+        min: priceMin.value,
+        max: priceMax.value
+      }
+    }
   }
 }
 
@@ -353,11 +368,13 @@ const paginatedProducts = computed(() => productsStore.products.value || [])
 const totalPages        = computed(() => productsStore.totalPages.value)
 const totalProducts     = computed(() => productsStore.totalProducts.value)
 
-const decodeHtml = (html) => {
-  if (!html) return ''
-  const txt = document.createElement('textarea')
-  txt.innerHTML = html
-  return txt.value
+const decodeHtml = (html = '') => {
+  return html
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
 }
 
 const categoryOptions = computed(() => {
