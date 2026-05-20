@@ -7,13 +7,13 @@
   font-style: normal;
   font-weight: 400;
 }
-/*@font-face {
+@font-face {
   font-family: Roboto;
   font-display: optional;
   src: url(../assets/fonts/roboto/roboto-v50-latin-200.woff2);
   font-style: normal;
   font-weight: 200;
-}*/
+}
 @font-face {
   font-family: Roboto;
   font-display: optional;
