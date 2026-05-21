@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!uiHydrated" class="minimal-fallback">
+  <div v-if="!uiHydrated && shouldDelayHydration" class="minimal-fallback">
 <header class="q-header q-layout__section--marginal sticky"><div class="container">
   <div class="q-toolbar row no-wrap items-center flex justify-between q-pa-sm" role="toolbar">
     <div class="flex"><!-- Desktop Navigation -->
@@ -392,7 +392,7 @@ const uiHydrated = ref(false)              // Deferred functional UI
 const route = useRoute()
 const router = useRouter()
 
-const noDelayRoutes = ['/checkout/', '/cart/']
+const noDelayRoutes = ['/checkout/', '/cart/', '/my-account/']
 
 const shouldDelayHydration = computed(() => {
   return !noDelayRoutes.includes(route.path)
@@ -462,14 +462,15 @@ onMounted(async () => {
 
   const scheduler = async () => {
     if (uiHydrated.value) return
-
     window.removeEventListener('scroll', scheduler)
     window.removeEventListener('mousemove', scheduler)
     window.removeEventListener('touchstart', scheduler)
 
+
     try {
       const { hydrate } = await import('../utils/lazy-quasar.js')
       await hydrate()
+
       requestAnimationFrame(() => {
         uiHydrated.value = true
         hideSplash()

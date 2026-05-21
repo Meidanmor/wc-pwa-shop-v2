@@ -188,22 +188,35 @@ export default defineConfig((ctx) => {
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
-    devServer: {
-// If not (SPA/PWA), we run the existing SSL logic.
-      https: ctx.mode.capacitor ? false : {
-        key: fs.readFileSync('./certs/localhost-key.pem'),
-        cert: fs.readFileSync('./certs/localhost.pem'),
-      },
+devServer: {
+  https: ctx.mode.capacitor ? false : {
+    key: fs.readFileSync('./certs/localhost-key.pem'),
+    cert: fs.readFileSync('./certs/localhost.pem'),
+  },
+  port: 9000,
+  host: '0.0.0.0',
+  open: ctx.mode.capacitor ? false : true,
 
-      port: 9000,
-
-      // host: '0.0.0.0' is important so your mobile device
-      // can connect to your computer's IP address.
-      host: '0.0.0.0',
-
-      open: ctx.mode.capacitor ? false : true,
+  // ← proxy belongs here
+proxy: {
+  '/wp-json': {
+    target: 'https://nuxt.meidanm.com',
+    changeOrigin: true,
+    secure: true,
+    cookieDomainRewrite: {
+      'nuxt.meidanm.com': 'localhost'
     },
-
+  },
+  '/wp-admin': {
+    target: 'https://nuxt.meidanm.com',
+    changeOrigin: true,
+    secure: true,
+    cookieDomainRewrite: {
+      'nuxt.meidanm.com': 'localhost'
+    },
+  }
+}
+},
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
     framework: {
       config: {

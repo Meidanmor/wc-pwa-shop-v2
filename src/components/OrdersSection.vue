@@ -57,9 +57,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { matShoppingBag, matKeyboardArrowDown } from '@quasar/extras/material-icons'
+import { fetchWithToken } from 'src/composables/useApiFetch.js'
+
 
 const orders = ref(null)
-const token = localStorage.getItem('jwt_token');
 const columns = [
   {
     name: 'thumbnail',
@@ -88,12 +89,7 @@ const columns = [
 ]
 
 onMounted(async () => {
-const res = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/my-orders`, {
-  cerdentials: 'include',
-  headers: {
-    Authorization: `Bearer ${token}` // From your JWT login
-  }
-});
+const res = await fetchWithToken(`${import.meta.env.VITE_API_BASE}/wp-json/wc/store/v1/my-orders`);
 
 orders.value = await res.json();
 console.log(orders);

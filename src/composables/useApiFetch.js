@@ -1,60 +1,33 @@
 let authExpiredTriggered = false
+let wasLoggedIn = false
+
+export function setLoggedIn(value) {
+  wasLoggedIn = value
+  if (!value) authExpiredTriggered = false // reset on logout
+}
 
 export async function fetchWithToken(url, options = {}) {
   const isClient = typeof window !== 'undefined'
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {})
-  }
-
-  if (isClient) {
-    const token = localStorage.getItem('jwt_token')
-    if (token) headers.Authorization = `Bearer ${token}`
-  }
-
   const response = await fetch(url, {
     credentials: 'include',
     ...options,
-    headers
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
   })
 
   if ((response.status === 401 || response.status === 403) && isClient) {
-    console.log(await response.text());
     const isDataRequest =
-        url.includes('wp-json') ||
-        !url.match(/\.(js|css|woff2?|png|jpg)$/)
+      url.includes('wp-json') ||
+      !url.match(/\.(js|css|woff2?|png|jpg)$/)
 
-    if (isDataRequest && !authExpiredTriggered) {
+    if (isDataRequest && wasLoggedIn && !authExpiredTriggered) {
       authExpiredTriggered = true
-
-      const {clearUser} = await import('src/stores/user')
-      clearUser()
-
-      window.dispatchEvent(
-          new CustomEvent('auth-expired')
-      )
+      window.dispatchEvent(new CustomEvent('auth-expired'))
     }
   }
-
-  /*const latestCartToken = response.headers.get('Cart-Token')
-
-  if (isClient && latestCartToken) {
-    const currentToken = localStorage.getItem('wc_cart_token')
-
-    if (latestCartToken !== currentToken) {
-      localStorage.setItem('wc_cart_token', latestCartToken)
-    }
-
-    // Important for SSR:
-    document.cookie = [
-      `wc_cart_token=${latestCartToken}`,
-      'Path=/',
-      'SameSite=Lax'
-    ].join('; ')
-  } else {
-    console.log('Cart-Token not updated')
-  }*/
 
   return response
 }

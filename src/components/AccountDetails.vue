@@ -1,52 +1,113 @@
 <template>
   <div>
     <h1 class="text-h4">Account Details</h1>
-    <div v-if="account.user_email">
-    <q-form @submit.prevent="updateDetails">
-      <q-input v-model="account.first__name" label="First Name" />
-      <q-input v-model="account.last__name" label="Last Name" />
-      <q-input disable readonly v-model="account.user_email" label="Email" type="email" />
-      <q-btn type="submit" label="Save Changes" color="secondary" />
-    </q-form>
+
+    <!-- Loading state -->
+    <div v-if="loading">
+      <q-spinner color="secondary" size="2em" />
     </div>
-    <div v-else> <q-spinner color="secondary" size="2em" /> </div>
+
+    <!-- Error loading user -->
+    <div v-else-if="loadError" class="text-negative">
+      {{ loadError }}
+    </div>
+
+    <!-- Account form -->
+    <div v-else>
+      <q-form @submit.prevent="updateDetails">
+        <q-input
+          v-model="account.first_name"
+          label="First Name"
+          :disable="saving"
+        />
+        <q-input
+          v-model="account.last_name"
+          label="Last Name"
+          :disable="saving"
+        />
+        <q-input
+          v-model="account.email"
+          label="Email"
+          type="email"
+          disable
+          readonly
+        />
+
+        <q-btn
+          type="submit"
+          label="Save Changes"
+          color="secondary"
+          :loading="saving"
+        />
+
+        <!-- Save feedback -->
+        <div v-if="saveError" class="text-negative q-mt-md">{{ saveError }}</div>
+        <div v-if="saveSuccess" class="text-positive q-mt-md">Profile updated successfully.</div>
+      </q-form>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { fetchWithToken } from 'src/composables/useApiFetch'
+const props = defineProps({
+  user: {
+    type: Object,
+    required: true
+  }
+})
 
 const account = ref({
-  first_name: '',
-  last_name: '',
-  email: ''
+  first_name: props?.user?.first_name,
+  last_name:  props?.user?.last_name,
+  email:      props?.user?.email,
 })
 
-const token = localStorage.getItem('jwt_token');
+const API = import.meta.env.VITE_API_BASE
 
-onMounted(async () => {
-  const res = await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wp/v2/users/me`, {
-    credentials: 'include',
-    headers: {
-    Authorization: `Bearer ${token}`
-  }
-  })
-    account.value = await res.json()
-  console.log(account.value)
-})
+const saving     = ref(false)
+const saveError  = ref('')
+const saveSuccess = ref(false)
+
+
+// ─── Save changes ─────────────────────────────────────────────────────────────
 
 async function updateDetails() {
-console.log(account.value);
-console.log(JSON.stringify(account.value).replace('__name', '_name'));
-  await fetch(`${import.meta.env.VITE_API_BASE}/wp-json/wp/v2/users/me`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(account.value).replaceAll('__name', '_name')
-  })
-  .then(res => console.log(res))
+  saveError.value   = ''
+  saveSuccess.value = false
+  saving.value      = true
+
+  try {
+    const res  = await fetchWithToken(`${API}/wp-json/qwoo/v1/me`, {
+      method: 'POST',
+      body: JSON.stringify({
+        first_name: account.value.first_name,
+        last_name:  account.value.last_name,
+      }),
+    })
+
+    const data = await res.json()
+
+    if (!data.success) {
+      saveError.value = data.message || 'Failed to save changes. Please try again.'
+      return
+    }
+
+    // Keep local state in sync with what the server confirmed
+    account.value = {
+      first_name: data.user.first_name,
+      last_name:  data.user.last_name,
+      email:      data.user.email,
+    }
+
+    saveSuccess.value = true
+
+  } catch (err) {
+    console.error('Failed to update account:', err)
+    saveError.value = 'A server error occurred. Please try again later.'
+  } finally {
+    saving.value = false
+  }
 }
 </script>
