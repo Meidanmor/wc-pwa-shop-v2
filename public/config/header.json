@@ -1,37 +1,39 @@
 {
     "announcement": {
+        "enabled": false,
         "text": "",
         "bg_color": "#000000",
         "text_color": "#ffffff"
     },
     "navigation": [
         {
-            "key": "home",
+            "key": "0",
             "label": "Home",
             "enabled": true
         },
         {
-            "key": "products",
+            "key": "1",
             "label": "Products",
             "enabled": true
         },
         {
-            "key": "cart",
+            "key": "2",
             "label": "Cart",
             "enabled": true
         },
         {
-            "key": "checkout",
+            "key": "3",
             "label": "Checkout",
             "enabled": true
         },
         {
-            "key": "account",
+            "key": "4",
             "label": "My Account",
             "enabled": true
         }
     ],
     "settings": {
-        "sticky": "1"
+        "sticky": true,
+        "show_search": false
     }
 }
