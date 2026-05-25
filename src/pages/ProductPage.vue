@@ -147,6 +147,7 @@
   :options="getOptionsWithDisabled(attribute)"
   dense
   :dropdown-icon="matArrowDropDown"
+  :clear-icon="matCancel"
   clearable
   :placeholder="`Select a ${attribute.name}`"
   :label="`Select a ${attribute.name}`"
@@ -323,7 +324,18 @@ import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { matFavoriteBorder, matFavorite, matAdd, matClose, matRemove, matLens, matArrowDropDown, matChevronLeft, matChevronRight } from '@quasar/extras/material-icons'
+import {
+  matFavoriteBorder,
+  matFavorite,
+  matAdd,
+  matClose,
+  matRemove,
+  matLens,
+  matArrowDropDown,
+  matChevronLeft,
+  matChevronRight,
+  matCancel
+} from '@quasar/extras/material-icons'
 
 const $q = useQuasar()
 const route = useRoute()
