@@ -3,11 +3,12 @@ import { fetchWithToken } from 'src/composables/useApiFetch.js'
 import productsStore from 'src/stores/products'
 import { matShoppingCart, matError, matCloudOff } from '@quasar/extras/material-icons'
 import { userState, setUser } from 'src/stores/user'
+import { fetchProductById } from 'src/boot/woocommerce.js'
 
 /* -------------------------
    Constants
    ------------------------- */
-const API_BASE = import.meta.env.VITE_STORE_API_BASE
+const API_BASE = `${import.meta.env.VITE_API_BASE}/wp-json/wc/store`
 const LOCAL_CART_KEY = 'local_cart_v1'
 const LEGACY_OFFLINE_KEY = 'offline_cart'
 const DEBUG = import.meta.env.DEV
@@ -165,7 +166,7 @@ function normalizeVariation(variation) {
     return Object.entries(variation)
       .map(([k, v]) => {
         const val = (v && typeof v === 'object' && 'value' in v) ? v.value : v
-        return { attribute: String(k), value: String(val ?? '') }
+        return {attribute: String(k), value: val == null ? '' : String(val)}
       })
       .filter(v => v.attribute !== '' || v.value !== '')
       .sort((a, b) => (a.attribute + a.value).localeCompare(b.attribute + b.value))
@@ -282,14 +283,13 @@ async function getProductFromJson(productId) {
 /* -------------------------
    Local item builder
    ------------------------- */
-function buildLocalItemFromProduct(productLike, variation = [], quantity = 1) {
+function buildLocalItemFromProduct(productLike, variation = [], quantity = 1, variationId = null) {
   const images = productLike?.images ?? []
-  const prices = productLike?.prices ?? (productLike?.price
-    ? { price: productLike.price, currency_code: productLike?.prices?.currency_code || '' }
-    : {})
+  const prices = productLike?.prices ?? {}
   const normalizedVariation = normalizeVariation(variation)
+
   const temp = {
-    id: productLike?.id || 0,
+    id: variationId || productLike?.id || 0,  // ← use variationId when available
     name: productLike?.name || productLike?.title || '',
     quantity: quantity || 1,
     quantity_limits: {
@@ -875,20 +875,30 @@ function _addFromApiItem(apiItem, quantity, variationArr, variationId, $q, openD
   _finishAdd($q, openDrawer)
 }
 
-async function _addNewItem(productId, quantity, variationArr, productDataFromUI, $q, openDrawer = true) {
+async function _addNewItem(productId, quantity, variationArr, variationId, productDataFromUI, $q, openDrawer = true) {
   let productData = productDataFromUI
   if (!productData) {
     try { productData = await getCachedProduct(productId) } catch { productData = null }
   }
   if (!productData) productData = await getProductFromJson(productId)
 
-  const sourceProduct = productData || {
+  let variationData = null
+  if (variationId) {
+    try { variationData = await getCachedProduct(variationId) } catch (err){console.log(err)}
+    if (!variationData) variationData = await fetchProductById(variationId)
+  }
+
+  let sourceProduct = productData || {
     id: productId, name: '', images: [], prices: {},
     add_to_cart: { minimum: 1, maximum: null },
     stock_availability: { text: '' }
   }
 
-  const localItemNew = buildLocalItemFromProduct(sourceProduct, variationArr, quantity)
+  if (variationData?.prices) {
+    sourceProduct = { ...sourceProduct, prices: variationData.prices }
+  }
+
+const localItemNew = buildLocalItemFromProduct(sourceProduct, variationArr, quantity, variationId)
   const maxAllowedNew = getMaxAllowed(localItemNew)
   if (maxAllowedNew !== Infinity && localItemNew.quantity > maxAllowedNew) {
     localItemNew.quantity = maxAllowedNew
@@ -908,7 +918,10 @@ async function add(productId, quantity = 1, _variationId = null, variation = {},
   state.error = null
 
   const variationArr = normalizeVariation(variation)
-  const sig = buildSig(productId, variationArr)
+
+  // Use variationId for signature when available, just like the stored item
+  const sigId = _variationId || productId
+  const sig = buildSig(sigId, variationArr)
 
   const localItem = state.local_cart.items.find(i => itemSignature(i) === sig)
   if (localItem) return _addToExistingLocalItem(localItem, quantity, $q, openDrawer)
@@ -916,7 +929,7 @@ async function add(productId, quantity = 1, _variationId = null, variation = {},
   const apiItem = (state.cart_array?.items || []).find(i => itemSignature(i) === sig)
   if (apiItem) return _addFromApiItem(apiItem, quantity, variationArr, _variationId, $q, openDrawer)
 
-  return _addNewItem(productId, quantity, variationArr, productDataFromUI, $q, openDrawer)
+  return _addNewItem(productId, quantity, variationArr, _variationId, productDataFromUI, $q, openDrawer)
 }
 
 async function increase(productIdOrKey, $q = null) {

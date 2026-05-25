@@ -274,10 +274,9 @@ i.q-icon.on-left.notranslate.material-icons {
 }
 
 .q-carousel {
-    padding: 0 0px 30px;
+    padding: 0 10px 30px;
     position: relative;
     background: transparent;
-    overflow: visible;
 }
 .q-carousel__control.absolute:not(.q-carousel__navigation) {
     top: 38%;
@@ -287,11 +286,11 @@ i.q-icon.on-left.notranslate.material-icons {
     border-radius: 50%;
 }
 .q-carousel__control.absolute.absolute-left.flex.items-center {
-    left: -12px;
+    left: 0px;
     margin: 0 !important;
 }
 .q-carousel__control.absolute.absolute-right.flex.items-center {
-    right: -12px;
+    right: 0px;
     margin: 0 !important;
 }
 .q-carousel__slide .row.justify-between {

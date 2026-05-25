@@ -102,8 +102,8 @@
             <div class="flex">
             <div class="item-name">
       <router-link
-  :to="`/product/${getSlugFromPermalink(item.permalink)}`"
-  class="no-decoration">
+          :to="{ path: `/product/${getSlugFromPermalink(item.permalink)}`, query: getVariationQuery(item) }"
+              class="no-decoration">
               {{ item.name }}</router-link>
              <div v-if="item.variation && item.variation.length > 0">
              <div
@@ -374,12 +374,17 @@ const paymentMethods = computed(() => {
 })
 const couponApplied = computed(() => displayCart.value?.coupons?.length > 0)// More reliable slug extractor using regex
 const getSlugFromPermalink = (permalink) => {
-  if(permalink) {
-    const match = permalink.match(/product\/([^/]+)\/?$/)
-    return match ? match[1] : ''
-  }
-  return '';
+  if (!permalink) return ''
+  const cleanUrl = permalink.split('?')[0]
+  const match = cleanUrl.match(/product\/([^/]+)\/?$/)
+  return match ? match[1] : ''
 }
+
+const getVariationQuery = (item) => {
+  if (!item.variation?.length) return {}
+  return Object.fromEntries(item.variation.map(v => [v.attribute, v.value]))
+}
+
 const initializeFormFromCart = async () => {
   const cartData = displayCart.value
   if (!cartData) return

@@ -10,11 +10,11 @@
             animated
             v-model="activeSlide"
             height="400px"
-            navigation
+            :navigation="showCarouselControls"
             autoplay
             control-color="white"
             swipeable
-            infinite
+            :infinite="showCarouselControls"
             transition-prev="slide-right"
             transition-next="slide-left"
               :navigation-icon="matLens"
@@ -29,9 +29,53 @@
               :src="img.src"
               :srcset="img.srcset"
               :sizes="img.sizes"
-              @click="openLightbox(index)"
+              @mousedown="onImageMouseDown"
+              @click="onImageClick(index)"
               style="cursor: zoom-in"
             />
+              <!-- Keep the look: bind btnProps, add aria-label, keep visual style -->
+  <template v-if="showCarouselControls" #navigation-icon="{ name, onClick, btnProps }">
+    <q-btn
+      v-bind="btnProps"
+      :flat="false"
+      :color="activeSlide === name ? 'secondary' : 'primary'"
+      size="sm"
+      :icon="null"
+      style="background: var(--q-secondary); font-size: 5px;padding: 0"
+      round
+      dense
+      :aria-label="`Go to slide ${name + 1}`"
+      @click="onClick"
+    />
+  </template>
+
+  <!-- Custom arrows using q-carousel-control (positions match default) -->
+  <template v-if="showCarouselControls" #control>
+    <q-carousel-control position="left" class="flex items-center">
+      <q-btn
+        :icon="matChevronLeft"
+        aria-label="Previous slide"
+        flat
+        round
+        dense
+        color="secondary"
+        @click="activeSlide = (Number(activeSlide) - 1 + product?.images.length) % product?.images.length"
+      />
+    </q-carousel-control>
+
+    <q-carousel-control position="right" class="flex items-center">
+      <q-btn
+        :icon="matChevronRight"
+        aria-label="Next slide"
+        flat
+        round
+        dense
+        color="secondary"
+        @click="activeSlide = (Number(activeSlide) + 1) % product?.images.length"
+      />
+    </q-carousel-control>
+  </template>
+
           </q-carousel>
         </div>
         <div v-else>
@@ -43,7 +87,9 @@
             spinner-color="secondary"
             fit="contain"
             style="cursor: zoom-in; max-height: 500px"
-            @click="openLightbox(0)"
+  @mousedown="onImageMouseDown"
+  @mousemove="onImageMouseMove"
+  @click="onImageClick(0)"
           />
         </div>
       </div>
@@ -96,18 +142,18 @@
             class="q-mb-sm"
           >
             <label class="text-subtitle2 q-mb-xs">{{ attribute.name }}</label>
-            <q-select
-              v-model="selectedVariations[attribute.name]"
-              :options="attribute.options"
-              dense
-              :dropdown-icon="matArrowDropDown"
-              clearable
-              :placeholder="`Select a ${attribute.name}`"
-              :label="`Select a ${attribute.name}`"
-              emit-value
-              map-options
-              @update:model-value="onVariationChange"
-            />
+<q-select
+  v-model="selectedVariations[attribute.name]"
+  :options="getOptionsWithDisabled(attribute)"
+  dense
+  :dropdown-icon="matArrowDropDown"
+  clearable
+  :placeholder="`Select a ${attribute.name}`"
+  :label="`Select a ${attribute.name}`"
+  emit-value
+  map-options
+  @update:model-value="onVariationChange"
+/>
           </div>
           <div v-if="variationError" class="text-negative text-caption q-mt-xs">
             {{ variationError }}
@@ -169,43 +215,92 @@
     </div>
 
     <!-- Lightbox -->
-    <q-dialog v-model="lightbox.open">
-      <q-card
-        class="bg-black text-white"
-        style="max-width: 100vw; max-height: 100vh; overflow: hidden"
-      >
-        <div
-          class="q-pa-md flex flex-center"
-          ref="zoomContainer"
-          @touchstart="startTouch"
-          @touchmove="moveTouch"
-          @touchend="endTouch"
-          @wheel="wheelZoom"
-          @mousedown="startDrag"
-          @mousemove="dragging"
-          @mouseup="stopDrag"
-          @mouseleave="stopDrag"
-          style="overflow: hidden; position: relative"
-        >
-          <img
-            :src="product.images[lightbox.index]?.src"
-            :style="zoomStyle"
-            ref="zoomImage"
-            draggable="false"
-          />
-          <q-btn
-            round
-            dense
-            :icon="matClose"
-            color="white"
-            text-color="black"
-            class="absolute-top-right q-ma-sm z-top"
-            @click="lightbox.open = false"
-          />
-        </div>
-      </q-card>
-    </q-dialog>
+<q-dialog v-model="lightbox.open" no-backdrop-dismiss>
+  <q-card
+    class="bg-black text-white"
+    style="max-width: 100vw; max-height: 100vh; overflow: hidden"
+  >
+    <div
+      class="q-pa-md flex flex-center"
+      ref="zoomContainer"
+      @touchstart="startTouch"
+      @touchmove="moveTouch"
+      @touchend="endTouch"
+      @wheel="wheelZoom"
+      @mousedown="startDrag"
+      @mousemove="dragging"
+      @mouseup="stopDrag"
+      @mouseleave="stopDrag"
+      style="overflow: hidden; position: relative; min-width: 80vw; min-height: 70vh"
+    >
+      <img
+        :src="product.images[lightbox.index]?.src"
+        :style="zoomStyle"
+        ref="zoomImage"
+        draggable="false"
+        @click.stop
+      />
 
+      <!-- Close -->
+      <q-btn
+        round dense
+        :icon="matClose"
+        color="white"
+        text-color="black"
+        class="absolute-top-right q-ma-sm z-top"
+        @click="lightbox.open = false"
+      />
+
+      <!-- Left arrow -->
+      <q-btn
+        v-if="product.images.length > 1"
+        round dense
+        :icon="matChevronLeft"
+        color="white"
+        text-color="black"
+        class="absolute-left q-ma-sm z-top"
+        style="top: 50%; transform: translateY(-50%)"
+        @click.stop="lightboxNav(-1)"
+      />
+
+      <!-- Right arrow -->
+      <q-btn
+        v-if="product.images.length > 1"
+        round dense
+        :icon="matChevronRight"
+        color="white"
+        text-color="black"
+        class="absolute-right q-ma-sm z-top"
+        style="top: 50%; transform: translateY(-50%)"
+        @click.stop="lightboxNav(1)"
+      />
+    </div>
+
+    <!-- Thumbnail strip -->
+    <div
+      v-if="product.images.length > 1"
+      class="row justify-center q-pa-sm bg-black"
+      style="gap: 8px"
+    >
+      <img
+        v-for="(img, index) in product.images"
+        :key="index"
+        :src="img.thumbnail || img.src"
+        @click.stop="lightboxGoTo(index)"
+        :style="{
+          width: '60px',
+          height: '60px',
+          objectFit: 'cover',
+          cursor: 'pointer',
+          border: lightbox.index === index ? '2px solid white' : '2px solid transparent',
+          opacity: lightbox.index === index ? '1' : '0.5',
+          borderRadius: '4px',
+          transition: 'all 0.2s ease'
+        }"
+      />
+    </div>
+  </q-card>
+</q-dialog>
     <RelatedProductsSlider
       :productId="product.id"
       :categoryId="product.categories[0]?.id"
@@ -228,7 +323,7 @@ import RelatedProductsSlider from 'src/components/RelatedProductsSlider.vue'
 import { useQuasar, useMeta } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
-import { matFavoriteBorder, matFavorite, matAdd, matClose, matRemove, matLens, matArrowDropDown } from '@quasar/extras/material-icons'
+import { matFavoriteBorder, matFavorite, matAdd, matClose, matRemove, matLens, matArrowDropDown, matChevronLeft, matChevronRight } from '@quasar/extras/material-icons'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -255,6 +350,11 @@ if (process.env.CLIENT) {
     }
   }
 }
+
+const showCarouselControls = computed(() => {
+  return product.value.images.length > 1
+})
+
 
 // 🟢 Run on SSR only
 // Inside your Page or Layout
@@ -322,31 +422,67 @@ if (process.env.SERVER) {
   console.log('[SSR] ProductPage loaded on server')
 }
 
+function getOptionsWithDisabled(attribute) {
+  // Get all original options for this attribute
+  const allOptions = product.value.attributes
+    .find(a => a.name === attribute.name)?.terms.map(t => t.name) || []
+
+  return allOptions.map(opt => ({
+    label: opt,
+    value: opt,
+    disable: !attribute.options.includes(opt)
+  }))
+}
+
 //const addToCartLoading = ref(false);
 const availableAttributes = computed(() => {
-  if (!product.value || !product.value.attributes) return []
+  if (!product.value?.attributes) return []
 
   const attrMap = {}
-
-  for (const variation of product.value.attributes) {
-      if (!attrMap[variation.name]) {
-        attrMap[variation.name] = {
-          name: variation.name,
-          id: variation.id,
-          terms: variation.terms,
-          options: new Set()
-        }
+  for (const attr of product.value.attributes) {
+    if (!attrMap[attr.name]) {
+      attrMap[attr.name] = {
+        name: attr.name,
+        id: attr.id,
+        allOptions: attr.terms.map(t => t.name)
       }
-      for (const term of variation.terms) {
-          attrMap[variation.name].options.add(term.name)
-      }
+    }
   }
 
-  return Object.values(attrMap).map(attr => ({
-    name: attr.name,
-    slug: attr.slug,
-    options: Array.from(attr.options)
-  }))
+  const attributeNames = Object.keys(attrMap)
+
+  return attributeNames.map(attrName => {
+    const allOptions = attrMap[attrName].allOptions
+
+    const validOptions = allOptions.filter(optionValue => {
+      // Build a hypothetical selection with this option chosen
+      const hypothetical = { ...selectedVariations.value, [attrName]: optionValue }
+
+      // Check if any variation is compatible with this hypothetical selection
+      return product.value.variations.some(variation => {
+        return attributeNames.every(name => {
+          const selectedVal = hypothetical[name]
+
+          // If this attribute isn't selected yet in hypothetical, skip it
+          if (!selectedVal) return true
+
+          const varAttr = variation.attributes.find(a => a.name === name)
+          if (!varAttr) return false
+
+          // Wildcard matches anything
+          if (varAttr.value === null) return true
+
+          return varAttr.value.toLowerCase() === selectedVal.toLowerCase()
+        })
+      })
+    })
+
+    return {
+      name: attrName,
+      id: attrMap[attrName].id,
+      options: validOptions
+    }
+  })
 })
 
 const lightbox = ref({ open: false, index: 0 })
@@ -385,6 +521,38 @@ function openLightbox(index) {
     lastY: 0
   }
 }
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartY = ref(0)
+
+const mouseDownTime = ref(0)
+
+function onImageMouseDown() {
+  mouseDownTime.value = Date.now()
+}
+
+function onImageMouseMove(e) {
+  const dx = Math.abs(e.clientX - dragStartX.value)
+  const dy = Math.abs(e.clientY - dragStartY.value)
+  if (dx > 5 || dy > 5) isDragging.value = true
+}
+
+function onImageClick(index) {
+  const elapsed = Date.now() - mouseDownTime.value
+  if (elapsed > 200) return // was a drag, not a click
+  openLightbox(index)
+}
+
+function lightboxNav(direction) {
+  // Reset zoom when navigating
+  zoom.value = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, lastX: 0, lastY: 0 }
+  lightbox.value.index = (lightbox.value.index + direction + product.value.images.length) % product.value.images.length
+}
+
+function lightboxGoTo(index) {
+  zoom.value = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, lastX: 0, lastY: 0 }
+  lightbox.value.index = index
+}
 
 const openDrawer = ref(true);
 function addToCart(e) {
@@ -420,17 +588,17 @@ function handleAddToCart(e) {
   console.log(selectedVariations.value);
 
   for (const [key, value] of Object.entries(matchedVariation.attributes)) {
-    console.log(key);
-    if (!value.value || value.value == null) {
-      for (const [key, val] of Object.entries(selectedVariations.value)) {
-        if (value.name == key) {
-          value.value = val;
-        }
-      }
+    console.log(key, value)
+    let resolvedValue = value.value
 
-      // value.value = selectedVariations.value.name;
+    if (resolvedValue === null || resolvedValue === 'null' || !resolvedValue) {
+      resolvedValue = selectedVariations.value[value.name] ?? ''
     }
-    selectedVariationsArray.variation.push({"attribute": value.name, "value": value.value});
+
+    selectedVariationsArray.variation.push({
+      attribute: value.name,
+      value: resolvedValue
+    })
   }
   console.log(product.value.id + '-' + 1 + '-' + matchedVariation.id + '-' + selectedVariationsArray.variation);
   cart.add(product.value.id, quantity.value, matchedVariation.id, selectedVariationsArray.variation, $q, '', openDrawer.value);
@@ -460,18 +628,11 @@ async function fetchProduct(slug) {
     return
   }
 }
-async function enhanceProduct()
-{
-  if (!product.value) {
-    console.log('[Product] enhance skipped - no product')
-    return
-  }
+async function enhanceProduct() {
+  if (!product.value) return
 
-  // Fix categories fallback (your logic)
   if (!product.value?.categories?.length) {
-    product.value.categories = [
-      product.value.extensions?.mpress?.default_category
-    ]
+    product.value.categories = [product.value.extensions?.mpress?.default_category]
   }
 
   quantity.value = 1
@@ -479,6 +640,32 @@ async function enhanceProduct()
   lightbox.value.open = false
 
   await resetVariations()
+console.log('route.query:', route.query)
+console.log('product attributes:', product.value?.attributes)
+
+  // Auto-select from URL query params if present and valid
+  const query = route.query
+  if (Object.keys(query).length && product.value.attributes) {
+    const validAttrNames = product.value.attributes.map(a => a.name)
+
+    for (const [key, value] of Object.entries(query)) {
+      if (!validAttrNames.includes(key)) continue
+
+      // Check the value is a valid option for this attribute
+      const attr = product.value.attributes.find(a => a.name === key)
+      const validOptions = attr?.terms.map(t => t.name.toLowerCase()) || []
+
+      if (validOptions.includes(String(value).toLowerCase())) {
+        selectedVariations.value[key] = value
+      }
+    }
+
+    // Trigger variation matching if we restored any selections
+    if (Object.keys(selectedVariations.value).length) {
+      await onVariationChange()
+    }
+  }
+
   await fetchWishlistData()
 }
 const isVariable = computed(() => product.value?.type === 'variable')
@@ -512,37 +699,44 @@ if(wishlist.state.items && Object.values(wishlist.state.items).find(obj => selec
  }
 
 async function onVariationChange() {
+  // Clear any selected values that are no longer valid
+  for (const attr of availableAttributes.value) {
+    const currentVal = selectedVariations.value[attr.name]
+    if (currentVal && !attr.options.includes(currentVal)) {
+      selectedVariations.value[attr.name] = null
+    }
+  }
   if (!product.value || !product.value.attributes) {
     selectedVariation.value = null
     return
   }
 
-console.log('Selected Variations:', selectedVariations.value)
-console.log('Available Variations:', product.value.variations)
+  console.log('Selected Variations:', selectedVariations.value)
+  console.log('Available Variations:', product.value.variations)
 
-console.log(product.value.variations);
+  console.log(product.value.variations);
 
- matchedVariation.value = product.value.variations.find((variation) => {
-  return Object.entries(selectedVariations.value).every(([attrName, selectedValue]) => {
-    const attr = variation.attributes.find(a => a.name === attrName);
+  matchedVariation.value = product.value.variations.find((variation) => {
+    return Object.entries(selectedVariations.value).every(([attrName, selectedValue]) => {
+      const attr = variation.attributes.find(a => a.name === attrName);
 
-    // If attribute not found, mismatch
-    if (!attr || selectedValue === null) return false;
+      // If attribute not found, mismatch
+      if (!attr || selectedValue === null) return false;
 
-    // If variation has no value (null), treat it as a wildcard (match anything)
-    if (attr.value === null) return true;
+      // If variation has no value (null), treat it as a wildcard (match anything)
+      if (attr.value === null) return true;
 
-    // Otherwise, compare the selected value (case-insensitive)
-    return attr.value.toLowerCase() === selectedValue.toLowerCase();
+      // Otherwise, compare the selected value (case-insensitive)
+      return attr.value.toLowerCase() === selectedValue.toLowerCase();
+    });
   });
-});
-console.log(Object.keys(selectedVariations.value).length);
+  console.log(Object.keys(selectedVariations.value).length);
 
   if (matchedVariation.value) {
-  console.log(Object.keys(matchedVariation.value.attributes).length)
+    console.log(Object.keys(matchedVariation.value.attributes).length)
 
-    if( Object.keys(matchedVariation.value.attributes).length == Object.keys(selectedVariations.value).length ) {
-    selectedVariation.value = matchedVariation.value
+    if (Object.keys(matchedVariation.value.attributes).length == Object.keys(selectedVariations.value).length) {
+      selectedVariation.value = matchedVariation.value
     }
     variationError.value = ''
   } else {
@@ -551,18 +745,29 @@ console.log(Object.keys(selectedVariations.value).length);
   }
 
 
-for (const [key, value] of Object.entries(selectedVariations.value)) {
-  console.log(`${key}: ${value}`);
-  if(value == null){
-    selectedVariation.value = null
+  for (const [key, value] of Object.entries(selectedVariations.value)) {
+    console.log(`${key}: ${value}`);
+    if (value == null) {
+      selectedVariation.value = null
+    }
   }
-}
 
-if(selectedVariation.value && selectedVariation.value.id){
-selectedVariation.value = await fetchProductById(selectedVariation.value.id);
-}
+  if (selectedVariation.value && selectedVariation.value.id) {
+    selectedVariation.value = await fetchProductById(selectedVariation.value.id);
+  }
 
-console.log(selectedVariation.value);
+  // Update URL query params with current selections
+  const query = {}
+  for (const [key, value] of Object.entries(selectedVariations.value)) {
+    if (value) query[key] = value
+  }
+const url = new URL(window.location.href)
+url.search = '' // clear all existing params first
+for (const [k, v] of Object.entries(selectedVariations.value)) {
+  if (v) url.searchParams.set(k, v)
+}
+window.history.replaceState({}, '', url.toString())
+  console.log(selectedVariation.value);
 
 }
 
@@ -607,6 +812,8 @@ onMounted(async() => {
   if (!product.value || !product.value.id) {
     await fetchProduct(route.params.slug)
     await enhanceProduct();
+  } else {
+    enhanceProduct();
   }
     console.log('PWA Shell detected: Fetching SEO data from API...')
     try {
@@ -691,6 +898,18 @@ const startTouch = (e) => {
   }
 }
 
+const endTouch = (e) => {
+  if (zoom.value.scale > 1) return
+  if (e.changedTouches.length === 1) {
+    const dx = e.changedTouches[0].clientX - touchStart.x
+    const dy = e.changedTouches[0].clientY - touchStart.y
+    // Only swipe if horizontal movement is dominant and significant
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      lightboxNav(dx < 0 ? 1 : -1)
+    }
+  }
+}
+
 const moveTouch = (e) => {
   if (e.touches.length === 2) {
     const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -701,7 +920,6 @@ const moveTouch = (e) => {
   }
 }
 
-const endTouch = () => {}
 </script>
 
 <style scoped>
