@@ -394,13 +394,47 @@ function rebuildMergedView() {
   const visible = (state.local_cart.items || []).filter(i => !i._removed)
   state.items.splice(0, state.items.length, ...visible)
   state.items_count = state.items.reduce((s, i) => s + (i.quantity || 0), 0)
-  state.totals = state.cart_array?.totals || {
-    total_items: String(
-      state.items.reduce((s, it) =>
-        s + (it.prices?.price ? parseFloat(it.prices.price) * (it.quantity || 1) : 0), 0)
-    )
+
+  if (state.cart_array?.totals) {
+    // Server totals are authoritative when available
+    state.totals = state.cart_array.totals
+    state.coupons = state.cart_array.coupons || []
+  } else {
+    // Compute local totals from item prices
+    const totalItems = state.items.reduce((s, it) => {
+      const unitPrice = parseInt(it.prices?.price ?? it.prices?.regular_price ?? 0, 10)
+      return s + unitPrice * (it.quantity || 1)
+    }, 0)
+
+    const currencyCode = state.items[0]?.prices?.currency_code ?? 'USD'
+    const currencyMinorUnit = state.items[0]?.prices?.currency_minor_unit ?? 2
+    const currencySymbol = state.items[0]?.prices?.currency_symbol ?? '$'
+    const currencyPrefix = state.items[0]?.prices?.currency_prefix ?? currencySymbol
+
+    state.totals = {
+      currency_code: currencyCode,
+      currency_minor_unit: currencyMinorUnit,
+      currency_symbol: currencySymbol,
+      currency_prefix: currencyPrefix,
+      currency_suffix: state.items[0]?.prices?.currency_suffix ?? '',
+      currency_decimal_separator: state.items[0]?.prices?.currency_decimal_separator ?? '.',
+      currency_thousand_separator: state.items[0]?.prices?.currency_thousand_separator ?? ',',
+      total_items: String(totalItems),
+      total_items_tax: '0',
+      total_fees: '0',
+      total_fees_tax: '0',
+      total_discount: '0',
+      total_discount_tax: '0',
+      total_shipping: '0',
+      total_shipping_tax: '0',
+      total_price: String(totalItems),
+      total_tax: '0',
+      tax_lines: [],
+      // Flag so consuming components know this is estimated, not server-confirmed
+      _local: true,
+    }
+    state.coupons = []
   }
-  state.coupons = state.cart_array?.coupons || []
 }
 
 /* -------------------------
@@ -422,10 +456,13 @@ function applyServerSnapshot(data) {
     if (match) {
       li._synced = true
       li.remote_key = match.key || li.remote_key
+      // Keep local prices fresh from server
+      if (match.prices) li.prices = match.prices
     } else {
       li._synced = false
     }
   }
+
 
   // ✅ Remove local items that the server rejected (out of stock, deleted, etc.)
   // These are non-removed local items that attempted to sync but aren't on the server

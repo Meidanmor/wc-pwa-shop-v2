@@ -473,6 +473,24 @@ footer .footer-bottom {
 .q-drawer .cart-details {
    margin-top: auto;
 }
+.cart-drawer .q-ml-sm.flex {
+    flex-wrap: nowrap;
+    column-gap: 5px;
+}
+.cart-drawer .product-meta {
+    line-height: 1.1;
+}
+.cart-drawer .q-pa-sm.row.items-center {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    column-gap: 10px;
+}
+.cart-drawer .row.items-center .row.items-center {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    row-gap: 5px;
+}
 .q-drawer .cart-drawer {
    padding: 0 10px;
 }
@@ -538,6 +556,24 @@ header.sticky {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.qty-wrap {
+    border: 1px solid;
+    border-radius: 3px;
+    display: flex;
+}
+
+.buttons-wrap {
+    display: flex;
+    column-gap: 5px;
+}
+.buttons-wrap a:first-child button.q-btn {
+    width: 100%;
+}
+
+.buttons-wrap a:first-child {
+    flex: 1;
 }
 
 @media (max-width: 600px) {

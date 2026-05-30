@@ -84,7 +84,7 @@
       side="left"
       overlay
       behavior="mobile"
-      :width="260"
+      :width="drawerWidth"
       transition-show="slide-right"
       transition-hide="slide-left"
       :touch-area-width="250"
@@ -151,6 +151,7 @@
     v-model="wishlistDrawerOpen"
     side="right"
     overlay
+    :width="drawerWidth"
     behavior="mobile"
     v-if="uiHydrated"
   >
@@ -162,7 +163,7 @@
       side="right"
       overlay
       behavior="mobile"
-      :width="300"
+      :width="drawerWidth"
       class="cart-drawer"
       :touch-area-width="250"
       v-if="uiHydrated"
@@ -173,8 +174,9 @@
         <h4 class="sticky">Cart</h4>
         <div v-if="cart.hasItems.value">
         <div v-for="item in cart.state.items" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
-          <img v-if="item.images" :src="cart.state.offline === true ? item?.images[0]?.src : item.images[0]?.thumbnail" style="width: 100px; height: 100px; object-fit: cover" />
-          <div class="q-ml-sm column">
+          <div class="q-ml-sm flex">
+          <img v-if="item.images" :src="cart.state.offline === true ? item?.images[0]?.src : item.images[0]?.thumbnail" style="width: 70px; height: 70px; object-fit: cover" />
+            <div class="product-meta">
             <div>{{ item.name }}</div>
            <div v-if="item.variation && item.variation.length > 0">
              <div
@@ -184,14 +186,27 @@
              {{variation.attribute}}: {{variation.value}}
              </div>
           </div>
-            <div v-if="item.prices">{{ item.prices.price }} {{ item.prices.currency_code }}</div>
-            <div class="row items-center q-mt-xs">
-              <q-btn dense round :icon="matRemove" @click="decrease(item.key)" :disable="item.quantity === 1" />
-              <span class="q-mx-sm">{{ item.quantity }}</span>
-              <q-btn dense round :icon="matAdd" @click="increase(item.id)" />
-              <q-btn dense flat :icon="matClose" @click="remove(item.key, item.remote_key)" class="q-ml-sm" />
+            <div v-if="item.prices">
+              {{formatCurrency(
+    item.prices.price,
+    {
+      minorUnit: item.prices?.currency_minor_unit ?? 2,
+      decimalSeparator: item.prices?.currency_decimal_separator ?? '.',
+      prefix: item.prices?.currency_prefix ?? '₪',
+      suffix: item.prices?.currency_suffix ?? ''
+    }
+  )}}
+            </div>
             </div>
           </div>
+            <div class="row items-center">
+              <div class="qty-wrap">
+              <q-btn size="xs" padding="xs" :flat="true" :icon="matRemove" @click="decrease(item.key)" :disable="item.quantity === 1" />
+              <span class="q-mx-sm">{{ item.quantity }}</span>
+              <q-btn size="xs" padding="xs" :flat="true" :icon="matAdd" @click="increase(item.id)" />
+              </div>
+              <q-btn :outline="true" size="xs" padding="xs" :icon="matClose" @click="remove(item.key, item.remote_key)" class="q-ml-sm" />
+            </div>
         </div>
 
         </div>
@@ -204,15 +219,34 @@
             />
           </router-link>
         </div>
-        <div class="cart-details sticky">
+        <div class="cart-details sticky" v-if="cart.hasItems.value">
+          <div class="cart-totals">
+            <div class="flex justify-between"><span>Subtotal:</span> <span> {{formatCurrency(
+    cart.state.cart_array?.totals?.total_price ? cart.state.cart_array.totals.total_price : cart.state?.totals?.total_price,
+    {
+      minorUnit: cart.state?.totals?.currency_minor_unit ?? 2,
+      decimalSeparator: cart.state?.totals?.currency_decimal_separator ?? '.',
+      prefix: cart.state?.totals?.currency_prefix ?? '₪',
+      suffix: cart.state?.totals?.currency_suffix ?? ''
+    }
+  )}}</span></div>
+          </div>
+          <div class="buttons-wrap">
         <router-link to="/checkout/">
          <q-btn
           color="secondary"
           label="Checkout"
         />
         </router-link>
+        <router-link to="/cart/">
+         <q-btn
+             :outline="true"
+          color="transparent"
+          label="View Cart"
+        />
+        </router-link>
           </div>
-
+          </div>
       </q-scroll-area>
        </q-no-ssr>
     </q-drawer>
@@ -295,6 +329,22 @@ import { matShoppingCart,
   matSignalWifiOff,
   matError } from '@quasar/extras/material-icons'
 
+
+function formatCurrency(amountStr, {
+  minorUnit = 2,
+  decimalSeparator = '.',
+  prefix = '$',
+  suffix = ''
+} = {}) {
+  const amount = parseInt(amountStr, 10);
+  if (isNaN(amount)) return `${prefix}0${decimalSeparator}${'0'.repeat(minorUnit)}${suffix}`;
+  const factor = Math.pow(10, minorUnit);
+  const number = amount / factor;
+  return `${number.toLocaleString(undefined, {
+    minimumFractionDigits: minorUnit,
+    maximumFractionDigits: minorUnit
+  })}${suffix}${prefix}`;
+}
 async function hideSplash() {
   if (!Platform.is.capacitor) return
   try {
@@ -322,6 +372,7 @@ const mobileMenuDrawer = ref(false)
 
 const wishlistDrawerOpen = ref(false)
 const cartDrawer = ref(false)
+const drawerWidth = computed(() => Math.min(400, $q.screen.width * 0.9))
 
 let startX = 0
 let isDragging = false
