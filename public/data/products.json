@@ -97,9 +97,9 @@
         "description": "<p>HELLO</p>",
         "on_sale": true,
         "prices": {
-            "price": "18900",
+            "price": "18800",
             "regular_price": "20000",
-            "sale_price": "18900",
+            "sale_price": "18800",
             "price_range": null,
             "currency_code": "ILS",
             "currency_symbol": "\u20aa",
@@ -109,7 +109,7 @@
             "currency_prefix": "",
             "currency_suffix": "\u20aa"
         },
-        "price_html": "<del aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">200.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></del> <span class=\"screen-reader-text\">Original price was: 200.00&#8362;.</span><ins aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">189.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></ins><span class=\"screen-reader-text\">Current price is: 189.00&#8362;.</span>",
+        "price_html": "<del aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">200.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></del> <span class=\"screen-reader-text\">Original price was: 200.00&#8362;.</span><ins aria-hidden=\"true\"><span class=\"woocommerce-Price-amount amount\">188.00<span class=\"woocommerce-Price-currencySymbol\">&#8362;</span></span></ins><span class=\"screen-reader-text\">Current price is: 188.00&#8362;.</span>",
         "average_rating": "0",
         "review_count": 0,
         "images": [
