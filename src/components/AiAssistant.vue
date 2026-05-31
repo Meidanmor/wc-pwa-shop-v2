@@ -3,7 +3,8 @@
     <!-- Floating Action Button -->
 <q-btn
   fab
-  class="fixed-bottom-left q-mb-md q-ml-md z-max"
+  class="fixed-bottom-left q-mb-md q-ml-md"
+  style="z-index: 2999"
   color="secondary"
   :aria-label="visible ? 'Close chat' : 'Open chat'"
   @click="visible = !visible"

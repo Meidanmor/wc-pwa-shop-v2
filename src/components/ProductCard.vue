@@ -4,6 +4,31 @@
               <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-if="wishlist.state.items && Object.values(wishlist.state.items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
               <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
           </div>
+      <div
+    v-if="!product.is_in_stock"
+    class="absolute q-ma-sm"
+    style="z-index: 3; top: 25px; left: 20px;"
+  >
+    <q-badge
+      color="grey-8"
+      label="Sold out"
+      class="text-caption text-black text-weight-medium q-px-sm q-py-xs"
+    />
+  </div>
+          <div
+    v-if="product.is_in_stock && product.on_sale"
+    class="absolute q-ma-sm"
+    style="z-index: 3; top: 25px; left: 20px;"
+  >
+    <q-badge
+      color="grey-8"
+      label="Sale!"
+      class="text-caption text-black text-weight-medium q-px-sm q-py-xs"
+    />
+  </div>
+
+
+
           <q-card class="my-card full-height">
             <img
             :img-src="product.images[0]?.src"
@@ -13,7 +38,7 @@
             :alt="product.name"
             :loading="priority ? 'eager' : 'lazy'"
             :fetchpriority="priority ? 'high' : 'auto'"
-            height="250px"
+            height="200px"
             width="auto"
             class="rounded-borders product-img"
             />
@@ -23,8 +48,8 @@
               <div class="text-subtitle2" v-html="product.price_html" />
               </div>
               <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
-              <q-btn v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(product)" />
-              <q-btn v-else-if="product.is_in_stock && product.type === 'variable'" label="Choose options" color="secondary" />
+              <q-btn padding="sm" style="line-height: 1" v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(product)" />
+              <q-btn padding="sm" style="line-height: 1" v-else-if="product.is_in_stock && product.type === 'variable'" label="Choose options" color="secondary" />
               <div v-else>Out of stock</div>
               </div>
           </q-card>

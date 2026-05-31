@@ -135,12 +135,12 @@
         </div>
         <q-banner
           v-if="supported && permission !== 'granted' && permission !== 'denied'"
-          class="bg-primary text-white q-ma-md rounded-borders shadow-2"
+          class="bg-secondary text-white q-ma-md rounded-borders shadow-2"
           inline-actions
       >
         <div class="text-subtitle1">Enable push notifications?</div>
         <template v-slot:action>
-          <q-btn dense color="white" text-color="secondary" label="Enable" @click="handleSubscribe" />
+          <q-btn style="line-height: 1;" outline padding="sm" color="secondary" text-color="white" label="Enable" @click="handleSubscribe" />
         </template>
       </q-banner>
       </q-scroll-area>
@@ -428,7 +428,7 @@ async function handleSubscribe() {
       // request permission via the boot helper (user gesture)
       const result = await initNativePush()
       permission.value = normalizePermission(result)
-      alert('Permission status: ' + result)
+      //alert('Permission status: ' + result)
     } catch (e) {
       console.error('Native permission error', e)
     }
@@ -437,6 +437,17 @@ async function handleSubscribe() {
     permission.value = Notification.permission
   }
 }
+// Utility: detect incognito (best-effort, not 100% but covers Chrome/Firefox/Safari)
+async function isIncognito() {
+  try {
+    if (!('storage' in navigator && 'persist' in navigator.storage)) return false
+    const persisted = await navigator.storage.persist()
+    return !persisted
+  } catch {
+    return false
+  }
+}
+
 
 const storeReady = ref(process.env.SERVER) // Immediate sync
 const uiHydrated = ref(false)              // Deferred functional UI
@@ -519,7 +530,7 @@ onMounted(async () => {
 
 
     try {
-      const { hydrate } = await import('../utils/lazy-quasar.js')
+      const {hydrate} = await import('../utils/lazy-quasar.js')
       await hydrate()
 
       requestAnimationFrame(() => {
@@ -531,24 +542,38 @@ onMounted(async () => {
         initLoadingBar(router)
         initAuthPopup(router)
 
-        if (typeof window !== 'undefined' || Platform.is.capacitor) {
-          initPush({ router })
+        /*if (typeof window !== 'undefined' || Platform.is.capacitor) {
+          initPush({router})
           checkNativePermission().then(initialPermissions => {
             permission.value = normalizePermission(initialPermissions)
           })
-        }
+        }*/
+
+        initPush({router})
 
         if (Platform.is.capacitor) {
           supported.value = true
+          // keep only the native check, remove the web Notification.permission line below
+          checkNativePermission().then(initialPermissions => {
+            permission.value = normalizePermission(initialPermissions)
+          })
         } else if ('Notification' in window) {
-          supported.value = true
-          permission.value = normalizePermission(Notification.permission)
-        }
+          const perm = normalizePermission(Notification.permission)
+          permission.value = perm
 
-        window.addEventListener('touchstart', handleTouchStart, { passive: true })
-        window.addEventListener('touchend', handleTouchEnd, { passive: true })
-        window.addEventListener('mousedown', handleMouseDown, { passive: true })
-        window.addEventListener('mouseup', handleMouseUp, { passive: true })
+          // If already granted, no need to show the banner or check incognito
+          if (perm !== 'granted') {
+            isIncognito().then(incognito => {
+              if (!incognito) {
+                supported.value = true
+              }
+            })
+          }
+        }
+        window.addEventListener('touchstart', handleTouchStart, {passive: true})
+        window.addEventListener('touchend', handleTouchEnd, {passive: true})
+        window.addEventListener('mousedown', handleMouseDown, {passive: true})
+        window.addEventListener('mouseup', handleMouseUp, {passive: true})
       })
 
     } catch (e) {

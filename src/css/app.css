@@ -485,11 +485,14 @@ footer .footer-bottom {
     align-items: flex-start;
     flex-wrap: nowrap;
     column-gap: 10px;
+    justify-content: space-between;
 }
 .cart-drawer .row.items-center .row.items-center {
     justify-content: flex-end;
     flex-wrap: wrap;
     row-gap: 5px;
+    flex-direction: column;
+    align-items: flex-end;
 }
 .q-drawer .cart-drawer {
    padding: 0 10px;
