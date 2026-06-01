@@ -415,7 +415,7 @@ function getSortParams(sort) {
   }
 }
 
-const isFetching = ref(false)
+//const isFetching = ref(false)
 const pendingPriceRange = ref(null)
 let requestId = 0
 watch(
@@ -424,75 +424,73 @@ watch(
     search: search.value,
     page: currentPage.value,
     sort: sortBy.value,
-    priceTrigger: priceChanged.value // ✅ only trigger when user releases slider
+    priceTrigger: priceChanged.value
   }),
   async (filters, prev) => {
     if (
-        !isReady.value ||
-        priceRange.value.min === null ||
-        priceRange.value.max === null
+      !isReady.value ||
+      priceRange.value.min === null ||
+      priceRange.value.max === null
     ) return
-    if (isFetching.value) return
 
     const currentRequest = ++requestId
 
     const categoryChanged =
-        prev &&
-        JSON.stringify([...filters.category].sort()) !==
-        JSON.stringify([...prev.category].sort())
+      prev &&
+      JSON.stringify([...filters.category].sort()) !==
+      JSON.stringify([...prev.category].sort())
+
+    const shouldResetPage =
+      prev &&
+      (filters.search !== prev.search ||
+        filters.priceTrigger !== prev.priceTrigger ||
+        categoryChanged)
 
     if (categoryChanged) {
       productsStore.productsLoading.value = true
-
       await fetchPriceMeta(filters.category)
-
       priceMin.value = pendingPriceRange.value.min
       priceMax.value = pendingPriceRange.value.max
-      priceRange.value = {
-        min: pendingPriceRange.value.min,
-        max: pendingPriceRange.value.max
-      }
+      priceRange.value = { ...pendingPriceRange.value }
     }
 
-    if (
-        prev &&
-        (filters.search !== prev.search ||
-            filters.priceTrigger !== prev.priceTrigger)
-    ) {
-      if (currentPage.value !== 1) {
-        currentPage.value = 1
-        return
-      }
-    }
-
-    isFetching.value = true
     if (currentRequest !== requestId) return
-    const source = priceRange.value
 
-    const min = Math.floor(source.min * 100)
-    const max = Math.ceil(source.max * 100)
-    const sortParams = getSortParams(filters.sort)
-    console.log(sortParams)
-    await productsStore.preFetchProducts({
-      api: true,
-      page: filters.page,
-      per_page: perPage,
-      min_price: min,
-      max_price: max,
-      category: filters.category.length
+    if (shouldResetPage && currentPage.value !== 1) {
+      currentPage.value = 1
+      return
+    }
+
+    try {
+      if (currentRequest !== requestId) return
+
+      const min = Math.floor(priceRange.value.min * 100)
+      const max = Math.ceil(priceRange.value.max * 100)
+      const sortParams = getSortParams(filters.sort)
+
+      await productsStore.preFetchProducts({
+        api: true,
+        page: currentPage.value,
+        per_page: perPage,
+        min_price: min,
+        max_price: max,
+        category: filters.category.length
           ? filters.category.join(',')
           : null,
-      search: filters.search,
-      ...sortParams
-    })
+        search: filters.search,
+        ...sortParams
+      })
 
-    // 4. NOW update UI together 💥
-    if (categoryChanged) {
-      priceMin.value = pendingPriceRange.value.min
-      priceMax.value = pendingPriceRange.value.max
-      priceRange.value = pendingPriceRange.value
+      if (currentRequest !== requestId) return
+
+      if (categoryChanged) {
+        priceMin.value = pendingPriceRange.value.min
+        priceMax.value = pendingPriceRange.value.max
+        priceRange.value = { ...pendingPriceRange.value }
+      }
+    } finally {
+      // nothing needed here anymore
     }
-    isFetching.value = false
   }
 )
 // Lifecycle

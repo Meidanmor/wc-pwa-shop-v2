@@ -728,7 +728,29 @@ onMounted(async () => {
   position: absolute;
   height: 100%;
   width: 100%;
-  background: red;
+  background: #00000050;
   z-index: 999;
+}
+.blockUi:before {
+    content: '';
+    width: 30px;
+    height: 30px;
+    border: 5px solid #000;
+    background: transparent;
+    border-radius: 50%;
+    display: block;
+    border-top-color: #00000025;
+    position: sticky;
+    top: 100px;
+    margin: 100px auto 0;
+    animation: rotate 1s linear infinite;
+}
+@keyframes rotate {
+  from{
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

@@ -61,11 +61,8 @@ import { matFavorite, matFavoriteBorder } from '@quasar/extras/material-icons'
 import cart from 'src/stores/cart'
 import wishlist from 'src/stores/wishlist'
 import { useQuasar } from 'quasar'
-import { defineAsyncComponent } from 'vue'
 
 const $q = useQuasar()
-
-const QCard = defineAsyncComponent(() => import('quasar').then(m => m.QCard))
 
 defineProps({
   product: {

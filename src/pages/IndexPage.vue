@@ -119,7 +119,7 @@
       :navigation="showCarouselControls"
       swipeable
       :arrows="false"
-      height="100%"
+        height="auto"
       control-color="primary"
       class="rounded-borders"
         tabindex="0"
