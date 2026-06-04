@@ -29,7 +29,6 @@ safelist: {
         /q-app/, /q-layout/, /q-page/, /q-header/, /q-footer/,
         /q-body--/,        // Vital for drawer-open overflow handling
         /q-layout--/,      // Vital for header/drawer positioning
-
         // --- Drawer Fixes ---
         /q-drawer/,        // Re-added: Covers q-drawer, q-drawer--left, etc.
         'q-page-container', // Ensures page content shifts correctly
@@ -40,7 +39,15 @@ safelist: {
         'absolute-full',
         'no-pointer-events',
         'overflow-hidden',
-
+        'bg-black',
+        'q-slider',
+'q-range',
+'q-range__track',
+'q-range__track-container',
+'q-range__thumb',
+'q-range__pin',
+'q-range__text',
+'q-range__marker',
         // --- Positioning & Stacking ---
         'fixed-top', 'fixed-bottom', 'absolute-top', 'sticky', 'fixed', 'absolute',
         'z-top', 'z-max',
@@ -103,9 +110,9 @@ safelist: {
         'q-transition--slide-up',
     ],
     deep: [
-        /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /q-carousel/, /q-spinner/, /q-menu/, /q-select/, /q-img/, /q-field/, /q-input/, /q-textarea/, /q-option-group/, /q-radio/, /q-checkbox/
+        /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /^q-carousel/, /q-spinner/, /q-menu/, /q-select/, /q-img/, /q-field/, /q-input/, /q-textarea/, /q-option-group/, /q-radio/, /q-checkbox/, /^q-range/, /^q-slider/
     ],
-    greedy: [/q-transition/, /rotate/, /^q-radio/]
+    greedy: [/q-transition/, /rotate/, /^q-radio/, /^q-range/]
 },
       defaultExtractor: content => content.match(/[\w-/:]+(?<!:)/g) || []
     })

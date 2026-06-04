@@ -323,8 +323,16 @@ i.q-icon.on-left.notranslate.material-icons {
 .q-slider__thumb.q-slider__thumb--h.q-slider__thumb--h-ltr.absolute.text-primary {
     transform: translate(-7px, -7px);
 }
-.q-card.q-pa-md.q-mb-md.price-range-wrap {
-    padding-bottom: 30px;
+.q-card.filters-inner-wrap {
+    padding: 20px;
+}
+.filters-inner-wrap .q-slider__pin--h-standard {
+    bottom: -200%;
+}
+.filters-inner-wrap .q-slider__pin--h-standard:before {
+    bottom: 160%;
+    border-bottom: 6px solid currentColor;
+    border-top: none;
 }
 .q-card {
     box-shadow: none;

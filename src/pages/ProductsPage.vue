@@ -21,12 +21,12 @@
             <q-input filled v-model="search" label="Search products..." debounce="300" />
         </div>
 
-        <div class="col-xs-12 col-md-6"  v-if="!isHydrated && !categoryOptions.length">
+        <div class="filters-inner-wrap col-xs-12 col-md-6"  v-if="!isHydrated && !categoryOptions.length">
           <q-skeleton type="rect" class="q-mb-md"/>
         </div>
 
         <div class="col-xs-12 col-md-6" v-else>
-          <q-card class="q-pa-md q-mb-md">
+          <q-card class="filters-inner-wrap q-pa-md q-mb-md">
             <div class="text-subtitle1 q-mb-sm">
               Filter by Category
             </div>
@@ -39,12 +39,12 @@
           </q-card>
         </div>
 
-      <div class="q-pa-md q-mb-md" v-if="!priceMin">
+      <div class="filters-inner-wrap q-pa-md q-mb-md" v-if="!priceMin">
         <q-skeleton type="rect" class="q-mb-md"/>
       </div>
 
         <q-card
-            class="price-range-wrap q-pa-md q-mb-md"
+            class="filters-inner-wrap price-range-wrap q-pa-md q-mb-md"
             v-else
         >
           <div class="text-subtitle1 q-mb-sm">Filter by Price</div>
