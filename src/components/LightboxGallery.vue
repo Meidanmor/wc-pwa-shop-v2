@@ -5,6 +5,8 @@
     transition-show="fade"
     transition-hide="fade"
     :no-backdrop-dismiss="zoom.scale > 1"
+    @touchstart.stop
+    @mousedown.stop
   >
     <div
       class="lightbox-root"
@@ -17,7 +19,8 @@
         <q-btn
           round flat
           :icon="matClose"
-          color="white"
+          color="transparent"
+          text-color="white"
           size="md"
           class="lightbox-close"
           @click="close"

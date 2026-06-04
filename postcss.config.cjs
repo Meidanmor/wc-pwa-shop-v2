@@ -110,9 +110,9 @@ safelist: {
         'q-transition--slide-up',
     ],
     deep: [
-        /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /^q-carousel/, /q-spinner/, /q-menu/, /q-select/, /q-img/, /q-field/, /q-input/, /q-textarea/, /q-option-group/, /q-radio/, /q-checkbox/, /^q-range/, /^q-slider/
+         /q-btn/, /q-icon/, /q-ripple/, /q-scrollarea/, /q-layout__shadow/, /q-drawer/, /q-list/, /^q-carousel/, /q-spinner/, /q-menu/, /q-select/, /q-img/, /q-field/, /q-input/, /q-textarea/, /q-option-group/, /q-radio/, /q-checkbox/, /^q-range/, /^q-slider/
     ],
-    greedy: [/q-transition/, /rotate/, /^q-radio/, /^q-range/]
+    greedy: [ /q-transition/, /rotate/, /^q-radio/, /^q-range/]
 },
       defaultExtractor: content => content.match(/[\w-/:]+(?<!:)/g) || []
     })

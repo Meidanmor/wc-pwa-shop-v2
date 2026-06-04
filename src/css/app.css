@@ -341,7 +341,6 @@ i.q-icon.on-left.notranslate.material-icons {
     background-color: transparent;
     display: flex;
     flex-direction: column;
-    padding: 0;
 }
 .q-card .flex.q-pa-md {
     flex: 1;

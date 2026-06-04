@@ -82,7 +82,7 @@
         <div v-else>
           <q-img
             :img-src="product.images[0]?.src"
-            :src="product.images[0]?.src"
+            :src="product.images[0]?.src ? product.images[0].src : '/naturaBloom-circle.svg'"
             :srcset="product.images[0]?.srcset"
             :sizes="product.images[0]?.sizes"
             spinner-color="secondary"
@@ -418,7 +418,7 @@ const lightboxRef = ref(null)
 
 // replace your openLightbox function with:
 function openLightbox(index) {
-  lightboxRef.value.open(product.value.images, index)
+  lightboxRef.value.open(product.value?.images.length ? product.value?.images :  [{ src: '/naturaBloom-circle.svg' }], index)
 }
 
 const openDrawer = ref(true);
