@@ -30,7 +30,8 @@
               :srcset="img.srcset"
               :sizes="img.sizes"
               @mousedown="onImageMouseDown"
-              @click="onImageClick(index)"
+              @mousemove="onImageMouseMove"
+              @click="onImageClick(0)"
               style="cursor: zoom-in"
             />
               <!-- Keep the look: bind btnProps, add aria-label, keep visual style -->
@@ -216,92 +217,6 @@
     </div>
 
     <!-- Lightbox -->
-<q-dialog v-model="lightbox.open" no-backdrop-dismiss>
-  <q-card
-    class="bg-black text-white"
-    style="max-width: 100vw; max-height: 100vh; overflow: hidden"
-  >
-    <div
-      class="q-pa-md flex flex-center"
-      ref="zoomContainer"
-      @touchstart="startTouch"
-      @touchmove="moveTouch"
-      @touchend="endTouch"
-      @wheel="wheelZoom"
-      @mousedown="startDrag"
-      @mousemove="dragging"
-      @mouseup="stopDrag"
-      @mouseleave="stopDrag"
-      style="overflow: hidden; position: relative; min-width: 80vw; min-height: 70vh"
-    >
-      <img
-        :src="product.images[lightbox.index]?.src"
-        :style="zoomStyle"
-        ref="zoomImage"
-        draggable="false"
-        @click.stop
-      />
-
-      <!-- Close -->
-      <q-btn
-        round dense
-        :icon="matClose"
-        color="white"
-        text-color="black"
-        class="absolute-top-right q-ma-sm z-top"
-        @click="lightbox.open = false"
-      />
-
-      <!-- Left arrow -->
-      <q-btn
-        v-if="product.images.length > 1"
-        round dense
-        :icon="matChevronLeft"
-        color="white"
-        text-color="black"
-        class="absolute-left q-ma-sm z-top"
-        style="top: 50%; transform: translateY(-50%)"
-        @click.stop="lightboxNav(-1)"
-      />
-
-      <!-- Right arrow -->
-      <q-btn
-        v-if="product.images.length > 1"
-        round dense
-        :icon="matChevronRight"
-        color="white"
-        text-color="black"
-        class="absolute-right q-ma-sm z-top"
-        style="top: 50%; transform: translateY(-50%)"
-        @click.stop="lightboxNav(1)"
-      />
-    </div>
-
-    <!-- Thumbnail strip -->
-    <div
-      v-if="product.images.length > 1"
-      class="row justify-center q-pa-sm bg-black"
-      style="gap: 8px"
-    >
-      <img
-        v-for="(img, index) in product.images"
-        :key="index"
-        :src="img.thumbnail || img.src"
-        @click.stop="lightboxGoTo(index)"
-        :style="{
-          width: '60px',
-          height: '60px',
-          objectFit: 'cover',
-          cursor: 'pointer',
-          border: lightbox.index === index ? '2px solid white' : '2px solid transparent',
-          opacity: lightbox.index === index ? '1' : '0.5',
-          borderRadius: '4px',
-          transition: 'all 0.2s ease'
-        }"
-      />
-    </div>
-  </q-card>
-</q-dialog>
     <RelatedProductsSlider
       :productId="product.id"
       :categoryId="product.categories[0]?.id"
@@ -312,6 +227,7 @@
   <div v-else-if="product === null" class="q-pa-md flex items-center justify-center">
     <q-spinner color="secondary" size="6em" />
   </div>
+  <LightboxGallery ref="lightboxRef" />
 </template>
 
 <script setup>
@@ -328,7 +244,6 @@ import {
   matFavoriteBorder,
   matFavorite,
   matAdd,
-  matClose,
   matRemove,
   matLens,
   matArrowDropDown,
@@ -336,6 +251,7 @@ import {
   matChevronRight,
   matCancel
 } from '@quasar/extras/material-icons'
+import LightboxGallery from 'src/components/LightboxGallery.vue'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -497,73 +413,12 @@ const availableAttributes = computed(() => {
   })
 })
 
-const lightbox = ref({ open: false, index: 0 })
 
-const zoom = ref({
-  scale: 1,
-  x: 0,
-  y: 0,
-  dragging: false,
-  startX: 0,
-  startY: 0,
-  lastX: 0,
-  lastY: 0
-})
+const lightboxRef = ref(null)
 
-const zoomStyle = computed(() => ({
-  transform: `scale(${zoom.value.scale}) translate(${zoom.value.x}px, ${zoom.value.y}px)`,
-  transition: zoom.value.dragging ? 'none' : 'transform 0.2s ease',
-  maxWidth: '100%',
-  maxHeight: '100%',
-  touchAction: 'none',
-  userSelect: 'none'
-}))
-
+// replace your openLightbox function with:
 function openLightbox(index) {
-  lightbox.value.index = index
-  lightbox.value.open = true
-  zoom.value = {
-    scale: 1,
-    x: 0,
-    y: 0,
-    dragging: false,
-    startX: 0,
-    startY: 0,
-    lastX: 0,
-    lastY: 0
-  }
-}
-const isDragging = ref(false)
-const dragStartX = ref(0)
-const dragStartY = ref(0)
-
-const mouseDownTime = ref(0)
-
-function onImageMouseDown() {
-  mouseDownTime.value = Date.now()
-}
-
-function onImageMouseMove(e) {
-  const dx = Math.abs(e.clientX - dragStartX.value)
-  const dy = Math.abs(e.clientY - dragStartY.value)
-  if (dx > 5 || dy > 5) isDragging.value = true
-}
-
-function onImageClick(index) {
-  const elapsed = Date.now() - mouseDownTime.value
-  if (elapsed > 200) return // was a drag, not a click
-  openLightbox(index)
-}
-
-function lightboxNav(direction) {
-  // Reset zoom when navigating
-  zoom.value = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, lastX: 0, lastY: 0 }
-  lightbox.value.index = (lightbox.value.index + direction + product.value.images.length) % product.value.images.length
-}
-
-function lightboxGoTo(index) {
-  zoom.value = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, lastX: 0, lastY: 0 }
-  lightbox.value.index = index
+  lightboxRef.value.open(product.value.images, index)
 }
 
 const openDrawer = ref(true);
@@ -649,7 +504,6 @@ async function enhanceProduct() {
 
   quantity.value = 1
   activeSlide.value = 0
-  lightbox.value.open = false
 
   await resetVariations()
 console.log('route.query:', route.query)
@@ -871,65 +725,26 @@ watch(
   }
 )
 
-const wheelZoom = (e) => {
-  e.preventDefault()
-  const delta = e.deltaY < 0 ? 0.1 : -0.1
-  zoom.value.scale = Math.min(Math.max(1, zoom.value.scale + delta), 4)
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartY = ref(0)
+
+const mouseDownTime = ref(0)
+
+function onImageMouseDown() {
+  mouseDownTime.value = Date.now()
 }
 
-const startDrag = (e) => {
-  zoom.value.dragging = true
-  zoom.value.startX = e.clientX
-  zoom.value.startY = e.clientY
+function onImageMouseMove(e) {
+  const dx = Math.abs(e.clientX - dragStartX.value)
+  const dy = Math.abs(e.clientY - dragStartY.value)
+  if (dx > 5 || dy > 5) isDragging.value = true
 }
 
-const dragging = (e) => {
-  if (!zoom.value.dragging || zoom.value.scale === 1) return
-  const dx = e.clientX - zoom.value.startX
-  const dy = e.clientY - zoom.value.startY
-  zoom.value.x = zoom.value.lastX + dx
-  zoom.value.y = zoom.value.lastY + dy
-}
-
-const stopDrag = () => {
-  zoom.value.dragging = false
-  zoom.value.lastX = zoom.value.x
-  zoom.value.lastY = zoom.value.y
-}
-
-let touchStart = { x: 0, y: 0, dist: 0 }
-
-const startTouch = (e) => {
-  if (e.touches.length === 2) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX
-    const dy = e.touches[0].clientY - e.touches[1].clientY
-    touchStart.dist = Math.sqrt(dx * dx + dy * dy)
-  } else {
-    touchStart.x = e.touches[0].clientX
-    touchStart.y = e.touches[0].clientY
-  }
-}
-
-const endTouch = (e) => {
-  if (zoom.value.scale > 1) return
-  if (e.changedTouches.length === 1) {
-    const dx = e.changedTouches[0].clientX - touchStart.x
-    const dy = e.changedTouches[0].clientY - touchStart.y
-    // Only swipe if horizontal movement is dominant and significant
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
-      lightboxNav(dx < 0 ? 1 : -1)
-    }
-  }
-}
-
-const moveTouch = (e) => {
-  if (e.touches.length === 2) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX
-    const dy = e.touches[0].clientY - e.touches[1].clientY
-    const dist = Math.sqrt(dx * dx + dy * dy)
-    const scaleChange = dist / touchStart.dist
-    zoom.value.scale = Math.min(Math.max(1, scaleChange), 4)
-  }
+function onImageClick(index) {
+  const elapsed = Date.now() - mouseDownTime.value
+  if (elapsed > 200) return // was a drag, not a click
+  openLightbox(index)
 }
 
 </script>

@@ -1,9 +1,19 @@
 let authExpiredTriggered = false
 let wasLoggedIn = false
 
+export function getWasLoggedIn() {
+  if (typeof window === 'undefined') return false // SSR safe
+  return localStorage.getItem('wasLoggedIn') === 'true'
+}
+
 export function setLoggedIn(value) {
-  wasLoggedIn = value
-  if (!value) authExpiredTriggered = false // reset on logout
+  if (typeof window === 'undefined') return
+  if (value) {
+    localStorage.setItem('wasLoggedIn', 'true')
+  } else {
+    localStorage.removeItem('wasLoggedIn')
+    authExpiredTriggered = false
+  }
 }
 
 export async function fetchWithToken(url, options = {}) {

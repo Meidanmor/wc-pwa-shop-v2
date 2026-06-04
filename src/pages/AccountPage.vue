@@ -73,7 +73,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { fetchWithToken, setLoggedIn } from 'src/composables/useApiFetch.js'
+import { fetchWithToken, setLoggedIn, getWasLoggedIn } from 'src/composables/useApiFetch.js'
 import LoginForm          from 'components/LoginForm.vue'
 import OrdersSection      from 'components/OrdersSection.vue'
 import AccountDetails     from 'components/AccountDetails.vue'
@@ -97,11 +97,16 @@ let sessionChecked = false;
 onMounted(async () => {
   if (sessionChecked) return
   sessionChecked = true
-  console.trace('AccountPage onMounted fired')
 
+  console.log(document.cookie)
+  if (!getWasLoggedIn()) {
+    sessionLoading.value = false  // show login form immediately
+    return
+  }
+
+  // cookie exists → verify session is still valid
   try {
     const res = await fetchWithToken(`${API}/wp-json/qwoo/v1/me`)
-
     if (res.ok) {
       const data = await res.json()
       userData.value   = data.user
@@ -109,8 +114,6 @@ onMounted(async () => {
       setLoggedIn(true)
       isLoggedIn.value = true
     }
-    // 401 means no active session — stay logged out, fetchWithToken
-    // handles the auth-expired event if needed
   } catch (err) {
     console.error('Session check failed:', err)
   } finally {

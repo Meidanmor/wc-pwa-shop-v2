@@ -193,10 +193,6 @@ section.related-products {
 .related-products .related-product-wrapper > div .q-card{
     transition: 0.3s ease;
 }
-.related-products .related-product-wrapper > div .q-card {
-  padding-left: 10px;
-  padding-right: 10px;
-}
 
 .related-products .related-product-wrapper > div:hover {
   transform: translateY(-10px);

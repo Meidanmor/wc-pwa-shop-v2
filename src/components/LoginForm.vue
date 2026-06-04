@@ -102,11 +102,7 @@ async function login() {
         username: username.value,
         password: password.value,
       }),
-    }).then(
-        apiFetch('qwoo/v1/debug').then(r => r.json()).then(console.log)
-
-    )
-
+    })
     const data = await res.json()
 
     // 3. Handle login errors returned from the endpoint
