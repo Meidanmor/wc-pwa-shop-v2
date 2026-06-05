@@ -371,7 +371,7 @@ div#q-portal--dialog--1 {
     pointer-events: auto;
 }
 .q-dialog button.q-btn {
-  background: #ffffff;
+  /*background: #ffffff;*/
   pointer-events: auto;
 }
 .q-select__dialog {

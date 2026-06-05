@@ -122,6 +122,7 @@
 import {ref, onMounted} from 'vue'
 import {useRoute} from 'vue-router'
 import {fetchWithToken} from 'src/composables/useApiFetch.js';
+import {formatCurrency} from 'src/utils/formatters.js'
 
 const route = useRoute()
 const order = ref(null)
@@ -132,26 +133,6 @@ const columns = [
   {name: 'quantity', label: 'Qty', align: 'center', field: 'quantity'},
   {name: 'total', label: 'Total', align: 'right', field: 'total'}
 ]
-
-function formatCurrency(amountStr, {
-  minorUnit = 2,
-  decimalSeparator = '.',
-  prefix = '$',
-  suffix = ''
-} = {}) {
-  const amount = parseInt(amountStr, 10);
-
-  if (isNaN(amount)) return `${prefix}0${decimalSeparator}${'0'.repeat(minorUnit)}${suffix}`;
-
-  const factor = Math.pow(10, minorUnit);
-  const number = amount / factor;
-
-  return `${number.toLocaleString(undefined, {
-    minimumFractionDigits: minorUnit,
-    maximumFractionDigits: minorUnit
-  })}${suffix}${prefix}`;
-}
-
 
 onMounted(async () => {
   const orderID = route.query.orderId

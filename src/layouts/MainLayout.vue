@@ -175,7 +175,7 @@
         <div v-if="cart.hasItems.value">
         <div v-for="item in cart.state.items" :key="item.id" class="q-pa-sm row items-center" :class="[item.key.includes('offline') ? 'offline-item' : '']">
           <div class="q-ml-sm flex">
-          <img v-if="item.images" :src="cart.state.offline === true ? item?.images[0]?.src : item.images[0]?.thumbnail" style="width: 70px; height: 70px; object-fit: cover" />
+          <img width="70" height="70" v-if="item.images" :src="cart.state.offline === true ? item?.images[0]?.src || '/naturaBloom-circle.svg' : item.images[0]?.thumbnail || '/naturaBloom-circle.svg'" style="width: 70px; height: 70px; object-fit: cover" />
             <div class="product-meta">
             <div>{{ item.name }}</div>
            <div v-if="item.variation && item.variation.length > 0">
@@ -313,6 +313,7 @@ import AiAssistant from "src/components/AiAssistant.vue";
 import initPush, { subscribeToWebPush, initNativePush, checkNativePermission } from 'src/boot/push.js'
 import { initLoadingBar } from 'boot/loading-bar'
 import { initAuthPopup } from 'boot/auth-expired'
+import {formatCurrency} from 'src/utils/formatters.js'
 
 import { matShoppingCart,
   matFavoriteBorder,
@@ -330,21 +331,6 @@ import { matShoppingCart,
   matError } from '@quasar/extras/material-icons'
 
 
-function formatCurrency(amountStr, {
-  minorUnit = 2,
-  decimalSeparator = '.',
-  prefix = '$',
-  suffix = ''
-} = {}) {
-  const amount = parseInt(amountStr, 10);
-  if (isNaN(amount)) return `${prefix}0${decimalSeparator}${'0'.repeat(minorUnit)}${suffix}`;
-  const factor = Math.pow(10, minorUnit);
-  const number = amount / factor;
-  return `${number.toLocaleString(undefined, {
-    minimumFractionDigits: minorUnit,
-    maximumFractionDigits: minorUnit
-  })}${suffix}${prefix}`;
-}
 async function hideSplash() {
   if (!Platform.is.capacitor) return
   try {
@@ -530,8 +516,8 @@ onMounted(async () => {
 
 
     try {
-      const {hydrate} = await import('../utils/lazy-quasar.js')
-      await hydrate()
+      //const {hydrate} = await import('../utils/lazy-quasar.js')
+      //await hydrate()
 
       requestAnimationFrame(() => {
         uiHydrated.value = true

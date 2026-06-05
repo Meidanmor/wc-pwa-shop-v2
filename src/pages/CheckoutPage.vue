@@ -202,6 +202,7 @@ import { fetchWithToken } from 'src/composables/useApiFetch.js';
 import GoogleLoginButton from 'src/components/GoogleLoginButton.vue';
 import { loadPageConfig } from 'src/utils/config-loader'
 import { matError } from '@quasar/extras/material-icons'
+import {formatCurrency} from 'src/utils/formatters.js'
 
 defineOptions({
   async preFetch ({ ssrContext, currentRoute }) {
@@ -483,22 +484,6 @@ const handleInputBlur = (field) => {
   }
 }
 
-
-function formatCurrency(amountStr, {
-  minorUnit = 2,
-  decimalSeparator = '.',
-  prefix = '$',
-  suffix = ''
-} = {}) {
-  const amount = parseInt(amountStr, 10);
-  if (isNaN(amount)) return `${prefix}0${decimalSeparator}${'0'.repeat(minorUnit)}${suffix}`;
-  const factor = Math.pow(10, minorUnit);
-  const number = amount / factor;
-  return `${number.toLocaleString(undefined, {
-    minimumFractionDigits: minorUnit,
-    maximumFractionDigits: minorUnit
-  })}${suffix}${prefix}`;
-}
 const applyCoupon = (coupon) => cart.applyCoupon(coupon);
 const removeCoupon = (coupon) => cart.removeCoupon(coupon);
 // Fetch shipping methods

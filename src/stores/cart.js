@@ -446,7 +446,7 @@ function applyServerSnapshot(data) {
   state.error = null
 
   const serverMap = new Map(
-    (state.cart_array?.items || []).map(i => [itemSignature(i), i])
+      (state.cart_array?.items || []).map(i => [itemSignature(i), i])
   )
 
   // Only reconcile non-tombstone local items
@@ -454,28 +454,31 @@ function applyServerSnapshot(data) {
     if (li._removed) continue
     const match = serverMap.get(itemSignature(li))
     if (match) {
-      li._synced = true
+      li._syncStatus = 'synced'
       li.remote_key = match.key || li.remote_key
-      // Keep local prices fresh from server
       if (match.prices) li.prices = match.prices
     } else {
-      li._synced = false
+      // Only mark as rejected if it was previously synced (server knew about it)
+      // Items still pending their first sync are left alone
+      if (li._syncStatus === 'synced' || li.remote_key) {
+        li._syncStatus = 'rejected'
+      }
     }
   }
-
 
   // ✅ Remove local items that the server rejected (out of stock, deleted, etc.)
   // These are non-removed local items that attempted to sync but aren't on the server
   const rejectedItems = state.local_cart.items.filter(i =>
-    !i._removed && i._synced === false && state.cart_array !== null
+      !i._removed && i._syncStatus === 'rejected'
   )
+
 
   if (rejectedItems.length) {
     // Store them separately so we can notify the user
-    state.rejected_items = rejectedItems.map(i => ({ ...toRaw(i) }))
+    state.rejected_items = rejectedItems.map(i => ({...toRaw(i)}))
     // Remove them from local cart
     state.local_cart.items = state.local_cart.items.filter(i =>
-      i._removed || i._synced === true
+        i._removed || i._synced === true
     )
     persistLocalCart()
   } else {
