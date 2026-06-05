@@ -75,6 +75,9 @@ div.q-img__loading > svg{
   margin-bottom: 30px;
 }
 @media(max-width: 767px) {
+  body section.hero-section-sec {
+    padding-top: 0;
+  }
   .hero-content h1.text-h1 {
     font-size: 14vw;
   }
