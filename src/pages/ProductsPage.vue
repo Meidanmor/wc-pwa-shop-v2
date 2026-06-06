@@ -148,7 +148,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, useSSRContext } from 'vue'
+import { ref, computed, onMounted, watch, useSSRContext, nextTick} from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useFilterSync, parseQueryFilters } from 'src/composables/useFilterSync'
 import { useMeta, scroll } from 'quasar'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
@@ -156,6 +158,8 @@ import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutor
 import ProductCard from 'src/components/ProductCard.vue'
 
 const { setVerticalScrollPosition } = scroll
+const router = useRouter()
+const route  = useRoute()
 
 function scrollToTop() {
   setVerticalScrollPosition(window, 187, 300)
@@ -178,33 +182,106 @@ const sortOptions = [
   { label: 'Popularity', value: 'popularity' },
   { label: 'Rating', value: 'rating' }
 ]
+function getSortParams(sort) {
+  switch (sort) {
+    case 'price_asc':
+      return { orderby: 'price', order: 'asc' }
+
+    case 'price_desc':
+      return { orderby: 'price', order: 'desc' }
+
+    case 'date_desc':
+      return { orderby: 'date', order: 'desc' }
+
+    case 'title_asc':
+      return { orderby: 'title', order: 'asc' }
+
+    case 'title_desc':
+      return { orderby: 'title', order: 'desc' }
+
+    case 'popularity':
+      return { orderby: 'popularity', order: 'desc' }
+
+    case 'rating':
+      return { orderby: 'rating', order: 'desc' }
+
+    default:
+      return { orderby: 'menu_order', order: 'desc' }
+  }
+}
 // Fetch SEO data during SSR
 // 🟢 Run on SSR only
 // Inside your Page or Layout
 defineOptions({
-  async preFetch ({ ssrContext, currentRoute }) {
+  async preFetch({ssrContext, currentRoute}) {
+    if (process.env.NODE_ENV !== 'production') {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+    }
+    function getSortParams(sort) {
+      switch (sort) {
+        case 'price_asc':
+          return {orderby: 'price', order: 'asc'}
+
+        case 'price_desc':
+          return {orderby: 'price', order: 'desc'}
+
+        case 'date_desc':
+          return {orderby: 'date', order: 'desc'}
+
+        case 'title_asc':
+          return {orderby: 'title', order: 'asc'}
+
+        case 'title_desc':
+          return {orderby: 'title', order: 'desc'}
+
+        case 'popularity':
+          return {orderby: 'popularity', order: 'desc'}
+
+        case 'rating':
+          return {orderby: 'rating', order: 'desc'}
+
+        default:
+          return {orderby: 'menu_order', order: 'desc'}
+      }
+    }
+
     console.log('--- PreFetch Running for:', currentRoute.path)
     const seo = await fetchSeoForPath('shop')
 
-    // ✅ ALWAYS fetch SEO (lightweight)
+    // ✅ NEW: parse filters from URL
+    const urlFilters = parseQueryFilters(currentRoute.query)
+    const sortParams = getSortParams(urlFilters.sortBy || 'menu_order')
+const minPriceCents = urlFilters.priceRange?.min != null ? Math.floor(urlFilters.priceRange.min * 100) : undefined
+const maxPriceCents = urlFilters.priceRange?.max != null ? Math.ceil(urlFilters.priceRange.max * 100) : undefined
 
-    let result = []
-    let categories = []
-    let priceMeta = null
+    console.log('preFetch filters:', {
+  urlFilters,
+  sortParams,
+  minPriceCents,
+  maxPriceCents
+})
 
-    // 🟢 ONLY BLOCK SSR
-    result = await productsStore.preFetchProducts({
+    const result = await productsStore.preFetchProducts({
       api: true,
-      page: 1,
+      page: urlFilters.currentPage || 1,
       per_page: 6,
-      dryRun: true  // ✅ don't touch the store yet
+      dryRun: true,
+      search: urlFilters.search || undefined,
+      category: urlFilters.selectedCategory?.length ? urlFilters.selectedCategory.join(',') : undefined,
+      min_price: minPriceCents,
+      max_price: maxPriceCents,
+      ...sortParams
     })
 
-    categories = await productsStore.prefetchCategories()
+    const categories = await productsStore.prefetchCategories()
 
-    priceMeta = await productsStore.prefetchPriceMeta();
+    // ✅ NEW: pass active category so price bounds match the filtered view
+    const priceMeta = await productsStore.prefetchPriceMeta(
+        urlFilters.selectedCategory?.length ? urlFilters.selectedCategory : null
+    )
 
     if (ssrContext) {
+      ssrContext.urlFilters = urlFilters;
       ssrContext.productsData = result.products
       ssrContext.categoriesData = categories
       ssrContext.priceMetaData = priceMeta
@@ -213,12 +290,12 @@ defineOptions({
       ssrContext.seoData = seo
     } else {
       // Client-side navigation
-      window.__PREFETCH_PRODUCTS__ = result.products
-      window.__PREFETCH_TOTAL__ = result.total
-      window.__PREFETCH_PAGES__ = result.totalPages
+      window.__PRODUCTS_DATA__ = result.products
+      window.__PRODUCTS_TOTAL__ = result.total
+      window.__PAGES_TOTAL__ = result.totalPages
       window.__CATEGORIES_DATA__ = categories
       window.__PRICE_META__ = priceMeta
-      window.__SEO_DATA__  = seo
+      window.__SEO_DATA__ = seo
     }
     productsStore.products.value = result.products
     productsStore.totalProducts.value = result.total
@@ -238,6 +315,8 @@ const paginatedProducts = computed(() => {
 })
 
 const isReady = ref(false)
+const isInitialising = ref(true)
+
 // Price filter
 const priceMin = ref(null)
 const priceMax = ref(null)
@@ -250,13 +329,28 @@ if (process.env.SERVER) {
     priceMin.value = Number(ssrContext.priceMetaData.min_price) || 0
     priceMax.value = Number(ssrContext.priceMetaData.max_price) || 0
 
-    priceRange.value = {
-      min: priceMin.value,
-      max: priceMax.value
+    if(ssrContext?.urlFilters?.priceRange?.min || ssrContext.urlFilters.priceRange?.max) {
+      priceRange.value = {
+        min: ssrContext?.urlFilters?.priceRange?.min || priceMin.value,
+        max: ssrContext?.urlFilters?.priceRange?.max || priceMax.value
+      }
+    } else {
+      priceRange.value = {
+        min: priceMin.value,
+        max: priceMax.value
+      }
     }
   }
+  if(ssrContext?.urlFilters.sortBy){
+    sortBy.value = ssrContext.urlFilters.sortBy;
+  }
+  selectedCategory.value = ssrContext?.urlFilters?.selectedCategory || [];
 }
-
+const { initFromQuery, startWatching } = useFilterSync(
+  { search, selectedCategory, priceRange, priceMin, priceMax, sortBy, currentPage },
+  router,
+  route
+)
 if (process.env.CLIENT) {
   // --- SEO ---
   if (window.__SEO_DATA__) seoData.value = window.__SEO_DATA__
@@ -302,8 +396,8 @@ useMeta(() => {
     ]
   }
 })
-  const hasSSRProducts =
-    Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length
+const hasSSRProducts =
+  Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length
 
   // ✅ Check BOTH: data exists AND it belongs to the current category
   const isSSRMatch = hasSSRProducts
@@ -324,6 +418,9 @@ useMeta(() => {
 
     if (window.__PRODUCTS_TOTAL__) productsStore.totalProducts.value = window.__PRODUCTS_TOTAL__
     if (window.__PAGES_TOTAL__) productsStore.totalPages.value = window.__PAGES_TOTAL__
+
+    initFromQuery() // ✅ ADD THIS
+
   }
 
   // --- Client nav path: preFetch already loaded the correct category ---
@@ -333,8 +430,9 @@ useMeta(() => {
     if (window.__PRICE_META__) {
       priceMin.value = Number(window.__PRICE_META__.min_price)
       priceMax.value = Number(window.__PRICE_META__.max_price)
-      priceRange.value = { min: priceMin.value, max: priceMax.value }
+      priceRange.value = {min: priceMin.value, max: priceMax.value}
     }
+    initFromQuery()
 
 
   }
@@ -385,35 +483,6 @@ const isHydrated = ref(
     !!(window.__PRODUCTS_DATA__?.length)
   )
 )
-// Watch price range
-
-function getSortParams(sort) {
-  switch (sort) {
-    case 'price_asc':
-      return { orderby: 'price', order: 'asc' }
-
-    case 'price_desc':
-      return { orderby: 'price', order: 'desc' }
-
-    case 'date_desc':
-      return { orderby: 'date', order: 'desc' }
-
-    case 'title_asc':
-      return { orderby: 'title', order: 'asc' }
-
-    case 'title_desc':
-      return { orderby: 'title', order: 'desc' }
-
-    case 'popularity':
-      return { orderby: 'popularity', order: 'desc' }
-
-    case 'rating':
-      return { orderby: 'rating', order: 'desc' }
-
-    default:
-      return { orderby: 'menu_order', order: 'desc' }
-  }
-}
 
 //const isFetching = ref(false)
 const pendingPriceRange = ref(null)
@@ -428,6 +497,7 @@ watch(
   }),
   async (filters, prev) => {
     if (
+        isInitialising.value ||
       !isReady.value ||
       priceRange.value.min === null ||
       priceRange.value.max === null
@@ -493,20 +563,35 @@ watch(
     }
   }
 )
+
 // Lifecycle
 onMounted(async () => {
   isHydrated.value = true
 
-  if (window.__PREFETCH_PRODUCTS__) {
-    // ✅ Now safe to commit — old page is already gone
-    productsStore.products.value = window.__PREFETCH_PRODUCTS__
-    productsStore.totalProducts.value = window.__PREFETCH_TOTAL__
-    productsStore.totalPages.value = window.__PREFETCH_PAGES__
+  if (window.__PRODUCTS_DATA__) {
+    productsStore.products.value = window.__PRODUCTS_DATA__
+    productsStore.totalProducts.value = window.__PRODUCTS_TOTAL__
+    productsStore.totalPages.value = window.__PAGES_TOTAL__
     productsStore.initialized.value = true
     productsStore.productsLoading.value = false
+    window.__PRODUCTS_DATA__ = null
+    window.__PRODUCTS_TOTAL__ = null
+    window.__PAGES_TOTAL__ = null
+
+    // ✅ NEW: bounds may have just arrived via __PRICE_META__, re-apply URL filters
+    /*if (window.__PRICE_META__) {
+      priceMin.value = Number(window.__PRICE_META__.min_price)
+      priceMax.value = Number(window.__PRICE_META__.max_price)
+      priceRange.value = {min: priceMin.value, max: priceMax.value}
+    }
+
+    // ✅ Always null these out after reading
     window.__PREFETCH_PRODUCTS__ = null
     window.__PREFETCH_TOTAL__ = null
     window.__PREFETCH_PAGES__ = null
+
+    initFromQuery()*/ // ✅ NEW
+
   } else if (!productsStore.initialized.value) {
     // fallback if preFetch didn't run
     productsStore.productsLoading.value = true
@@ -522,6 +607,7 @@ onMounted(async () => {
     priceMin.value = pendingPriceRange.value.min
     priceMax.value = pendingPriceRange.value.max
     priceRange.value = {...pendingPriceRange.value}
+    initFromQuery() // ✅ NEW: bounds just loaded, now safe to read price from URL
   }
 
   if (!Array.isArray(productsStore.categories.value) || !productsStore.categories.value.length) {
@@ -531,6 +617,10 @@ onMounted(async () => {
   if (!isReady.value) {
     isReady.value = true  // only set if not already set
   }
+
+  startWatching();
+  await nextTick()
+  isInitialising.value = false  // ✅ now watcher is live
 
 })
 // Function to recalculate price limits based on a product list

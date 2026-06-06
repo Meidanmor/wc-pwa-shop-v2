@@ -10,46 +10,20 @@
       <h1 v-html="selectedCategoryOBJ?.name || 'Products'"></h1>
 
       <div class="archive-layout flex no-wrap">
-      <div class="filters-wrap flex" :class="{ 'shown': filtersOpen }" >
-        <q-btn
-            class="mobile-only"
-  :icon="matClose"
-  color="secondary"
-  @click="filtersOpen = false"
-/>
-      <!-- Search and Filter -->
-        <div class="col-xs-12 col-md-6">
+        <div class="filters-wrap flex" :class="{ 'shown': filtersOpen }">
+          <q-btn class="mobile-only" :icon="matClose" color="secondary" @click="filtersOpen = false" />
+
+          <div class="col-xs-12 col-md-6">
             <q-input filled v-model="search" label="Search products..." debounce="300" />
-        </div>
+          </div>
 
-        <div class="col-xs-12 col-md-6"  v-if="!isHydrated && !categoryOptions.length">
-          <q-skeleton type="rect" class="q-mb-md"/>
-        </div>
+          <div class="filters-inner-wrap q-pa-md q-mb-md" v-if="!priceMin">
+            <q-skeleton type="rect" class="q-mb-md" />
+          </div>
 
-        <div class="col-xs-12 col-md-6" v-else>
-          <q-card class="q-pa-md q-mb-md">
-            <div class="text-subtitle1 q-mb-sm">
-              Filter by Category
-            </div>
-            <q-option-group
-                v-model="selectedCategory"
-                :options="categoryOptions"
-                type="checkbox"
-                color="secondary"
-            />
-          </q-card>
-        </div>
-
-      <div class="q-pa-md q-mb-md" v-if="!priceMin">
-        <q-skeleton type="rect" class="q-mb-md"/>
-      </div>
-
-        <q-card
-            class="price-range-wrap q-pa-md q-mb-md"
-            v-else
-        >
-          <div class="text-subtitle1 q-mb-sm">Filter by Price</div>
-          <q-range
+          <q-card class="filters-inner-wrap price-range-wrap q-pa-md q-mb-md" v-else>
+            <div class="text-subtitle1 q-mb-sm">Filter by Price</div>
+            <q-range
               v-model="priceRange"
               :min="priceMin"
               :max="priceMax"
@@ -92,12 +66,8 @@
             />
           </div>
 
-      <div v-if="productsStore.productsLoading.value" class="products-inner row q-col-gutter-md">
-            <div
-              v-for="n in 6"
-              :key="'skeleton-' + n"
-              class="col-xs-12 col-sm-6 col-md-4"
-            >
+          <div v-if="productsStore.productsLoading.value" class="products-inner row q-col-gutter-md">
+            <div v-for="n in 6" :key="'skeleton-' + n" class="col-xs-12 col-sm-6 col-md-4">
               <q-card class="my-card full-height">
                 <q-skeleton height="250px" square />
                 <q-card-section>
@@ -112,7 +82,6 @@
             </div>
           </div>
 
-          <!-- Product grid -->
           <div v-else-if="paginatedProducts.length" class="products-inner row q-col-gutter-md">
             <div
               v-for="(product, index) in paginatedProducts"
@@ -123,12 +92,8 @@
             </div>
           </div>
 
-          <!-- Empty state -->
-          <div v-else class="text-center q-mt-lg">
-            No products found
-          </div>
+          <div v-else class="text-center q-mt-lg">No products found</div>
 
-          <!-- Pagination -->
           <div v-if="totalPages > 1" class="q-mt-lg flex flex-center pagination-btns">
             <q-pagination
               v-model="currentPage"
@@ -149,246 +114,50 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, useSSRContext } from 'vue'
+import { ref, computed, onMounted, watch, useSSRContext, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useFilterSync, parseQueryFilters } from 'src/composables/useFilterSync'
 import { useMeta, scroll } from 'quasar'
-import { useRoute } from 'vue-router'
 import { fetchSeoForPath } from 'src/composables/useSeo'
 import productsStore from 'src/stores/products'
 import { matKeyboardArrowLeft, matKeyboardArrowRight, matArrowDropDown, matAutorenew, matClose, matFilterList } from '@quasar/extras/material-icons'
 import ProductCard from 'src/components/ProductCard.vue'
 
 const { setVerticalScrollPosition } = scroll
-const route = useRoute()
+const router = useRouter()
+const route  = useRoute()
 
-// ─── Scroll helper ────────────────────────────────────────────────────────────
 function scrollToTop() {
   setVerticalScrollPosition(window, 187, 300)
 }
 
 // ─── Core state ───────────────────────────────────────────────────────────────
-const categorySlug       = ref(route.params.slug || null)
-const selectedCategoryOBJ = ref(null)          // ← category-page identifier
-const selectedCategory   = ref([])              // ← pre-seeded with current cat id
-const search             = ref('')
-const currentPage        = ref(1)
-const perPage            = 6
-const sortBy             = ref('menu_order')
-const filtersOpen        = ref(false)
-const isReady            = ref(false)
-const isFetching         = ref(false)
-const priceMin           = ref(null)
-const priceMax           = ref(null)
-const priceRange         = ref({ min: 0, max: 1000 })
-const priceChanged       = ref(0)
-const pendingPriceRange  = ref(null)
-const seoData            = ref({ title: 'Products', description: 'Products description' })
+const selectedCategoryOBJ = ref(null)
+const selectedCategory    = ref([])
+const search              = ref('')
+const currentPage         = ref(1)
+const perPage             = 6
+const sortBy              = ref('menu_order')
+const filtersOpen         = ref(false)
+const isReady             = ref(false)
+const isInitialising      = ref(true)   // ← guards watcher during setup
+const priceMin            = ref(null)
+const priceMax            = ref(null)
+const priceRange          = ref({ min: 0, max: 1000 })
+const priceChanged        = ref(0)
+const pendingPriceRange   = ref(null)
+const seoData             = ref({ title: 'Products', description: 'Products description' })
 
 const sortOptions = [
-  { label: 'Default',           value: 'menu_order' },
-  { label: 'Newest',            value: 'date_desc'  },
-  { label: 'Price: Low to High',value: 'price_asc'  },
-  { label: 'Price: High to Low',value: 'price_desc' },
-  { label: 'Name: A to Z',      value: 'title_asc'  },
-  { label: 'Name: Z to A',      value: 'title_desc' },
-  { label: 'Popularity',        value: 'popularity' },
-  { label: 'Rating',            value: 'rating'     },
+  { label: 'Default',            value: 'menu_order' },
+  { label: 'Newest',             value: 'date_desc'  },
+  { label: 'Price: Low to High', value: 'price_asc'  },
+  { label: 'Price: High to Low', value: 'price_desc' },
+  { label: 'Name: A to Z',       value: 'title_asc'  },
+  { label: 'Name: Z to A',       value: 'title_desc' },
+  { label: 'Popularity',         value: 'popularity' },
+  { label: 'Rating',             value: 'rating'     },
 ]
-
-// ─── preFetch (SSR + client-nav) ──────────────────────────────────────────────
-defineOptions({
-  async preFetch({ ssrContext, currentRoute }) {
-    console.log(currentRoute.path)
-    const seo        = await fetchSeoForPath(`product-category/${currentRoute.params.slug}`)
-    const categories = await productsStore.prefetchCategories()
-    const currentCat = categories.find(c => c.slug === currentRoute.params.slug) || null
-
-    const productsQuery = {
-      api:      true,
-      page:     1,
-      per_page: 6,
-      category: currentCat?.id ?? null,
-      dryRun:   true,
-    }
-
-    const [result, priceMeta] = await Promise.all([
-      productsStore.preFetchProducts(productsQuery),
-      productsStore.prefetchPriceMeta(currentCat?.id ?? null),  // ← uses store method, same as ProductsPage
-    ])
-
-    if (ssrContext) {
-      ssrContext.productsData         = result.products
-      ssrContext.categoriesData       = categories
-      ssrContext.selectedCategoryData = currentCat
-      ssrContext.ssrQuery             = productsQuery
-      ssrContext.priceMetaData        = priceMeta
-      ssrContext.productsTotal        = result.total
-      ssrContext.pagesTotal           = result.totalPages
-      ssrContext.seoData              = seo
-    } else {
-      // Client-side navigation
-      window.__PREFETCH_PRODUCTS__       = result.products
-      window.__PREFETCH_TOTAL__          = result.total
-      window.__PREFETCH_PAGES__          = result.totalPages
-      window.__CATEGORIES_DATA__         = categories
-      window.__PRICE_META__              = priceMeta
-      window.__SELECTED_CATEGORY_DATA__  = currentCat
-      window.__SEO_DATA__  = seo
-    }
-    productsStore.products.value = result.products
-    productsStore.totalProducts.value = result.total
-    productsStore.totalPages.value = result.totalPages
-    productsStore.productsLoading.value = false
-
-  }
-})
-
-// ─── SSR context hydration ────────────────────────────────────────────────────
-// Runs synchronously on the server so the initial render has category data
-if (process.env.SERVER) {
-  const ssr = useSSRContext()
-  if (ssr) {
-    productsStore.categories.value = ssr.categoriesData || []
-    selectedCategoryOBJ.value = ssr.selectedCategoryData || null
-    selectedCategory.value = ssr.selectedCategoryData ? [ssr.selectedCategoryData.id] : []
-
-    if (ssr?.priceMetaData) {
-      priceMin.value = Number(ssr.priceMetaData.min_price) || 0
-      priceMax.value = Number(ssr.priceMetaData.max_price) || 0
-
-      priceRange.value = {
-        min: priceMin.value,
-        max: priceMax.value
-      }
-    }
-  }
-}
-
-// ─── Client hydration ─────────────────────────────────────────────────────────
-const isHydrated = ref(
-  process.env.CLIENT && (
-    productsStore.initialized.value === true ||
-    !!(window.__PRODUCTS_DATA__?.length)
-  )
-)
-
-if (process.env.CLIENT) {
-  // SEO
-  if (window.__SEO_DATA__) seoData.value = window.__SEO_DATA__
-useMeta(() => {
-  const seo = seoData.value
-
-  return {
-    title: seo?.title || 'NaturaBloom',
-
-    meta: {
-      description: {
-        name: 'description',
-        content: seo?.description || "Let's Bloom Together"
-      },
-
-      robots: {
-        name: 'robots',
-        content: seo?.robots || 'index, follow'
-      },
-
-      'og:title': {
-        property: 'og:title',
-        content: seo?.title || 'NaturaBloom'
-      },
-
-      'og:description': {
-        property: 'og:description',
-        content: seo?.description || "Let's Bloom Together"
-      },
-
-      'og:image': {
-        property: 'og:image',
-        content: seo?.og_image || ''
-      }
-    },
-
-    link: [
-      {
-        rel: 'canonical',
-        href: seo?.canonical || window?.location?.href || ''
-      }
-    ]
-  }
-})
-
-  const hasSSRProducts = Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length
-  const ssrQuery       = window.__SSR_QUERY__ || null
-  const currentCat     = (window.__CATEGORIES_DATA__ || []).find(c => c.slug === route.params.slug) || null
-
-  // Check that the SSR data was fetched for this specific category
-  const isSameCategory = (ssrQuery?.category || null) === (currentCat?.id || null)
-  const isSSRMatch     = hasSSRProducts && isSameCategory
-
-  if (isSSRMatch) {
-    // ── SSR hydration path ────────────────────────────────────────────────────
-    productsStore.categories.value = window.__CATEGORIES_DATA__ || []
-
-    selectedCategoryOBJ.value = window.__SELECTED_CATEGORY_DATA__?.slug === route.params.slug
-      ? window.__SELECTED_CATEGORY_DATA__
-      : currentCat
-    selectedCategory.value = [selectedCategoryOBJ.value?.id]
-
-    productsStore.products.value      = window.__PRODUCTS_DATA__
-    productsStore.initialized.value   = true
-    productsStore.productsLoading.value = false
-
-    if (window.__PRICE_META__) {
-      priceMin.value  = Number(window.__PRICE_META__.min_price)
-      priceMax.value  = Number(window.__PRICE_META__.max_price)
-      priceRange.value = { min: priceMin.value, max: priceMax.value }
-    }
-
-    if (window.__PRODUCTS_TOTAL__) productsStore.totalProducts.value = window.__PRODUCTS_TOTAL__
-    if (window.__PAGES_TOTAL__)    productsStore.totalPages.value    = window.__PAGES_TOTAL__
-
-  } else if (productsStore.initialized.value) {
-    // ── Client-nav path: preFetch already populated the store ─────────────────
-    productsStore.categories.value = window.__CATEGORIES_DATA__ || []
-
-    selectedCategoryOBJ.value = currentCat
-    selectedCategory.value    = currentCat ? [currentCat.id] : []
-
-    if (window.__PRICE_META__) {
-      priceMin.value  = Number(window.__PRICE_META__.min_price)
-      priceMax.value  = Number(window.__PRICE_META__.max_price)
-      priceRange.value = { min: priceMin.value, max: priceMax.value }
-    }
-  }
-
-  isReady.value = true
-}
-
-// ─── Computed ─────────────────────────────────────────────────────────────────
-const paginatedProducts = computed(() => productsStore.products.value || [])
-const totalPages        = computed(() => productsStore.totalPages.value)
-const totalProducts     = computed(() => productsStore.totalProducts.value)
-
-const decodeHtml = (html = '') => {
-  return html
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-}
-
-const categoryOptions = computed(() => {
-  if (!Array.isArray(productsStore.categories.value)) return []
-  return productsStore.categories.value.map(cat => ({
-    label: decodeHtml(cat.name),
-    value: cat.id,
-  }))
-})
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function onPriceChange() {
-  priceChanged.value++
-}
 
 function getSortParams(sort) {
   switch (sort) {
@@ -403,7 +172,196 @@ function getSortParams(sort) {
   }
 }
 
-// Uses the store method — same pattern as ProductsPage
+// ─── preFetch (SSR + client-nav) ──────────────────────────────────────────────
+defineOptions({
+  async preFetch({ ssrContext, currentRoute }) {
+    if (process.env.NODE_ENV !== 'production') {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+    }
+
+    // Redefine locally — preFetch runs outside component scope
+    function getSortParams(sort) {
+      switch (sort) {
+        case 'price_asc':  return { orderby: 'price',      order: 'asc'  }
+        case 'price_desc': return { orderby: 'price',      order: 'desc' }
+        case 'date_desc':  return { orderby: 'date',       order: 'desc' }
+        case 'title_asc':  return { orderby: 'title',      order: 'asc'  }
+        case 'title_desc': return { orderby: 'title',      order: 'desc' }
+        case 'popularity': return { orderby: 'popularity', order: 'desc' }
+        case 'rating':     return { orderby: 'rating',     order: 'desc' }
+        default:           return { orderby: 'menu_order', order: 'desc' }
+      }
+    }
+
+    const seo        = await fetchSeoForPath(`product-category/${currentRoute.params.slug}`)
+    const categories = await productsStore.prefetchCategories()
+    const currentCat = categories.find(c => c.slug === currentRoute.params.slug) || null
+
+    // ✅ Read URL filters (search, sort, page, price) just like ProductsPage
+    const urlFilters  = parseQueryFilters(currentRoute.query)
+    const sortParams  = getSortParams(urlFilters.sortBy || 'menu_order')
+    const minPriceCents = urlFilters.priceRange?.min != null ? Math.floor(urlFilters.priceRange.min * 100) : undefined
+    const maxPriceCents = urlFilters.priceRange?.max != null ? Math.ceil(urlFilters.priceRange.max * 100)  : undefined
+
+    const [result, priceMeta] = await Promise.all([
+      productsStore.preFetchProducts({
+        api:       true,
+        page:      urlFilters.currentPage || 1,
+        per_page:  6,
+        dryRun:    true,
+        search:    urlFilters.search || undefined,
+        // Category page: always lock to current cat; selectedCategory from URL is extra filter on top
+        category:  currentCat?.id ?? undefined,
+        min_price: minPriceCents,
+        max_price: maxPriceCents,
+        ...sortParams,
+      }),
+      productsStore.prefetchPriceMeta(currentCat?.id ?? null),
+    ])
+
+    if (ssrContext) {
+      ssrContext.urlFilters           = urlFilters          // ✅ same as ProductsPage
+      ssrContext.productsData         = result.products
+      ssrContext.categoriesData       = categories
+      ssrContext.selectedCategoryData = currentCat
+      ssrContext.priceMetaData        = priceMeta
+      ssrContext.productsTotal        = result.total
+      ssrContext.pagesTotal           = result.totalPages
+      ssrContext.seoData              = seo
+    } else {
+      window.__PRODUCTS_DATA__           = result.products   // ✅ unified naming
+      window.__PRODUCTS_TOTAL__          = result.total
+      window.__PAGES_TOTAL__             = result.totalPages
+      window.__CATEGORIES_DATA__         = categories
+      window.__PRICE_META__              = priceMeta
+      window.__SELECTED_CATEGORY_DATA__  = currentCat
+      window.__SEO_DATA__                = seo
+    }
+
+    productsStore.products.value        = result.products
+    productsStore.totalProducts.value   = result.total
+    productsStore.totalPages.value      = result.totalPages
+    productsStore.productsLoading.value = false
+  }
+})
+
+// ─── SSR hydration ────────────────────────────────────────────────────────────
+if (process.env.SERVER) {
+  const ssr = useSSRContext()
+  if (ssr) {
+    productsStore.categories.value = ssr.categoriesData || []
+    selectedCategoryOBJ.value      = ssr.selectedCategoryData || null
+    selectedCategory.value         = ssr.selectedCategoryData ? [ssr.selectedCategoryData.id] : []
+
+    if (ssr.priceMetaData) {
+      priceMin.value = Number(ssr.priceMetaData.min_price) || 0
+      priceMax.value = Number(ssr.priceMetaData.max_price) || 0
+
+      // ✅ Respect URL price filters on SSR too
+      if (ssr.urlFilters?.priceRange?.min || ssr.urlFilters?.priceRange?.max) {
+        priceRange.value = {
+          min: ssr.urlFilters.priceRange.min ?? priceMin.value,
+          max: ssr.urlFilters.priceRange.max ?? priceMax.value,
+        }
+      } else {
+        priceRange.value = { min: priceMin.value, max: priceMax.value }
+      }
+    }
+
+    if (ssr.urlFilters?.sortBy) sortBy.value = ssr.urlFilters.sortBy
+    if (ssr.urlFilters?.currentPage) currentPage.value = ssr.urlFilters.currentPage
+  }
+}
+
+// ─── Client hydration ─────────────────────────────────────────────────────────
+const isHydrated = ref(
+  process.env.CLIENT && (
+    productsStore.initialized.value === true ||
+    !!(window.__PRODUCTS_DATA__?.length)
+  )
+)
+
+const { initFromQuery, startWatching } = useFilterSync(
+  { search, priceRange, priceMin, priceMax, sortBy, currentPage },
+  router,
+  route
+)
+
+if (process.env.CLIENT) {
+  if (window.__SEO_DATA__) seoData.value = window.__SEO_DATA__
+
+  useMeta(() => {
+    const seo = seoData.value
+    return {
+      title: seo?.title || 'NaturaBloom',
+      meta: {
+        description:    { name: 'description',    content: seo?.description || "Let's Bloom Together" },
+        robots:         { name: 'robots',          content: seo?.robots      || 'index, follow'        },
+        'og:title':     { property: 'og:title',    content: seo?.title       || 'NaturaBloom'          },
+        'og:description':{ property: 'og:description', content: seo?.description || "Let's Bloom Together" },
+        'og:image':     { property: 'og:image',    content: seo?.og_image    || ''                     },
+      },
+      link: [{ rel: 'canonical', href: seo?.canonical || window?.location?.href || '' }],
+    }
+  })
+
+  const hasSSRProducts = Array.isArray(window.__PRODUCTS_DATA__) && window.__PRODUCTS_DATA__.length
+  const currentCat     = (window.__CATEGORIES_DATA__ || []).find(c => c.slug === route.params.slug) || null
+
+  if (hasSSRProducts) {
+    // ── SSR hydration path ──────────────────────────────────────────────────
+    productsStore.categories.value      = window.__CATEGORIES_DATA__ || []
+    selectedCategoryOBJ.value           = window.__SELECTED_CATEGORY_DATA__ || currentCat
+    selectedCategory.value              = selectedCategoryOBJ.value ? [selectedCategoryOBJ.value.id] : []
+    productsStore.products.value        = window.__PRODUCTS_DATA__
+    productsStore.initialized.value     = true
+    productsStore.productsLoading.value = false
+
+    if (window.__PRICE_META__) {
+      priceMin.value   = Number(window.__PRICE_META__.min_price) || 0
+      priceMax.value   = Number(window.__PRICE_META__.max_price) || 0
+      priceRange.value = { min: priceMin.value, max: priceMax.value }
+    }
+
+    if (window.__PRODUCTS_TOTAL__) productsStore.totalProducts.value = window.__PRODUCTS_TOTAL__
+    if (window.__PAGES_TOTAL__)    productsStore.totalPages.value    = window.__PAGES_TOTAL__
+
+    initFromQuery() // ✅ apply URL sort/page/price on top of hydrated data
+
+  } else if (productsStore.initialized.value) {
+    // ── Client-nav path ─────────────────────────────────────────────────────
+    productsStore.categories.value = window.__CATEGORIES_DATA__ || []
+    selectedCategoryOBJ.value      = currentCat
+    selectedCategory.value         = currentCat ? [currentCat.id] : []
+
+    if (window.__PRICE_META__) {
+      priceMin.value   = Number(window.__PRICE_META__.min_price)
+      priceMax.value   = Number(window.__PRICE_META__.max_price)
+      priceRange.value = { min: priceMin.value, max: priceMax.value }
+    }
+
+    initFromQuery()
+  }
+
+  isReady.value = true
+}
+
+// ─── Computed ─────────────────────────────────────────────────────────────────
+const paginatedProducts = computed(() => productsStore.products.value || [])
+const totalPages        = computed(() => productsStore.totalPages.value)
+const totalProducts     = computed(() => productsStore.totalProducts.value)
+
+if (process.env.CLIENT && window.__PRODUCTS_TOTAL__) productsStore.totalProducts.value = window.__PRODUCTS_TOTAL__
+if (process.env.CLIENT && window.__PAGES_TOTAL__)    productsStore.totalPages.value    = window.__PAGES_TOTAL__
+
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const committedPrice = ref(null) // ✅ only updates on slider release
+
+function onPriceChange() {
+  committedPrice.value = { ...priceRange.value } // snapshot on release
+  priceChanged.value++
+}
 async function fetchPriceMeta(category = null) {
   const data = await productsStore.prefetchPriceMeta(category)
   pendingPriceRange.value = {
@@ -413,7 +371,7 @@ async function fetchPriceMeta(category = null) {
   return data
 }
 
-// ─── Watcher: filters → fetch products ───────────────────────────────────────
+// ─── Watcher: filters → fetch ─────────────────────────────────────────────────
 let requestId = 0
 
 watch(
@@ -425,93 +383,108 @@ watch(
     priceTrigger: priceChanged.value,
   }),
   async (filters, prev) => {
-    if (!isReady.value || priceRange.value.min === null || priceRange.value.max === null) return
-    if (isFetching.value) return
+    if (
+      isInitialising.value ||        // ✅ guard — same as ProductsPage
+      !isReady.value ||
+      priceRange.value.min === null ||
+      priceRange.value.max === null
+    ) return
 
     const currentRequest = ++requestId
+
+    // ✅ Snapshot price before any awaits
+    const capturedPrice = committedPrice.value
+      ? { ...committedPrice.value }
+      : { ...priceRange.value }
 
     const categoryChanged =
       prev &&
       JSON.stringify([...filters.category].sort()) !==
       JSON.stringify([...prev.category].sort())
 
+    const shouldResetPage =
+      prev &&
+      (filters.search !== prev.search ||
+       filters.priceTrigger !== prev.priceTrigger ||
+       categoryChanged)
+
     if (categoryChanged) {
       productsStore.productsLoading.value = true
       await fetchPriceMeta(filters.category)
       priceMin.value   = pendingPriceRange.value.min
       priceMax.value   = pendingPriceRange.value.max
-      priceRange.value = { min: pendingPriceRange.value.min, max: pendingPriceRange.value.max }
+      priceRange.value = { ...pendingPriceRange.value }
+      committedPrice.value  = { ...pendingPriceRange.value } // ✅ sync snapshot too
     }
 
-    if (prev && (filters.search !== prev.search || filters.priceTrigger !== prev.priceTrigger)) {
-      if (currentPage.value !== 1) {
-        currentPage.value = 1
-        return
-      }
-    }
-
-    isFetching.value = true
     if (currentRequest !== requestId) return
 
-    const source = priceRange.value
-    const min    = Math.floor(source.min * 100)
-    const max    = Math.ceil(source.max * 100)
-    const sortParams = getSortParams(filters.sort)
-
-    await productsStore.preFetchProducts({
-      api:      true,
-      page:     filters.page,
-      per_page: perPage,
-      min_price: min,
-      max_price: max,
-      category: filters.category.length ? filters.category.join(',') : null,
-      search:   filters.search,
-      ...sortParams,
-    })
-
-    if (categoryChanged) {
-      priceMin.value   = pendingPriceRange.value.min
-      priceMax.value   = pendingPriceRange.value.max
-      priceRange.value = pendingPriceRange.value
+    if (shouldResetPage && currentPage.value !== 1) {
+      currentPage.value = 1
+      return
     }
 
-    isFetching.value = false
+    try {
+      if (currentRequest !== requestId) return
+
+    // ✅ Use capturedPrice — never re-reads priceRange.value
+    const min        = Math.floor(capturedPrice.min * 100)
+    const max        = Math.ceil(capturedPrice.max * 100)
+    const sortParams = getSortParams(filters.sort)
+
+      await productsStore.preFetchProducts({
+        api:      true,
+        page:     currentPage.value,
+        per_page: perPage,
+        min_price: min,
+        max_price: max,
+        category: filters.category.length ? filters.category.join(',') : null,
+        search:   filters.search,
+        ...sortParams,
+      })
+
+      if (currentRequest !== requestId) return
+
+      if (categoryChanged) {
+        priceMin.value   = pendingPriceRange.value.min
+        priceMax.value   = pendingPriceRange.value.max
+        priceRange.value = { ...pendingPriceRange.value }
+      }
+    } finally {
+      // intentionally empty
+    }
   }
 )
 
-// ─── Watcher: route slug change (e.g. navigating between categories) ──────────
+// ─── Watcher: slug change (navigating between category pages) ─────────────────
 watch(
   () => route.params.slug,
   async (newSlug) => {
-    categorySlug.value = newSlug
-
     if (!Array.isArray(productsStore.categories.value) || !productsStore.categories.value.length) {
       await productsStore.prefetchCategories()
     }
 
     const cat = productsStore.categories.value.find(c => c.slug === newSlug)
+    if (!cat) return
 
-    if (cat) {
-      selectedCategoryOBJ.value = cat
-      selectedCategory.value    = [cat.id]
+    selectedCategoryOBJ.value           = cat
+    selectedCategory.value              = [cat.id]
+    productsStore.products.value        = []
+    productsStore.productsLoading.value = true
 
-      productsStore.products.value      = []
-      productsStore.productsLoading.value = true
+    await fetchPriceMeta(cat.id)
+    priceMin.value   = pendingPriceRange.value.min
+    priceMax.value   = pendingPriceRange.value.max
+    priceRange.value = { ...pendingPriceRange.value }
 
-      await fetchPriceMeta(cat.id)
-      priceMin.value   = pendingPriceRange.value.min
-      priceMax.value   = pendingPriceRange.value.max
-      priceRange.value = { ...pendingPriceRange.value }
+    await productsStore.preFetchProducts({
+      api:      true,
+      page:     1,
+      per_page: perPage,
+      category: cat.id,
+    })
 
-      await productsStore.preFetchProducts({
-        api:      true,
-        page:     1,
-        per_page: perPage,
-        category: cat.id,
-      })
-
-      productsStore.productsLoading.value = false
-    }
+    productsStore.productsLoading.value = false
   }
 )
 
@@ -519,38 +492,37 @@ watch(
 onMounted(async () => {
   isHydrated.value = true
 
-  // Apply category name immediately to prevent title flash
   if (window.__SELECTED_CATEGORY_DATA__) {
     selectedCategoryOBJ.value = window.__SELECTED_CATEGORY_DATA__
     selectedCategory.value    = [window.__SELECTED_CATEGORY_DATA__.id]
+    window.__SELECTED_CATEGORY_DATA__ = null
   }
 
-  if (window.__PREFETCH_PRODUCTS__) {
-    // Client-nav: commit prefetched data now that old page is gone
-    productsStore.products.value        = window.__PREFETCH_PRODUCTS__
-    productsStore.totalProducts.value   = window.__PREFETCH_TOTAL__
-    productsStore.totalPages.value      = window.__PREFETCH_PAGES__
+  if (window.__PRODUCTS_DATA__) {
+    productsStore.products.value        = window.__PRODUCTS_DATA__
+    productsStore.totalProducts.value   = window.__PRODUCTS_TOTAL__
+    productsStore.totalPages.value      = window.__PAGES_TOTAL__
     productsStore.initialized.value     = true
     productsStore.productsLoading.value = false
-    window.__PREFETCH_PRODUCTS__ = null
-    window.__PREFETCH_TOTAL__    = null
-    window.__PREFETCH_PAGES__    = null
+    window.__PRODUCTS_DATA__  = null
+    window.__PRODUCTS_TOTAL__ = null
+    window.__PAGES_TOTAL__    = null
   } else if (!productsStore.initialized.value) {
-    // Fallback: preFetch didn't run — fetch for this category now
     productsStore.productsLoading.value = true
     await productsStore.preFetchProducts({
       api:      true,
       page:     1,
       per_page: perPage,
-      category: selectedCategoryOBJ.value?.id || null,   // ← category identifier
+      category: selectedCategoryOBJ.value?.id || null,
     })
   }
 
   if (!priceMin.value) {
-    await fetchPriceMeta(selectedCategoryOBJ.value?.id || null)  // ← category identifier
+    await fetchPriceMeta(selectedCategoryOBJ.value?.id || null)
     priceMin.value   = pendingPriceRange.value.min
     priceMax.value   = pendingPriceRange.value.max
     priceRange.value = { ...pendingPriceRange.value }
+    initFromQuery()  // ✅ bounds just loaded, now safe to read price from URL
   }
 
   if (!Array.isArray(productsStore.categories.value) || !productsStore.categories.value.length) {
@@ -558,6 +530,10 @@ onMounted(async () => {
   }
 
   if (!isReady.value) isReady.value = true
+
+  startWatching()             // ✅ same as ProductsPage
+  await nextTick()
+  isInitialising.value = false // ✅ watcher is now live
 })
 </script>
 
