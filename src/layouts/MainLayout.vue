@@ -47,7 +47,7 @@
           <p>Crafting botanical excellence for the modern soul. Pure ingredients, ethical processes, lasting radiance.</p>
         </div>
         <div class="footer-column">
-          <h5 class="links-title">Shop</h5>
+          <h2 class="links-title">Shop</h2>
           <nav>
             <a href="/products">Shop All</a>
             <a href="/product-category/best-sellers">Best Sellers</a>
@@ -56,14 +56,14 @@
           </nav>
         </div>
         <div class="footer-column">
-          <h5 class="links-title">Experience</h5>
+          <h2 class="links-title">Experience</h2>
           <nav>
             <a href="/sustainability">Sustainability</a>
             <a href="/our-story">Our Story</a>
           </nav>
         </div>
         <div class="footer-column">
-          <h5 class="links-title">Support</h5>
+          <h2 class="links-title">Support</h2>
           <nav>
             <a href="/shipping-and-returns">Shipping & Returns</a>
             <a href="/privacy-policy">Privacy Policy</a>
@@ -248,7 +248,7 @@
 
         </div>
         <div v-else class="q-pa-sm row items-center">
-          <h5>seems like your cart is empty</h5>
+          <h2>seems like your cart is empty</h2>
           <router-link to="/products/">
             <q-btn
                 color="secondary"
@@ -302,7 +302,7 @@
           <p>Crafting botanical excellence for the modern soul. Pure ingredients, ethical processes, lasting radiance.</p>
         </div>
         <div class="footer-column">
-          <h5 class="links-title">Shop</h5>
+          <h2 class="links-title">Shop</h2>
           <nav>
             <router-link to="/products">Shop All</router-link>
             <router-link to="/product-category/best-sellers">Best Sellers</router-link>
@@ -311,14 +311,14 @@
           </nav>
         </div>
         <div class="footer-column">
-          <h5 class="links-title">Experience</h5>
+          <h2 class="links-title">Experience</h2>
           <nav>
             <router-link to="/sustainability">Sustainability</router-link>
             <router-link to="/our-story">Our Story</router-link>
           </nav>
         </div>
         <div class="footer-column">
-          <h5 class="links-title">Support</h5>
+          <h2 class="links-title">Support</h2>
           <nav>
             <router-link to="/shipping-and-returns">Shipping & Returns</router-link>
             <router-link to="/privacy-policy">Privacy Policy</router-link>

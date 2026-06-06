@@ -1,8 +1,8 @@
 <template>
   <router-link :to="`/product/${getSlugFromPermalink(product.permalink)}`">
           <div class="item-loop-wl absolute">
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-if="wishlist.state.items && Object.values(wishlist.state.items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
-              <q-btn class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
+              <q-btn aria-label="Remove from wishlist" class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-if="wishlist.state.items && Object.values(wishlist.state.items).find(obj => product.id === obj.id)" @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavorite" />
+              <q-btn aria-label="Add to wishlist" class="text-black q-pa-none text-caption q-mt-sm" flat :loading="wishlist.state.loading" v-else @click.prevent="addToWishlist(product.id)" color="accent" :icon="matFavoriteBorder" />
           </div>
       <div
     v-if="!product.is_in_stock"
@@ -48,8 +48,8 @@
               <div class="text-subtitle2" v-html="product.price_html" />
               </div>
               <div v-if="product.status && product.status === 'draft'"><b>This is a draft product. It's shown for admins only!</b></div>
-              <q-btn padding="sm" style="line-height: 1" v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(product)" />
-              <q-btn padding="sm" style="line-height: 1" v-else-if="product.is_in_stock && product.type === 'variable'" label="Choose options" color="secondary" />
+              <q-btn aria-label="Add to cart" padding="sm" style="line-height: 1" v-else-if="product.is_in_stock && product.type !== 'variable'" label="Add to Cart" color="secondary" @click.prevent="addToCart(product)" />
+              <q-btn aria-label="Choose options" padding="sm" style="line-height: 1" v-else-if="product.is_in_stock && product.type === 'variable'" label="Choose options" color="secondary" />
               <div v-else>Out of stock</div>
               </div>
           </q-card>

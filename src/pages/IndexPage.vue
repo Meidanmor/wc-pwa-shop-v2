@@ -75,12 +75,23 @@
               <div class="q-card__actions justify-start q-card__actions--horiz row">
                 <div v-if="!product?.is_in_stock">Out of stock</div>
                 <button
-                  v-else
-                  class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-secondary text-white q-btn--actionable"
-                  type="button"
+                    v-else-if="product.is_in_stock && product.type !== 'variable'"
+                    class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-secondary text-white q-btn--actionable"
+                    type="button"
+                    aria-label="Add to cart"
                 >
                   <span class="q-btn__content text-center col items-center justify-center row">
                     <span class="block">Add to Cart</span>
+                  </span>
+                </button>
+                <button
+                    v-else-if="product.is_in_stock && product.type === 'variable'"
+                    class="q-btn q-btn-item non-selectable no-outline q-btn--standard q-btn--rectangle bg-secondary text-white q-btn--actionable"
+                    type="button"
+                    aria-label="Choose options"
+                >
+                  <span class="q-btn__content text-center col items-center justify-center row">
+                    <span class="block">Choose options</span>
                   </span>
                 </button>
               </div>

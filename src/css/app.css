@@ -413,6 +413,7 @@ footer .footer-column:not(.first) {
 }
 footer .footer-column .links-title {
     margin-bottom: 20px;
+    font-weight: 400;
     font-size: 16px;
 }
 footer .footer-column nav {
