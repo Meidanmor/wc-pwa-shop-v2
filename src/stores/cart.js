@@ -1243,7 +1243,7 @@ async function placeOrder(payload) {
 
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Checkout failed')
-
+console.log('Checkout response:', data)
     // Cancel any pending sync
     cancelPendingSync()
 
